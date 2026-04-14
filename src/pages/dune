@@ -1,0 +1,21 @@
+(library
+ (name pages)
+ (wrapped true)
+ (modules
+  login
+  contests
+  problems
+  scoreboard
+  users
+  dashboard
+  submissions
+  codeboard)
+ (libraries
+  components
+  js_of_ocaml
+  js_of_ocaml-tyxml
+  tyxml
+  js_of_ocaml-lwt
+  lwt)
+ (preprocess
+  (pps js_of_ocaml-ppx)))

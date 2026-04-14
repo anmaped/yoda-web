@@ -1,0 +1,17 @@
+{
+  "name": "Yoda Web Dev Container",
+  "build": {
+    "dockerfile": "Containerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,Z",
+  "remoteUser": "opam",
+  "postCreateCommand": "opam update && eval \"$(opam env)\" && opam install -y dune ocaml-lsp-server merlin utop",
+  "extensions": [
+    "ocamllabs.ocaml-platform"
+  ],
+  "settings": {
+    "ocaml.sandbox": "opam"
+  }
+}

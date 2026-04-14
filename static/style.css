@@ -1,0 +1,73 @@
+html,
+body {
+  height: 100%;
+}
+
+.form-signin {
+  max-width: 330px;
+  padding: 1rem;
+}
+
+.form-signin .form-floating:focus-within {
+  z-index: 2;
+}
+
+.form-signin input[type="email"] {
+  margin-bottom: -1px;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.form-signin input[type="password"] {
+  margin-bottom: 10px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* CodeMirror styles */
+.CodeMirror {
+  height: inherit !important;
+}
+
+/* Tab bar styles */
+#tab-bar {
+    display: flex;
+    flex-wrap: wrap;
+    /* allows tabs to wrap to next line */
+    gap: 5px;
+    /* optional spacing between tabs */
+}
+
+#tab-bar .tab {
+    flex: 1 1 auto;
+    /* grow/shrink automatically */
+    padding: 8px 12px;
+    background-color: #eee;
+    cursor: pointer;
+    text-align: center;
+    white-space: nowrap;
+    /* prevent text from breaking in the middle */
+    border-radius: 4px;
+}
+
+#tab-bar .tab.active {
+    background-color: #4287f5;
+    color: white;
+    font-weight: bold;
+}
+
+#tab-bar .tab:not(.active):hover {
+    background: #a0c4ff;
+}
+
+/* End of Tab bar styles */
+
+
+.accordion-header {
+    background-color: var(--bs-accordion-bg);
+    transition: background-color 0.2s;
+}
+
+.accordion-header:has(.accordion-button:not(.collapsed)) {
+    background-color: var(--bs-accordion-active-bg);
+}

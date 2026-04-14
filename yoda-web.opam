@@ -1,0 +1,26 @@
+opam-version: "2.0"
+name: "yoda-web"
+version: "0.1.0"
+synopsis: "Frontend for Yoda server"
+description: "A small frontend built with js_of_ocaml, Tyxml_js and Lwt."
+authors: ["The Yoda Team"]
+maintainer: "The Yoda Team"
+license: "MIT"
+build: [ ["dune" "build" "-p" "%{name}%" "-j" "4"] ]
+depends: [
+  "ocaml" {>= "4.08"}
+  "dune" {>= "2.0"}
+  "js_of_ocaml" {>= "3.0"}
+  "js_of_ocaml-compiler"
+  "js_of_ocaml-tyxml"
+  "js_of_ocaml-lwt"
+  "tyxml"
+  "lwt"
+  "ppx_blob"
+]
+homepage: "https://github.com/anmaped/yoda-web"
+bug-reports: ""
+extra-files: [ "dune-project" ]
+provided: []
+pin-depends: []
+flags: []

@@ -1,0 +1,101 @@
+(executable
+ (name main)
+ (modules main)
+ (modes js)
+ (libraries
+  js_of_ocaml
+  js_of_ocaml-ppx
+  js_of_ocaml-lwt
+  js_of_ocaml-tyxml
+  tyxml
+  lwt
+  astring
+  pages
+  components)
+ (js_of_ocaml
+  (javascript_files bootstrap.js codemirror.js))
+ (preprocess
+  (pps js_of_ocaml-ppx ppx_blob))
+ (preprocessor_deps
+  (file codemirror.css)
+  (file bootstrap.css)
+  (file ../static/style.css)))
+
+(library
+ (name api)
+ (modules api)
+ (wrapped true)
+ (libraries js_of_ocaml js_of_ocaml-lwt lwt)
+ (preprocess
+  (pps js_of_ocaml-ppx)))
+
+(library
+ (name helpers)
+ (modules helpers)
+ (wrapped true)
+ (libraries js_of_ocaml js_of_ocaml-tyxml js_of_ocaml-lwt lwt yojson astring)
+ (preprocess
+  (pps js_of_ocaml-ppx)))
+
+;; Rule to download Bootstrap JS
+
+(rule
+ (targets bootstrap.js)
+ (action
+  (progn
+   (run
+    curl
+    -L
+    -o
+    %{targets}
+    https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js))))
+
+;; Rule to download Bootstrap CSS
+
+(rule
+ (targets bootstrap.css)
+ (action
+  (progn
+   (run
+    curl
+    -L
+    -o
+    %{targets}
+    https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css))))
+
+(rule
+ (targets bootstrap-icons.css)
+ (action
+  (progn
+   (run
+    curl
+    -L
+    -o
+    %{targets}
+    https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css))))
+
+;; Rule to download CodeMirror
+
+(rule
+ (targets codemirror.js)
+ (action
+  (progn
+   (run
+    curl
+    -L
+    -o
+    %{targets}
+    https://unpkg.com/codemirror@6.65.7/lib/codemirror.js))))
+
+;; Rule to download CodeMirror CSS
+
+(rule
+ (targets codemirror.css)
+ (action
+  (progn
+   (run
+    curl
+    -L
+    -o
+    %{targets}
+    https://unpkg.com/codemirror@6.65.7/lib/codemirror.css))))

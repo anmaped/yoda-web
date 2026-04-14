@@ -1,0 +1,31 @@
+(library
+ (name components)
+ (wrapped true)
+ (modules
+  contest_list
+  login_form
+  problem_list
+  scoreboard
+  submission_form
+  user_list
+  sidebar
+  view_summary
+  view_submissions
+  view_problem
+  view_problems
+  view_contest_progress
+  editor
+  codebar
+  tabbar
+  testbar)
+ (libraries
+  api
+  model
+  helpers
+  js_of_ocaml
+  js_of_ocaml-tyxml
+  tyxml
+  js_of_ocaml-lwt
+  lwt)
+ (preprocess
+  (pps js_of_ocaml-ppx)))
