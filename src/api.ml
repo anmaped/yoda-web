@@ -2,7 +2,7 @@ open Js_of_ocaml
 open Js_of_ocaml_lwt
 open Lwt.Infix
 
-let base_url = "http://localhost:4000"
+let base_url = "http://localhost:8001"
 
 let get_local_storage_item key =
   match Js.Optdef.to_option Dom_html.window##.localStorage with
