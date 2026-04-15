@@ -17,6 +17,7 @@ depends: [
   "tyxml"
   "lwt"
   "ppx_blob"
+  "astring"
 ]
 homepage: "https://github.com/anmaped/yoda-web"
 bug-reports: ""
