@@ -1,9 +1,0 @@
-.git
-.github
-.devcontainer
-_build
-dist
-node_modules
-*.log
-trace.csexp
-static/_old

@@ -69,7 +69,7 @@ jobs:
           mkdir -p image-context
           cp Containerfile image-context/Containerfile
           mkdir -p image-context/nginx
-          cp nginx/default.conf image-context/nginx/default.conf
+          cp default.conf image-context/nginx/default.conf
           cp -a dist/static image-context/static
 
       - name: Set up Docker Buildx
