@@ -1,7 +1,12 @@
 FROM nginx:1.27-alpine
 
-COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+ARG BASE_API_URL=http://localhost:8001
+
+COPY default.conf /etc/nginx/conf.d/default.conf
 COPY static/ /usr/share/nginx/html/
+COPY entrypoint.sh /docker-entrypoint.d/01-encrypt-url.sh
+
+RUN chmod +x /docker-entrypoint.d/01-encrypt-url.sh
 
 EXPOSE 80
 

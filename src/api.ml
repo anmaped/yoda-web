@@ -2,7 +2,18 @@ open Js_of_ocaml
 open Js_of_ocaml_lwt
 open Lwt.Infix
 
-let base_url = "http://localhost:8001"
+let base_url =
+  let v = Js.Unsafe.get Js.Unsafe.global (Js.string "__BASE_API_URL__") in
+  try
+    let cipher_hex = Js.to_string (Obj.magic v) in
+    let len = String.length cipher_hex / 2 in
+    let buf = Bytes.create len in
+    for i = 0 to len - 1 do
+      let byte = int_of_string ("0x" ^ String.sub cipher_hex (2 * i) 2) in
+      Bytes.set buf i (Char.chr (byte lxor 27))
+    done;
+    Bytes.to_string buf
+  with _ -> "http://localhost:8001"
 
 let get_local_storage_item key =
   match Js.Optdef.to_option Dom_html.window##.localStorage with
