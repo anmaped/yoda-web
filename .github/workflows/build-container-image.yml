@@ -70,7 +70,7 @@ jobs:
           cp Containerfile image-context/Containerfile
           cp entrypoint.sh image-context/entrypoint.sh
           mkdir -p image-context/nginx
-          cp default.conf image-context/nginx/default.conf
+          cp default.conf image-context/default.conf
           cp -a dist/static image-context/static
 
       - name: Set up Docker Buildx
