@@ -1,10 +1,14 @@
 FROM nginx:1.27-alpine
 
+ARG BASE_API_URL=http://localhost:8001
+ARG VERSION=dev
+
 COPY default.conf /etc/nginx/conf.d/default.conf
 COPY static/ /usr/share/nginx/html/
 COPY entrypoint.sh /docker-entrypoint.d/01-encrypt-url.sh
 
-RUN chmod +x /docker-entrypoint.d/01-encrypt-url.sh
+RUN chmod +x /docker-entrypoint.d/01-encrypt-url.sh \
+  && echo "${VERSION}" > /usr/share/nginx/html/version
 
 EXPOSE 80
 
