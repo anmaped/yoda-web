@@ -119,6 +119,10 @@ let get_session_variable key =
   | Some storage -> Js.Opt.to_option (storage##getItem (Js.string key))
   | None -> None
 
+let remove_session_variable key =
+  Js.Optdef.iter Dom_html.window##.sessionStorage (fun storage ->
+      ignore (storage##removeItem (Js.string key)) )
+
 let set_local_variable key value =
   Js.Optdef.iter Dom_html.window##.localStorage (fun storage ->
       storage##setItem (Js.string key) (Js.string value) )
@@ -129,8 +133,18 @@ let get_local_variable key =
   | None -> None
 
 let username () =
-  match get_session_variable "username" with
-  | Some t -> Js.to_string t
+  match get_session_variable "user" with
+  | Some t ->
+      let json_str = Js.to_string t in
+      (try
+         let raw =
+           Yojson.Basic.from_string json_str
+           |> Yojson.Basic.Util.member "username"
+           |> Yojson.Basic.to_string
+         in
+         (* Strip surrounding double quotes from JSON string *)
+         String.sub raw 1 (String.length raw - 2)
+       with _ -> "Guest")
   | None -> "Guest"
 
 let is_valid_json s =

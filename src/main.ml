@@ -16,8 +16,6 @@ let inject_css css_str =
   Dom.appendChild Dom_html.document##.head style
 
 let () =
-  Helpers.set_session_variable "username" "Joe Toe" ;
-  Helpers.set_session_variable "contest_id" "1" ;
   (* Read CSS from file at compile-time *)
   let bootstrap_css = [%blob "bootstrap.css"] in
   inject_css bootstrap_css ;
@@ -43,7 +41,7 @@ let () =
               ~on_success:(fun () -> navigate_to "#contests")
               () ]
       | "#users" -> [Pages.Users.render ()]
-      | "#contests" -> [Pages.Contests.render ()]
+      | "#contests" -> Pages.Contests.render ()
       | p when Astring.String.is_prefix ~affix:"#show-problems" p ->
           [Pages.Problems.render ()]
       | p when Astring.String.is_prefix ~affix:"#scoreboard/" p ->
@@ -62,8 +60,11 @@ let () =
           let parts = Astring.String.cuts ~sep:"-" p in
           let problem_id = List.nth parts 2 in
           [Pages.Problems.render ~problem_id ()]
-      | _ -> Pages.Dashboard.render ()
-      (* Default to Dashboard *)
+      | _ ->
+          [ Pages.Login.render
+              ~on_success:(fun () -> navigate_to "#contests")
+              () ]
+      (* Defaults to login *)
     in
     (* Append the divs that need to be rendered *)
     List.iter

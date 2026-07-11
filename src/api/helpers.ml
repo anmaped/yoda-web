@@ -2,18 +2,23 @@ open Js_of_ocaml
 open Js_of_ocaml_lwt
 open Lwt.Infix
 
-let base_url =
+let decrypt_cipher cipher_hex =
+  let len = String.length cipher_hex / 2 in
+  let buf = Bytes.create len in
+  for i = 0 to len - 1 do
+    let byte = int_of_string ("0x" ^ String.sub cipher_hex (2 * i) 2) in
+    Bytes.set buf i (Char.chr (byte lxor 27))
+  done;
+  Bytes.to_string buf
+
+let get_base_url () : string =
   let v = Js.Unsafe.get Js.Unsafe.global (Js.string "__BASE_API_URL__") in
   try
     let cipher_hex = Js.to_string (Obj.magic v) in
-    let len = String.length cipher_hex / 2 in
-    let buf = Bytes.create len in
-    for i = 0 to len - 1 do
-      let byte = int_of_string ("0x" ^ String.sub cipher_hex (2 * i) 2) in
-      Bytes.set buf i (Char.chr (byte lxor 27))
-    done;
-    Bytes.to_string buf
+    decrypt_cipher cipher_hex
   with _ -> "http://localhost:8001"
+
+let base_url = get_base_url ()
 
 let get_local_storage_item key =
   match Js.Optdef.to_option Dom_html.window##.localStorage with
@@ -32,12 +37,14 @@ let headers () =
 
 let fetch_json url =
   XmlHttpRequest.perform_raw_url ~headers:(headers ()) url
-  >>= fun resp -> Lwt.return (Json.unsafe_input (Js.string resp.content))
+  >>= fun resp -> Console.console##log (Js.string ("Response: " ^ resp.content));
+  Lwt.return (Json.unsafe_input (Js.string resp.content))
 
 let post_json url body =
   XmlHttpRequest.perform_raw_url ~override_method:`POST ~headers:(headers ())
     ~contents:(`String body) url
-  >>= fun resp -> Lwt.return (Json.unsafe_input (Js.string resp.content))
+  >>= fun resp ->
+  Lwt.return ((Json.unsafe_input (Js.string resp.content)), resp.code)
 
 let login username password =
   let body =
@@ -49,9 +56,6 @@ let get_users () = fetch_json (base_url ^ "/users")
 
 let get_contests () = fetch_json (base_url ^ "/contests")
 
-let get_problems contest_id =
-  fetch_json (Printf.sprintf "%s/contests/%d/problems" base_url contest_id)
-
 let submit_solution contest_id problem_id language source_code =
   let body =
     Printf.sprintf
@@ -62,3 +66,7 @@ let submit_solution contest_id problem_id language source_code =
 
 let get_scoreboard contest_id =
   fetch_json (Printf.sprintf "%s/contests/%d/scoreboard" base_url contest_id)
+
+let verify_token () =
+  XmlHttpRequest.perform_raw_url ~headers:(headers ()) (base_url ^ "/auth/me")
+  >>= fun resp -> Lwt.return (resp.code = 200)

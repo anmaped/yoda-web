@@ -18,7 +18,7 @@ let render ~contest_id ~problem_id () =
     Lwt_js_events.clicks (Tyxml_js.To_dom.of_button submit_btn) (fun _ _ ->
       let lang = Js.to_string (Tyxml_js.To_dom.of_input lang_input)##.value in
       let code = Js.to_string (Tyxml_js.To_dom.of_textarea code_input)##.value in
-      Api.submit_solution contest_id problem_id lang code >>= fun _resp ->
+      Api.Helpers.submit_solution contest_id problem_id lang code >>= fun _resp ->
       Console.console##log (Js.string "Submitted!");
       Lwt.return_unit
     )

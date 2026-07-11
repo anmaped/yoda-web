@@ -17,4 +17,5 @@ let render ?(problem_id = "") () =
     try int_of_string (get_session_contest_id ())
     with Failure _ -> failwith "Invalid contest_id in sessionStorage!"
   in
-  Components.Problem_list.render ~contest_id ~problem_id ()
+  Components.Problem_list.content ~contest_id () ;
+  div []

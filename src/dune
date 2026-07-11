@@ -22,14 +22,6 @@
   (file ../static/style.css)))
 
 (library
- (name api)
- (modules api)
- (wrapped true)
- (libraries js_of_ocaml js_of_ocaml-lwt lwt)
- (preprocess
-  (pps js_of_ocaml-ppx)))
-
-(library
  (name helpers)
  (modules helpers)
  (wrapped true)

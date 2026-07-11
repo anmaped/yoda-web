@@ -6,7 +6,7 @@ open Lwt.Infix
 let render () =
   let ul = ul [] in
   Lwt.async (fun () ->
-    Api.get_users () >>= fun json ->
+    Api.Helpers.get_users () >>= fun json ->
     let users = Js.to_array json in
     Array.iter (fun u ->
       let li = li [txt (Js.to_string u##.username ^ " (" ^ Js.to_string u##.role ^ ")")] in

@@ -4,3 +4,10 @@ if [ -n "$BASE_API_URL" ]; then
   CIPHER=$(echo -n "$BASE_API_URL" | od -An -tx1 | tr -d ' \n\r' | sed 's/\(..\)/\1\n/g' | while read hex; do [ -n "$hex" ] && printf '%02x' $((0x$hex ^ 0x1b)); done)
   sed -i "s|<div id=\"app\"></div>|<div id=\"app\"></div>\n  <script>window.__BASE_API_URL__ = \"${CIPHER}\";</script>|" /usr/share/nginx/html/index.html
 fi
+
+# Inject API_ROUTING_URL into nginx config and add proxy location if defined
+if [ -n "$API_ROUTING_URL" ]; then
+  envsubst '${API_ROUTING_URL}' < /etc/nginx/conf.d/default.conf > /tmp/nginx.conf
+  sed -i "s|^\}|    # API routing\n    location /api {\n        proxy_pass ${API_ROUTING_URL};\n    }\n}|" /tmp/nginx.conf
+  mv /tmp/nginx.conf /etc/nginx/conf.d/default.conf
+fi

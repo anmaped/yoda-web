@@ -2,6 +2,7 @@ FROM nginx:1.27-alpine
 
 ARG BASE_API_URL=http://localhost:8001
 ARG VERSION=dev
+ARG API_ROUTING_URL=http://localhost:8001/api/
 
 COPY default.conf /etc/nginx/conf.d/default.conf
 COPY static/ /usr/share/nginx/html/

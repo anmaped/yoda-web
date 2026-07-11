@@ -18,6 +18,7 @@ depends: [
   "lwt"
   "ppx_blob"
   "astring"
+  "yojson"
 ]
 homepage: "https://github.com/anmaped/yoda-web"
 bug-reports: ""
