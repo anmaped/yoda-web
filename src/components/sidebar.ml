@@ -216,13 +216,13 @@ let icon_only_sidebar () =
         ; li
             [ a
                 ~a:
-                  [ a_href "#switch-contest"
+                  [ a_href "#contests"
                   ; a_class
                       [ "nav-link"
                       ; (let hash =
                            Js.to_string Dom_html.window##.location##.hash
                          in
-                         if hash = "#switch-contest" then "active" else "" )
+                         if hash = "#contests" then "active" else "" )
                       ; "py-3"
                       ; "border-bottom"
                       ; "rounded-0" ]
@@ -340,7 +340,7 @@ let full_sidebar () =
             [nav_link "#submissions" "Submissions" table_icon]
         ; li
             ~a:[a_class ["nav-item"]]
-            [nav_link "#switch-contest" "Switch Contest" arrow_left_right] ]
+            [nav_link "#contests" "Switch Contest" arrow_left_right] ]
       (* Bottom dropdown *)
     ; div
         ~a:

@@ -2,6 +2,14 @@ open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 
+
+(* Strip surrounding double quotes from JSON string *)
+let cleanup_json_string json_str =
+  let len = String.length json_str in
+  if len >= 2 && json_str.[0] = '"' && json_str.[len - 1] = '"' then
+    String.sub json_str 1 (len - 2)
+  else json_str
+
 let remove_first_element_from_app element =
   let doc = Dom_html.document in
   match Js.Opt.to_option (doc##querySelector (Js.string element)) with
@@ -134,17 +142,17 @@ let get_local_variable key =
 
 let username () =
   match get_session_variable "user" with
-  | Some t ->
+  | Some t -> (
       let json_str = Js.to_string t in
-      (try
-         let raw =
-           Yojson.Basic.from_string json_str
-           |> Yojson.Basic.Util.member "username"
-           |> Yojson.Basic.to_string
-         in
-         (* Strip surrounding double quotes from JSON string *)
-         String.sub raw 1 (String.length raw - 2)
-       with _ -> "Guest")
+      try
+        let raw =
+          Yojson.Basic.from_string json_str
+          |> Yojson.Basic.Util.member "username"
+          |> Yojson.Basic.to_string
+        in
+        (* Strip surrounding double quotes from JSON string *)
+        cleanup_json_string raw
+      with _ -> "Guest" )
   | None -> "Guest"
 
 let is_valid_json s =
@@ -203,3 +211,8 @@ let get_problem () =
     match get_session_variable "problem" with
     | Some p -> Js.to_string p
     | None -> "unknown_problem" )
+
+let get_current_contest_id () =
+  match get_session_variable "contest_id" with
+  | Some id -> int_of_string (Js.to_string id)
+  | None -> failwith "No contest_id found in sessionStorage!"
