@@ -68,5 +68,5 @@ let get_scoreboard contest_id =
   fetch_json (Printf.sprintf "%s/contests/%d/scoreboard" base_url contest_id)
 
 let verify_token () =
-  XmlHttpRequest.perform_raw_url ~headers:(headers ()) (base_url ^ "/auth/me")
+  XmlHttpRequest.perform_raw_url ~headers:(headers ()) (base_url ^ "/contests")
   >>= fun resp -> Lwt.return (resp.code = 200)

@@ -40,6 +40,11 @@ let () =
           [ Pages.Login.render
               ~on_success:(fun () -> navigate_to "#contests")
               () ]
+      | "#logout" ->
+          Helpers.remove_session_variable "token" ;
+          Helpers.remove_cookies_variable "dream.session" ;
+          navigate_to "#login" ;
+          []
       | "#users" -> [Pages.Users.render ()]
       | "#contests" -> Pages.Contests.render ()
       | p when Astring.String.is_prefix ~affix:"#show-problems" p ->
@@ -60,6 +65,8 @@ let () =
           let parts = Astring.String.cuts ~sep:"-" p in
           let problem_id = List.nth parts 2 in
           [Pages.Problems.render ~problem_id ()]
+      | p when Astring.String.is_prefix ~affix:"#settings" p ->
+          [Pages.Settings.render ()]
       | _ ->
           [ Pages.Login.render
               ~on_success:(fun () -> navigate_to "#contests")

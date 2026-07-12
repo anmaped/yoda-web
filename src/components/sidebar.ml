@@ -382,9 +382,9 @@ let full_sidebar () =
            in
            ul
              ~a:[a_class ["dropdown-menu"; "text-small"; "shadow"]]
-             [ dropdown_item "Settings"
+             [ dropdown_item ~href:"#settings" "Settings"
              ; dropdown_divider ()
-             ; dropdown_item "Sign out" ] ) ] ]
+             ; dropdown_item ~href:"#logout" "Sign out" ] ) ] ]
 
 let sidebar () =
   if Helpers.is_mobile () then div []

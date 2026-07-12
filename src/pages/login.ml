@@ -6,14 +6,14 @@ let render ~on_success () =
   (* check if user is already logged in *)
   match Helpers.get_session_variable "token" with
   | Some p ->
-      (* [TODO] need to check if token is valid *)
+      (* need to check if token is valid *)
       Lwt.async (fun () ->
           Api.Helpers.verify_token ()
           >>= fun is_valid ->
           if is_valid then on_success ()
-          else (
-            Helpers.remove_session_variable "token" ;
-            on_success () ) ;
+          else Helpers.remove_session_variable "token" ;
+          if Helpers.exists_cookie_variable "dream.session" then
+          Helpers.remove_cookies_variable "dream.session" ;
           Lwt.return_unit ) ;
       div []
   | None ->

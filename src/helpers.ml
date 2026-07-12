@@ -131,6 +131,19 @@ let remove_session_variable key =
   Js.Optdef.iter Dom_html.window##.sessionStorage (fun storage ->
       ignore (storage##removeItem (Js.string key)) )
 
+(* Cookie helpers *)
+let exists_cookie_variable name =
+  let cookies = Js.to_string Dom_html.document##.cookie in
+  let cookie_list = Astring.String.cuts ~sep:";" cookies in
+  List.exists (fun c -> Astring.String.is_prefix ~affix:(name ^ "=") c) cookie_list
+
+let remove_cookies_variable name =
+  let expired =
+    Js.string (name ^ "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/")
+  in
+  Dom_html.document##.cookie := expired;
+  Console.console##log (Js.string ("Cookie removed: " ^ name))
+
 let set_local_variable key value =
   Js.Optdef.iter Dom_html.window##.localStorage (fun storage ->
       storage##setItem (Js.string key) (Js.string value) )

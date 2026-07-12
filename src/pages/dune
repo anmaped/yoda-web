@@ -9,7 +9,8 @@
   users
   dashboard
   submissions
-  codeboard)
+  codeboard
+  settings)
  (libraries
   components
   js_of_ocaml
