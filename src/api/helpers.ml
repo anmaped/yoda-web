@@ -38,7 +38,7 @@ let headers () =
 let fetch_json url =
   XmlHttpRequest.perform_raw_url ~headers:(headers ()) url
   >>= fun resp -> Console.console##log (Js.string ("Response: " ^ resp.content));
-  Lwt.return (Json.unsafe_input (Js.string resp.content))
+  Lwt.return ((Json.unsafe_input (Js.string resp.content)), resp.code)
 
 let post_json url body =
   XmlHttpRequest.perform_raw_url ~override_method:`POST ~headers:(headers ())

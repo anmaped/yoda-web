@@ -24,12 +24,18 @@ let content ?(show_progress_only = false) () =
   Lwt.async (fun () ->
       Api.Helpers.fetch_json
         (Printf.sprintf "%s/contests/%d" Api.Helpers.base_url contest_id)
-      >>= fun resp ->
-      (* resp is a json string *)
-      let resp_json_string = Js.to_string (Json.output resp) in
-      let p = Api.Openapi.Contest.of_json resp_json_string in
-      (* find the dom of contest_title and set new title *)
-      Dom.appendChild
+      >>= fun (resp, status) ->
+      if status <> 200 then (
+        Console.console##log
+          (Js.string
+             (Printf.sprintf "Failed to fetch contest: %d" status)) ;
+        Lwt.return_unit )
+      else
+        (* resp is a json string *)
+        let resp_json_string = Js.to_string (Json.output resp) in
+        let p = Api.Openapi.Contest.of_json resp_json_string in
+        (* find the dom of contest_title and set new title *)
+        Dom.appendChild
         (Tyxml_js.To_dom.of_h2 contest_title)
         (Dom_html.document##createTextNode (Js.string p.title)) ;
       (* find the dom of contest_description and set new description *)

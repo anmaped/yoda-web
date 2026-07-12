@@ -8,17 +8,25 @@ let content ul () =
   Lwt.async (fun () ->
       (* [TODO] convert to Api.Openapi *)
       Api.Helpers.get_contests ()
-      >>= fun json ->
-      let contests = Js.to_array json in
-      Array.iter
-        (fun c ->
-          let select_btn =
-            a
-              ~a:
+      >>= fun (json, status) ->
+      if status <> 200 then (
+        Console.console##log
+          (Js.string
+             (Printf.sprintf "Failed to fetch contests: %d" status)) ;
+        Lwt.return_unit )
+      else
+        let contests = Js.to_array json in
+        Array.iter
+          (fun c ->
+            let select_btn =
+              a
+              (*~a:
                 [ a_href
                     ( Api.Helpers.base_url ^ "/contests/"
                     ^ Int32.to_string (Js.to_int32 c##.id)
-                    ^ "/problems" ) ]
+                    ^ "/problems" ) ]*)
+              ~a:
+                [ a_href "#dashboard" ]
               [ txt
                   ( Js.to_string c##.title
                   ^ " ("

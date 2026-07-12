@@ -6,7 +6,7 @@ open Lwt.Infix
 let render ~contest_id () =
   let table = table [] in
   Lwt.async (fun () ->
-    Api.Helpers.get_scoreboard contest_id >>= fun entries ->
+    Api.Helpers.get_scoreboard contest_id >>= fun (entries, status) ->
     Array.iter (fun e ->
       let row =
         tr [td [txt (Js.to_string e##.team)];

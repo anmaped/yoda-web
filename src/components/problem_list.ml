@@ -8,12 +8,18 @@ let content ~contest_id ~problem_row ~tbl () : unit =
       Api.Helpers.fetch_json
         (Printf.sprintf "%s/contests/%d/problems" Api.Helpers.base_url
            contest_id )
-      >>= fun resp ->
-      (* resp is a json string *)
-      let resp_json_string = Js.to_string (Json.output resp) in
-      let problems =
-        Api.Openapi.ContestsContestsidProblemsGetResponse2.of_json
-          resp_json_string
+      >>= fun (resp, status) ->
+      if status <> 200 then (
+        Console.console##log
+          (Js.string
+             (Printf.sprintf "Failed to fetch problems: %d" status)) ;
+        Lwt.return_unit )
+      else
+        (* resp is a json string *)
+        let resp_json_string = Js.to_string (Json.output resp) in
+        let problems =
+          Api.Openapi.ContestsContestsidProblemsGetResponse2.of_json
+            resp_json_string
       in
       List.iter
         (fun (p : Api.Openapi.problem) ->
