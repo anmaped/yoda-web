@@ -106,9 +106,9 @@ let content ~contest_id () =
                     Api.Openapi.Problem.of_json
                       (Js.to_string (Json.output problem_resp))
                   in
-                  (* let lang = match Js.Opt.get sub.language (fun () ->
-                     Js.string "Unknown") with | s -> Js.to_string s in*)
-                  let lang = "Unknown" in
+                  let lang =
+                    try Option.get sub.language with _ -> "Unknown"
+                  in
                   let row = submission_row id p.code lang status time_str in
                   Dom.appendChild
                     (Tyxml_js.To_dom.of_table table)
