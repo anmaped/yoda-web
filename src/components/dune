@@ -4,6 +4,7 @@
  (modules
   contest_list
   login_form
+  problem_dropdown
   problem_list
   scoreboard
   submission_form

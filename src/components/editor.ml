@@ -2,9 +2,10 @@ open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 
+let codeboard =
+  div ~a:[a_id "codeboard"; a_style "height: 100%; min-height: 0;"] []
 
 let textarea_or_create ~root_id ~textarea_id =
-  let root = Helpers.get_element_by_id root_id in
   match
     Js.Opt.to_option
       (Dom_html.document##getElementById (Js.string textarea_id))
@@ -17,7 +18,7 @@ let textarea_or_create ~root_id ~textarea_id =
       let ta = Dom_html.createTextarea Dom_html.document in
       ta##.id := Js.string textarea_id ;
       ta##.value := Js.string "(* Start coding here *)\n" ;
-      Dom.appendChild root ta ;
+      Dom.appendChild (Tyxml_js.To_dom.of_div codeboard) ta ;
       ta
 
 (* Minimal type for CodeMirror instance *)
@@ -29,7 +30,7 @@ class type codeMirror = object
   method refresh : unit Js.meth
 end
 
-let init () =
+let editor =
   let textarea =
     textarea_or_create ~root_id:"codeboard" ~textarea_id:"codeboard-editor"
   in
@@ -73,6 +74,16 @@ let init () =
   editor##setValue (Js.string "(* Start coding here *)\n") ;
   editor
 
+let load_state () =
+  match Helpers.get_local_variable "yoda-state-editor-content" with
+  | Some content -> editor##setValue (Js.string (Js.to_string content))
+  | None -> ()
+
+let save_state () =
+  editor##refresh ;
+  let content = Js.to_string editor##getValue in
+  Helpers.set_local_variable "yoda-state-editor-content" content
+
 let content () =
   section
     ~a:
@@ -82,4 +93,4 @@ let content () =
         ~a:
           [ a_class ["contest-card"; "rounded"; "p-1"; "shadow-sm"]
           ; a_style "height: 100%; min-height: 0;" ]
-        [div ~a:[a_id "codeboard"; a_style "height: 100%; min-height: 0;"] []] ]
+        [codeboard] ]

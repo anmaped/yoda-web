@@ -48,7 +48,7 @@ let submission_row id problem lang result time =
     ; td [span ~a:[a_class (badge_class result)] [txt (status_label result)]]
     ; td [txt time] ]
 
-let content ~contest_id () =
+let content ~contest_id ~last () =
   let table =
     table
       ~a:
@@ -114,6 +114,6 @@ let content ~contest_id () =
                     (Tyxml_js.To_dom.of_table table)
                     (Tyxml_js.To_dom.of_tr row) ;
                   Lwt.return_unit ) )
-          submissions ;
+          (List.rev submissions |> List.filteri (fun i _ -> i < last)) ;
         Lwt.return_unit ) ;
   div ~a:[a_class ["table-responsive"]] [table]

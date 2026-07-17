@@ -9,4 +9,4 @@ let content ~contest_id () =
         ~a:[a_class ["panel"]]
         [ View_contest_progress.content ()
         ; View_problems.content ()
-        ; View_submissions.content ~contest_id () ] ]
+        ; View_submissions.content ~contest_id ~last:15 () ] ]

@@ -373,7 +373,7 @@ let full_sidebar () =
                       "width:32px; height:32px; font-size:0.9rem; \
                        font-weight:600;" ]
                 [txt (initials ())]
-            ; span ~a:[a_class ["ms-2"]] [txt (Helpers.username ())] ]
+            ; span ~a:[a_class ["ms-2"]] [txt (Helpers.get_username ())] ]
         ; (let dropdown_item ?(href = "#") label =
              li [a ~a:[a_class ["dropdown-item"]; a_href href] [txt label]]
            in

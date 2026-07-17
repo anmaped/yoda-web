@@ -2,7 +2,6 @@ open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 
-
 (* Strip surrounding double quotes from JSON string *)
 let cleanup_json_string json_str =
   let len = String.length json_str in
@@ -66,49 +65,6 @@ let make_modal_view name title content action () =
                                 action () ) ]
                         [txt "Confirm"] ] ] ] ] ]
 
-let make_spinner id () =
-  div
-    ~a:
-      [ a_id ("spinner-" ^ id)
-      ; a_class ["spinner-border"; "spinner-border-sm"; "text-primary"]
-      ; a_role ["status"] ]
-    [span ~a:[a_class ["visually-hidden"]] [txt " "]]
-
-let hide id () =
-  let el = Dom_html.getElementById id in
-  el##.style##.display := Js.string "none" ;
-  Console.console##log (Js.string ("Element hidden: " ^ id))
-
-let make_spinner_modal () =
-  div
-    [ (* backdrop *)
-      div ~a:[a_class ["modal-backdrop"; "fade"; "show"]] []
-    ; (* fullscreen modal *)
-      div
-        ~a:[a_class ["modal"; "fade"; "show"]; a_style "display:block;"]
-        [ div
-            ~a:[a_class ["modal-dialog"; "modal-fullscreen"]]
-            [ div
-                ~a:[a_class ["modal-content"]]
-                [ (* header *)
-                  div
-                    ~a:[a_class ["modal-header"]]
-                    [ h5 ~a:[a_class ["modal-title"]] [txt "Processing..."]
-                    ; button
-                        ~a:[a_class ["btn-close"]; a_onclick (fun _ -> false)]
-                        [] ]
-                ; (* body *)
-                  div
-                    ~a:[a_class ["modal-body"]]
-                    [ div
-                        [ txt "Ready to start operation."
-                        ; br ()
-                        ; button
-                            ~a:
-                              [ a_class ["btn"; "btn-primary"; "mt-3"]
-                              ; a_onclick (fun _ -> false) ]
-                            [txt "Start"] ] ] ] ] ] ]
-
 let is_mobile () =
   let width = Dom_html.window##.innerWidth in
   width < 560
@@ -135,13 +91,15 @@ let remove_session_variable key =
 let exists_cookie_variable name =
   let cookies = Js.to_string Dom_html.document##.cookie in
   let cookie_list = Astring.String.cuts ~sep:";" cookies in
-  List.exists (fun c -> Astring.String.is_prefix ~affix:(name ^ "=") c) cookie_list
+  List.exists
+    (fun c -> Astring.String.is_prefix ~affix:(name ^ "=") c)
+    cookie_list
 
 let remove_cookies_variable name =
   let expired =
     Js.string (name ^ "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/")
   in
-  Dom_html.document##.cookie := expired;
+  Dom_html.document##.cookie := expired ;
   Console.console##log (Js.string ("Cookie removed: " ^ name))
 
 let set_local_variable key value =
@@ -153,7 +111,7 @@ let get_local_variable key =
   | Some storage -> Js.Opt.to_option (storage##getItem (Js.string key))
   | None -> None
 
-let username () =
+let get_username () =
   match get_session_variable "user" with
   | Some t -> (
       let json_str = Js.to_string t in
@@ -203,29 +161,18 @@ let remove_element_by_id id =
   ignore (Js.Unsafe.meth_call el "remove" [||]) ;
   Console.console##log (Js.string ("Element removed: #" ^ id))
 
-let get_problem () =
-  (* get problem from get variables *)
-  let url = Dom_html.window##.location in
-  let search = url##.search in
-  let params = Js.to_string search |> Astring.String.with_range ~first:1 in
-  let param_list = Astring.String.cuts ~sep:"&" params in
-  let param_map =
-    List.fold_left
-      (fun acc param ->
-        match Astring.String.cut ~sep:"=" param with
-        | Some (key, value) -> (key, value) :: acc
-        | None -> acc )
-      [] param_list
-  in
-  match List.assoc_opt "problem" param_map with
-  | Some problem -> problem
-  | None -> (
-    (* Fallback to session variable if not in URL *)
-    match get_session_variable "problem" with
-    | Some p -> Js.to_string p
-    | None -> "unknown_problem" )
+let navigate_to path =
+  Dom_html.window##.history##pushState
+    Js.null (Js.string "")
+    (Js.Opt.return (Js.string path)) ;
+  Dom_html.window##.location##reload
 
 let get_current_contest_id () =
-  match get_session_variable "contest_id" with
+  match get_local_variable "yoda-state-contest-id" with
   | Some id -> int_of_string (Js.to_string id)
-  | None -> failwith "No contest_id found in sessionStorage!"
+  | None -> navigate_to "#contests"; 0
+
+let set_current_contest_id id =
+  set_local_variable "yoda-state-contest-id" (string_of_int id) ;
+  Console.console##log
+    (Js.string ("Current contest_id set to: " ^ string_of_int id))

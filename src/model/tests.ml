@@ -33,15 +33,15 @@ let test_to_obj t =
 
 (* --- localStorage persistence --- *)
 
-let save_tests () =
+let save_tests ?(variable_name = "tests") () =
   let arr = Js.array (Array.of_list (List.map test_to_obj !tests)) in
   let json = Js._JSON##stringify arr in
-  Helpers.set_local_variable "tests" (Js.to_string json) ;
-  Helpers.set_local_variable "tests-count" (string_of_int !counter)
+  Helpers.set_local_variable variable_name (Js.to_string json) ;
+  Helpers.set_local_variable (variable_name ^ "-count") (string_of_int !counter)
 
-let load_tests () =
+let load_tests ?(variable_name = "tests") () =
   (tests :=
-     match Helpers.get_local_variable "tests" with
+     match Helpers.get_local_variable variable_name with
      | None -> []
      | Some json_str ->
          let parsed = Js._JSON##parse json_str in
@@ -53,7 +53,7 @@ let load_tests () =
              ; input= o##.input
              ; kind= input_kind_of_string (Js.to_string o##.kind) } ) ) ;
   counter :=
-    match Helpers.get_local_variable "tests-count" with
+    match Helpers.get_local_variable (variable_name ^ "-count") with
     | None -> 0
     | Some count -> int_of_string (Js.to_string count)
 
@@ -81,4 +81,6 @@ let export () =
              ; ("type", `String (string_of_kind t.kind)) ] )
          !tests )
   in
-  Console.console##log (Js.string (Yojson.Basic.to_string json))
+  let json_str = Yojson.Basic.to_string json in
+  Console.console##log (Js.string json_str) ;
+  json_str

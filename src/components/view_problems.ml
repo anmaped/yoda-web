@@ -16,11 +16,7 @@ let problem_row id name =
 
 (* Main content function generating the table *)
 let content () =
-  let current_selected_contest =
-    match Helpers.get_session_variable "contest_id" with
-    | Some id -> int_of_string (Js.to_string id)
-    | None -> failwith "No contest_id found in sessionStorage!"
-  in
+  let current_selected_contest = Helpers.get_current_contest_id () in
   let tbl =
     table
       ~a:

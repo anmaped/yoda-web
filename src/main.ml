@@ -3,12 +3,6 @@ open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 open Tyxml_js.Html
 
-let navigate_to path =
-  Dom_html.window##.history##pushState
-    Js.null (Js.string "")
-    (Js.Opt.return (Js.string path)) ;
-  Dom_html.window##.location##reload
-
 (* Inject CSS from string *)
 let inject_css css_str =
   let style = Dom_html.createStyle Dom_html.document in
@@ -38,12 +32,12 @@ let () =
       match hash with
       | "#login" ->
           [ Pages.Login.render
-              ~on_success:(fun () -> navigate_to "#contests")
+              ~on_success:(fun () -> Helpers.navigate_to "#contests")
               () ]
       | "#logout" ->
           Helpers.remove_session_variable "token" ;
           Helpers.remove_cookies_variable "dream.session" ;
-          navigate_to "#login" ;
+          Helpers.navigate_to "#login" ;
           []
       | "#users" -> [Pages.Users.render ()]
       | "#contests" -> Pages.Contests.render ()
@@ -58,7 +52,7 @@ let () =
           List.iter
             (fun p -> Dom.appendChild app_div (Tyxml_js.To_dom.of_div p))
             (Pages.Codeboard.render ()) ;
-          ignore (Pages.Codeboard.init ()) ;
+          ignore Components.Editor.editor##refresh ;
           []
       | "#submissions" -> Pages.Submissions.render ()
       | p when Astring.String.is_prefix ~affix:"#show-problem-" p ->
@@ -69,7 +63,7 @@ let () =
           [Pages.Settings.render ()]
       | _ ->
           [ Pages.Login.render
-              ~on_success:(fun () -> navigate_to "#contests")
+              ~on_success:(fun () -> Helpers.navigate_to "#contests")
               () ]
       (* Defaults to login *)
     in

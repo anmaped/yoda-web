@@ -113,6 +113,12 @@ let accordion (t : Model.Tests.test) =
                       div ~a:[a_class ["text-danger"]] [txt "Invalid JSON"]
                   | _ -> txt "" ) ] ] ] ]
 
+let load_state () = Model.Tests.load_tests ()
+
+let save_state () =
+  let tests_json = Model.Tests.export () in
+  Helpers.set_local_variable "yoda-state-tests" tests_json
+
 let content ?(sidebyside = true) () =
   let button =
     button

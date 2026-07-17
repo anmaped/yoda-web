@@ -39,6 +39,81 @@ let save_icon () =
                1z" ]
         [] ]
 
+let make_spinner id =
+  div
+    ~a:
+      [ a_id ("spinner-" ^ id)
+      ; a_class ["spinner-border"; "spinner-border-sm"; "text-primary"]
+      ; a_role ["status"] ]
+    [span ~a:[a_class ["visually-hidden"]] [txt " "]]
+
+let spinner = make_spinner "run"
+
+let status_message =
+  span
+    ~a:[a_id "status-message"; a_class ["text-muted"; "small"; "ml-3"]]
+    [txt "All changes saved • Last saved: "]
+
+let status_bar =
+  div
+    ~a:[a_class ["status-bar"; "text-muted"; "small"; "ml-3"]]
+    [status_message; spinner]
+
+let update_status_bar ?(no_time = false) msg =
+  let last_saved =
+    let now = new%js Js_of_ocaml.Js.date_now in
+    Js_of_ocaml.Js.to_string now##toLocaleString
+  in
+  let el = Tyxml_js.To_dom.of_span status_message in
+  el##.textContent :=
+    Js_of_ocaml.Js.some
+      (Js_of_ocaml.Js.string
+         (msg ^ if no_time then "" else " • " ^ last_saved) )
+
+let hide s =
+  let el = Tyxml_js.To_dom.of_div s in
+  el##.style##.display := Js_of_ocaml.Js.string "none" ;
+  Js_of_ocaml.Console.console##log
+    (Js_of_ocaml.Js.string
+       ("Element hidden: " ^ Js_of_ocaml.Js.to_string el##.id) )
+
+let show s =
+  let el = Tyxml_js.To_dom.of_div s in
+  el##.style##.display := Js_of_ocaml.Js.string "block" ;
+  Js_of_ocaml.Console.console##log
+    (Js_of_ocaml.Js.string
+       ("Element shown: " ^ Js_of_ocaml.Js.to_string el##.id) )
+
+let make_spinner_modal () =
+  div
+    [ (* backdrop *)
+      div ~a:[a_class ["modal-backdrop"; "fade"; "show"]] []
+    ; (* fullscreen modal *)
+      div
+        ~a:[a_class ["modal"; "fade"; "show"]; a_style "display:block;"]
+        [ div
+            ~a:[a_class ["modal-dialog"; "modal-fullscreen"]]
+            [ div
+                ~a:[a_class ["modal-content"]]
+                [ (* header *)
+                  div
+                    ~a:[a_class ["modal-header"]]
+                    [ h5 ~a:[a_class ["modal-title"]] [txt "Processing..."]
+                    ; button
+                        ~a:[a_class ["btn-close"]; a_onclick (fun _ -> false)]
+                        [] ]
+                ; (* body *)
+                  div
+                    ~a:[a_class ["modal-body"]]
+                    [ div
+                        [ txt "Ready to start operation."
+                        ; br ()
+                        ; button
+                            ~a:
+                              [ a_class ["btn"; "btn-primary"; "mt-3"]
+                              ; a_onclick (fun _ -> false) ]
+                            [txt "Start"] ] ] ] ] ] ]
+
 let toolbar () =
   [ div
       ~a:
@@ -53,7 +128,7 @@ let toolbar () =
             ; "shadow-sm"
             ; "rounded" ] ]
       [ (* Toolbar Title *)
-        h4 ~a:[a_class ["m-0"]] [txt (Helpers.get_problem () ^ ": Warmup")]
+        Problem_dropdown.content ()
       ; (* Remove margin from title *)
 
         (* Button Group on the Right, space between buttons for better
@@ -73,14 +148,18 @@ let toolbar () =
                         (Helpers.make_modal_view "run-modal" "Confirm action"
                            [ txt
                                ( "Do you want to run the '"
-                               ^ Helpers.get_problem () ^ "' code?" ) ]
-                           (fun _ ->
-                             Helpers.hide "spinner-run" () ;
-                             false )
+                               ^ ( Helpers.get_local_variable "last_problem"
+                                 |> Option.value
+                                      ~default:
+                                        (Js_of_ocaml.Js.string
+                                           "unknown_problem" )
+                                 |> Js_of_ocaml.Js.to_string )
+                               ^ "' code?" ) ]
+                           (fun _ -> hide spinner ; false)
                            () ) ;
                       false )
                 ; Unsafe.string_attrib "aria-label" "Run" ]
-              [terminal_fill_icon (); txt " Run"]
+              [terminal_fill_icon (); txt " Local Run"]
           ; (* Submit Button *)
             button
               ~a:
@@ -88,24 +167,17 @@ let toolbar () =
                 ; a_class ["btn"; "btn-warning"; "mr-2"]
                 ; a_title "Save all your work"
                 ; Unsafe.string_attrib "aria-label" "Submit" ]
-              [save_icon (); txt " Submit"] ]
+              [save_icon (); txt " Evaluate"] ]
       ; (* User Profile Section (Optional), add some spacing and align it to
            the far right *)
         div
           ~a:
             [a_class ["user-profile"; "d-flex"; "align-items-center"; "ml-3"]]
             (* Add margin-left for spacing *)
-          [span [txt (Helpers.username ())]] ]
+          [span [txt (Helpers.get_username ())]] ]
   ; (* This is a status bar that can show messages like "All changes saved"
        or "Error saving file" *)
-    (let last_saved =
-       let now = new%js Js_of_ocaml.Js.date_now in
-       Js_of_ocaml.Js.to_string now##toLocaleString
-     in
-     div
-       ~a:[a_class ["status-bar"; "text-muted"; "small"; "ml-3"]]
-       [ Helpers.make_spinner "run" ()
-       ; txt ("All changes saved • Last saved: " ^ last_saved) ] ) ]
+    status_bar ]
 
 let content () =
   section
