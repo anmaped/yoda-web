@@ -11,7 +11,7 @@ let render ~on_login () =
         [ a_input_type `Email
         ; a_class ["form-control"]
         ; a_id "username"
-        ; a_placeholder "name@example.com" ]
+        ; a_placeholder (I18n.t "login_placeholder_email") ]
       ()
   in
   let password =
@@ -20,7 +20,7 @@ let render ~on_login () =
         [ a_input_type `Password
         ; a_class ["form-control"]
         ; a_id "password"
-        ; a_placeholder "Password" ]
+        ; a_placeholder (I18n.t "login_placeholder_password") ]
       ()
   in
   let submit_btn =
@@ -28,7 +28,7 @@ let render ~on_login () =
       ~a:
         [ a_class ["btn"; "btn-primary"; "w-100"; "py-2"]
         ; a_button_type `Submit ]
-      [txt "Sign in"]
+      [txt (I18n.t "login_sign_in")]
   in
   let error_div =
     div
@@ -38,14 +38,14 @@ let render ~on_login () =
   let form_div =
     form
       ~a:[a_method `Post; a_onsubmit (fun _ -> false)]
-      [ h1 ~a:[a_class ["h3"; "mb-3"; "fw-normal"]] [txt "Please sign in"]
+      [ h1 ~a:[a_class ["h3"; "mb-3"; "fw-normal"]] [txt (I18n.t "login_title")]
       ; error_div
       ; div
           ~a:[a_class ["form-floating"]]
-          [username; label ~a:[a_label_for "username"] [txt "Email address"]]
+          [username; label ~a:[a_label_for "username"] [txt (I18n.t "login_label_email")]]
       ; div
           ~a:[a_class ["form-floating"]]
-          [password; label ~a:[a_label_for "password"] [txt "Password"]]
+          [password; label ~a:[a_label_for "password"] [txt (I18n.t "login_label_password")]]
       ; div
           ~a:[a_class ["form-check"; "text-start"; "my-3"]]
           [ input
@@ -56,7 +56,7 @@ let render ~on_login () =
               ()
           ; label
               ~a:[a_class ["form-check-label"]; a_label_for "checkDefault"]
-              [txt "Remember me"] ]
+              [txt (I18n.t "login_remember_me")] ]
       ; submit_btn ]
   in
   let _ =

@@ -1,0 +1,9 @@
+(library
+ (name i18n)
+ (wrapped true)
+ (modules i18n translations)
+ (libraries
+  helpers
+  js_of_ocaml
+  js_of_ocaml-tyxml
+  tyxml))

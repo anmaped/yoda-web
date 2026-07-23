@@ -2,12 +2,14 @@ open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 open Lwt.Infix
+open I18n
+let t = t
 
 let content () =
   let sel =
     select
       ~a:[a_id "problem-select"; a_class ["form-select"; "w-auto"]]
-      [option ~a:[a_value ""] (txt "-- Select a problem --")]
+      [option ~a:[a_value ""] (txt (t "dropdown_select_problem"))]
   in
   let fetch_and_populate () =
     let contest_id = Helpers.get_current_contest_id () in

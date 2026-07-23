@@ -1,6 +1,8 @@
 open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
+open I18n
+let t = t
 
 (* Function to generate a table row for a problem *)
 let problem_row id name =
@@ -26,7 +28,7 @@ let content () =
       ~thead:
         (thead
            ~a:[a_class ["table-light"]]
-           [tr [th [txt "ID"]; th [txt "Problem"]]] )
+           [tr [th [txt (t "problems_col_id")]; th [txt (t "problems_col_name")]]] )
       []
   in
   Problem_list.content ~contest_id:current_selected_contest ~problem_row ~tbl
@@ -37,5 +39,5 @@ let content () =
         ~a:[a_class ["card"; "shadow-sm"]]
         [ div
             ~a:[a_class ["card-header"; "bg-white"]]
-            [h2 ~a:[a_class ["h5"; "mb-0"]] [txt "Problems"]]
+            [h2 ~a:[a_class ["h5"; "mb-0"]] [txt (t "problems_title")]]
         ; div ~a:[a_class ["table-responsive"]] [tbl] ] ]

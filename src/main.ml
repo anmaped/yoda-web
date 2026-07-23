@@ -2,6 +2,9 @@ open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 open Tyxml_js.Html
+open I18n
+
+let () = init ()
 
 (* Inject CSS from string *)
 let inject_css css_str =

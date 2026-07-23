@@ -1,6 +1,8 @@
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 open Lwt.Infix
+open I18n
+let t = t
 
 let render ~on_success () =
   (* check if user is already logged in *)
@@ -26,4 +28,4 @@ let render ~on_success () =
         ; p
             ~a:
               [a_class ["mt-5"; "mb-3"; "text-body-secondary"; "text-center"]]
-            [txt "© The Yoda Team 2026"] ]
+            [txt (t "login_footer")] ]

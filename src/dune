@@ -11,7 +11,8 @@
   lwt
   astring
   pages
-  components)
+  components
+  i18n)
  (js_of_ocaml
   (javascript_files bootstrap.js codemirror.js))
  (preprocess

@@ -1,6 +1,8 @@
 open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
+open I18n
+let t = t
 
 let nav_to path =
   Dom_html.window##.history##pushState
@@ -274,9 +276,9 @@ let icon_only_sidebar () =
            ul
              ~a:
                [a_class ["dropdown-menu"; "text-small"; "shadow"]; a_style ""]
-             [ dropdown_item "Settings"
+             [ dropdown_item (t "settings_title")
              ; dropdown_divider ()
-             ; dropdown_item "Sign out" ] ) ] ]
+             ; dropdown_item (t "login_sign_out") ] ) ] ]
 
 let full_sidebar () =
   let current_hash = Js.to_string Dom_html.window##.location##.hash in
@@ -331,16 +333,16 @@ let full_sidebar () =
         ~a:[a_class ["nav"; "nav-pills"; "flex-column"; "mb-auto"]]
         [ li
             ~a:[a_class ["nav-item"]]
-            [nav_link "#dashboard" "Dashboard" dashboard_icon]
+            [nav_link "#dashboard" (t "sidebar_dashboard") dashboard_icon]
         ; li
             ~a:[a_class ["nav-item"]]
-            [nav_link "#codeboard" "Codeboard" journal_code_icon]
+            [nav_link "#codeboard" (t "sidebar_codeboard") journal_code_icon]
         ; li
             ~a:[a_class ["nav-item"]]
-            [nav_link "#submissions" "Submissions" table_icon]
+            [nav_link "#submissions" (t "sidebar_submissions") table_icon]
         ; li
             ~a:[a_class ["nav-item"]]
-            [nav_link "#contests" "Switch Contest" arrow_left_right] ]
+            [nav_link "#contests" (t "sidebar_switch_contest") arrow_left_right] ]
       (* Bottom dropdown *)
     ; div
         ~a:

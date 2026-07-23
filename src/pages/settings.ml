@@ -1,6 +1,8 @@
 open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
+open I18n
+let t = t
 
 (* --- localStorage keys --- *)
 let key_theme = "yoda-theme"
@@ -113,20 +115,20 @@ let render () =
         ~a:[a_class ["panel"]]
         [ div
             ~a:[a_class ["container-fluid"; "py-4"]]
-            [ h4 ~a:[a_class ["mb-4"]] [txt "Settings"]
+            [ h4 ~a:[a_class ["mb-4"]] [txt (t "settings_title")]
             ; section_card "Appearance"
                 [ div
                     ~a:[a_class ["mb-3"]]
-                    [ label ~a:[a_class ["form-label"]] [txt "Theme"]
+                    [ label ~a:[a_class ["form-label"]] [txt (t "settings_theme_label")]
                     ; select
                         ~a:[a_id "settings-theme"; a_class ["form-select"]]
                         (select_options themes theme)
                     ; p
                         ~a:[a_class ["form-text"; "text-body-secondary"]]
-                        [txt "Choose the editor color theme."] ]
+                        [txt (t "settings_theme_desc")] ]
                 ; div
                     ~a:[a_class ["mb-3"]]
-                    [ label ~a:[a_class ["form-label"]] [txt "Font Size"]
+                    [ label ~a:[a_class ["form-label"]] [txt (t "settings_font_size_label")]
                     ; input
                         ~a:
                           [ a_input_type `Range
@@ -139,30 +141,30 @@ let render () =
                         ()
                     ; p
                         ~a:[a_class ["form-text"; "text-body-secondary"]]
-                        [txt "Adjust the editor font size."] ] ]
+                        [txt (t "settings_font_size_desc")] ] ]
             ; section_card "Editor"
                 [ div
                     ~a:[a_class ["mb-3"]]
-                    [ label ~a:[a_class ["form-label"]] [txt "Tab Size"]
+                    [ label ~a:[a_class ["form-label"]] [txt (t "settings_tab_size_label")]
                     ; select
                         ~a:[a_id "settings-tab-size"; a_class ["form-select"]]
                         (select_options ["2"; "4"; "8"]
                            (string_of_int tab_size) )
                     ; p
                         ~a:[a_class ["form-text"; "text-body-secondary"]]
-                        [txt "Number of spaces per tab indentation."] ]
+                        [txt (t "settings_tab_size_desc")] ]
                 ; toggle_switch ~checked:line_wrapping
                     ~label_text:"Line Wrapping" ~on_change:set_line_wrapping
                     ()
                 ; p
                     ~a:[a_class ["form-text"; "text-body-secondary"]]
-                    [txt "Wrap long lines in the editor."] ]
+                    [txt (t "settings_wrap_lines")] ]
             ; section_card "Behavior"
                 [ toggle_switch ~checked:auto_save ~label_text:"Auto-save"
                     ~on_change:set_auto_save ()
                 ; p
                     ~a:[a_class ["form-text"; "text-body-secondary"]]
-                    [txt "Automatically save your code while typing."] ]
+                    [txt (t "settings_auto_save")] ]
             ; div
                 ~a:[a_class ["d-flex"; "gap-2"; "mt-4"]]
                 [ button
@@ -182,7 +184,7 @@ let render () =
                             Console.console##log
                               (Js.string ("Theme saved: " ^ v)) ;
                             false ) ]
-                    [txt "Save"]
+                    [txt (t "settings_save_btn")]
                 ; button
                     ~a:
                       [ a_class ["btn"; "btn-secondary"]
@@ -194,4 +196,4 @@ let render () =
                             set_auto_save false ;
                             Console.console##log (Js.string "Settings reset") ;
                             false ) ]
-                    [txt "Reset"] ] ] ] ]
+                    [txt (t "settings_reset_btn")] ] ] ] ]

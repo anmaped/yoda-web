@@ -24,6 +24,7 @@
   api
   model
   helpers
+  i18n
   js_of_ocaml
   js_of_ocaml-tyxml
   tyxml

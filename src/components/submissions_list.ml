@@ -3,6 +3,8 @@ open Js_of_ocaml_lwt
 open Lwt.Infix
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
+open I18n
+let t = t
 
 type submission_status =
   | Accepted
@@ -59,11 +61,11 @@ let content ~contest_id ~last () =
         (thead
            ~a:[a_class ["table-light"]]
            [ tr
-               [ th [txt "#"]
-               ; th [txt "Problem"]
-               ; th [txt "Language"]
-               ; th [txt "Result"]
-               ; th [txt "Time"] ] ] )
+               [ th [txt (t "submissions_col_id")]
+               ; th [txt (t "submissions_col_problem")]
+               ; th [txt (t "submissions_col_language")]
+               ; th [txt (t "submissions_col_result")]
+               ; th [txt (t "submissions_col_time")] ] ] )
       []
   in
   Lwt.async (fun () ->

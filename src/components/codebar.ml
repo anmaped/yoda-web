@@ -52,7 +52,7 @@ let spinner = make_spinner "run"
 let status_message =
   span
     ~a:[a_id "status-message"; a_class ["text-muted"; "small"; "ml-3"]]
-    [txt "All changes saved • Last saved: "]
+    [txt (I18n.t "codebar_all_changes_saved")]
 
 let status_bar =
   div
@@ -98,7 +98,7 @@ let make_spinner_modal () =
                 [ (* header *)
                   div
                     ~a:[a_class ["modal-header"]]
-                    [ h5 ~a:[a_class ["modal-title"]] [txt "Processing..."]
+                    [ h5 ~a:[a_class ["modal-title"]] [txt (I18n.t "codebar_processing")]
                     ; button
                         ~a:[a_class ["btn-close"]; a_onclick (fun _ -> false)]
                         [] ]
@@ -106,15 +106,25 @@ let make_spinner_modal () =
                   div
                     ~a:[a_class ["modal-body"]]
                     [ div
-                        [ txt "Ready to start operation."
+                        [ txt (I18n.t "codebar_ready")
                         ; br ()
                         ; button
                             ~a:
                               [ a_class ["btn"; "btn-primary"; "mt-3"]
                               ; a_onclick (fun _ -> false) ]
-                            [txt "Start"] ] ] ] ] ] ]
+                            [txt (I18n.t "codebar_start")] ] ] ] ] ] ]
 
-let toolbar () =
+let submit_button ~id ~class_ ~title ~onclick content =
+  button
+    ~a:
+      [ a_id id
+      ; a_class ["btn"; class_]
+      ; a_title title
+      ; a_onclick onclick
+      ; Unsafe.string_attrib "aria-label" title ]
+    content
+
+let toolbar ~mobile () =
   [ div
       ~a:
         [ a_class
@@ -159,27 +169,38 @@ let toolbar () =
                            () ) ;
                       false )
                 ; Unsafe.string_attrib "aria-label" "Run" ]
-              [terminal_fill_icon (); txt " Local Run"]
+              [terminal_fill_icon (); txt (" " ^ I18n.t "codebar_local_run")]
           ; (* Submit Button *)
-            button
-              ~a:
-                [ a_id "save-all-btn"
-                ; a_class ["btn"; "btn-warning"; "mr-2"]
-                ; a_title "Save all your work"
-                ; Unsafe.string_attrib "aria-label" "Submit" ]
-              [save_icon (); txt " Evaluate"] ]
+            submit_button ~id:"save-all-btn" ~class_:"btn btn-warning mr-2"
+              ~title:"Evaluate and save all your work"
+              ~onclick:(fun _ ->
+                Helpers.add_element_to_app
+                  (Helpers.make_modal_view "save-all-modal" "Confirm action"
+                     [ txt
+                         ( "Do you want to evaluate and permanently save your work for '"
+                         ^ ( Helpers.get_local_variable "last_problem"
+                           |> Option.value
+                                ~default:
+                                  (Js_of_ocaml.Js.string "unknown_problem")
+                           |> Js_of_ocaml.Js.to_string )
+                         ^ "'?" ) ]
+                     (fun _ -> hide spinner ; false)
+                     () ) ;
+                false )
+              [save_icon (); txt (" " ^ I18n.t "codebar_evaluate")] ]
       ; (* User Profile Section (Optional), add some spacing and align it to
            the far right *)
         div
           ~a:
             [a_class ["user-profile"; "d-flex"; "align-items-center"; "ml-3"]]
             (* Add margin-left for spacing *)
-          [span [txt (Helpers.get_username ())]] ]
+          [span [txt (if not mobile then Helpers.get_username () else "")]]
+      ]
   ; (* This is a status bar that can show messages like "All changes saved"
        or "Error saving file" *)
     status_bar ]
 
-let content () =
+let content ~mobile () =
   section
     ~a:[a_class ["panel-section"; "container-fluid"; "py-3"]]
-    (toolbar ())
+    (toolbar ~mobile ())

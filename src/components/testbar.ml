@@ -89,7 +89,7 @@ let accordion (t : Model.Tests.test) =
                         ~a:
                           [ a_class ["btn"; "btn-outline-primary"; "btn-sm"]
                           ; a_label_for ("type-text-" ^ id_suffix) ]
-                        [txt "Text"]
+                        [txt (I18n.t "test_type_text")]
                     ; input
                         ~a:
                           ( [ a_input_type `Radio
@@ -102,7 +102,7 @@ let accordion (t : Model.Tests.test) =
                         ~a:
                           [ a_class ["btn"; "btn-outline-primary"; "btn-sm"]
                           ; a_label_for ("type-json-" ^ id_suffix) ]
-                        [txt "JSON"] ]
+                        [txt (I18n.t "test_type_json")] ]
                 ; textarea
                     ~a:
                       [ a_class ["form-control"; "mb-2"]
@@ -110,7 +110,7 @@ let accordion (t : Model.Tests.test) =
                     (txt t.input)
                 ; ( match t.kind with
                   | `Json when not (Helpers.is_valid_json t.input) ->
-                      div ~a:[a_class ["text-danger"]] [txt "Invalid JSON"]
+                      div ~a:[a_class ["text-danger"]] [txt (I18n.t "test_invalid_json")]
                   | _ -> txt "" ) ] ] ] ]
 
 let load_state () = Model.Tests.load_tests ()

@@ -2,6 +2,8 @@ open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 open Lwt.Infix
+open I18n
+let t = t
 
 let content ?(show_progress_only = false) () =
   let contest_id = Helpers.get_current_contest_id () in
@@ -101,16 +103,16 @@ let content ?(show_progress_only = false) () =
       ; ul
           ~a:[a_class ["list-unstyled"; "mb-3"]]
           [ li
-              [ span ~a:[a_class ["fw-semibold"]] [txt "Status: "]
+              [ span ~a:[a_class ["fw-semibold"]] [txt (t "progress_status_label")]
               ; contest_status ]
           ; li
-              [ span ~a:[a_class ["fw-semibold"]] [txt "Time Left: "]
+              [ span ~a:[a_class ["fw-semibold"]] [txt (t "progress_time_left_label")]
               ; contest_timeleft ] ]
-      ; div ~a:[a_class ["mb-1"; "small"; "text-muted"]] [txt "Progress"] ]
+      ; div ~a:[a_class ["mb-1"; "small"; "text-muted"]] [txt (t "progress_progress_label")] ]
     else
       [ div
           ~a:[a_class ["mb-1"; "small"; "text-muted"]]
-          [txt "Contest Progress"] ]
+          [txt (t "progress_title")] ]
   in
   section
     ~a:[a_class ["panel-section"; "container"; "py-3"]]

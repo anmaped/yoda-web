@@ -1,6 +1,8 @@
 open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Lwt.Infix
+open I18n
+let t = t
 
 let render () =
   let open Tyxml_js.Html in
@@ -13,7 +15,7 @@ let render () =
           ~a:[a_class ["card"; "shadow-sm"]]
           [ div
               ~a:[a_class ["card-header"; "bg-white"]]
-              [h2 ~a:[a_class ["h5"; "mb-0"]] [txt "Contests"]]
+              [h2 ~a:[a_class ["h5"; "mb-0"]] [txt (t "contests_title")]]
           ; ul ] ]
   in
   let panel =
