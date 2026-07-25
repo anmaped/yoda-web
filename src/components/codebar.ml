@@ -84,36 +84,6 @@ let show s =
     (Js_of_ocaml.Js.string
        ("Element shown: " ^ Js_of_ocaml.Js.to_string el##.id) )
 
-let make_spinner_modal () =
-  div
-    [ (* backdrop *)
-      div ~a:[a_class ["modal-backdrop"; "fade"; "show"]] []
-    ; (* fullscreen modal *)
-      div
-        ~a:[a_class ["modal"; "fade"; "show"]; a_style "display:block;"]
-        [ div
-            ~a:[a_class ["modal-dialog"; "modal-fullscreen"]]
-            [ div
-                ~a:[a_class ["modal-content"]]
-                [ (* header *)
-                  div
-                    ~a:[a_class ["modal-header"]]
-                    [ h5 ~a:[a_class ["modal-title"]] [txt (I18n.t "codebar_processing")]
-                    ; button
-                        ~a:[a_class ["btn-close"]; a_onclick (fun _ -> false)]
-                        [] ]
-                ; (* body *)
-                  div
-                    ~a:[a_class ["modal-body"]]
-                    [ div
-                        [ txt (I18n.t "codebar_ready")
-                        ; br ()
-                        ; button
-                            ~a:
-                              [ a_class ["btn"; "btn-primary"; "mt-3"]
-                              ; a_onclick (fun _ -> false) ]
-                            [txt (I18n.t "codebar_start")] ] ] ] ] ] ]
-
 let submit_button ~id ~class_ ~title ~onclick content =
   button
     ~a:
@@ -152,19 +122,21 @@ let toolbar ~mobile () =
               ~a:
                 [ a_id "run-btn"
                 ; a_class ["btn"; "btn-success"; "mr-2"]
-                ; a_title "Run the code"
+                ; a_title (I18n.t "codebar_run")
                 ; a_onclick (fun _ ->
                       Helpers.add_element_to_app
-                        (Helpers.make_modal_view "run-modal" "Confirm action"
+                        (Modal_view.make "run-modal"
+                           (I18n.t "modal_confirm_action")
                            [ txt
-                               ( "Do you want to run the '"
-                               ^ ( Helpers.get_local_variable "last_problem"
-                                 |> Option.value
-                                      ~default:
-                                        (Js_of_ocaml.Js.string
-                                           "unknown_problem" )
-                                 |> Js_of_ocaml.Js.to_string )
-                               ^ "' code?" ) ]
+                               (I18n.interpolate
+                                  (I18n.t "codebar_confirm_run")
+                                  [ Helpers.get_local_variable
+                                      "yoda-state-last-problem-description"
+                                    |> Option.value
+                                         ~default:
+                                           (Js_of_ocaml.Js.string
+                                              "unknown_problem" )
+                                    |> Js_of_ocaml.Js.to_string ] ) ]
                            (fun _ -> hide spinner ; false)
                            () ) ;
                       false )
@@ -172,19 +144,24 @@ let toolbar ~mobile () =
               [terminal_fill_icon (); txt (" " ^ I18n.t "codebar_local_run")]
           ; (* Submit Button *)
             submit_button ~id:"save-all-btn" ~class_:"btn btn-warning mr-2"
-              ~title:"Evaluate and save all your work"
+              ~title:(I18n.t "codebar_evaluate_save")
               ~onclick:(fun _ ->
                 Helpers.add_element_to_app
-                  (Helpers.make_modal_view "save-all-modal" "Confirm action"
+                  (Modal_view.make "save-all-modal"
+                     (I18n.t "modal_confirm_action")
                      [ txt
-                         ( "Do you want to evaluate and permanently save your work for '"
-                         ^ ( Helpers.get_local_variable "last_problem"
-                           |> Option.value
-                                ~default:
-                                  (Js_of_ocaml.Js.string "unknown_problem")
-                           |> Js_of_ocaml.Js.to_string )
-                         ^ "'?" ) ]
-                     (fun _ -> hide spinner ; false)
+                         (I18n.interpolate
+                            (I18n.t "codebar_confirm_save")
+                            [ Helpers.get_local_variable
+                                "yoda-state-last-problem-description"
+                              |> Option.value
+                                   ~default:
+                                     (Js_of_ocaml.Js.string "unknown_problem")
+                              |> Js_of_ocaml.Js.to_string ] ) ]
+                     (fun _ ->
+                       hide spinner ;
+                       Helpers.add_element_to_app (Spinner_modal.make ()) ;
+                       false )
                      () ) ;
                 false )
               [save_icon (); txt (" " ^ I18n.t "codebar_evaluate")] ]

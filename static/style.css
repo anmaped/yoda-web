@@ -71,3 +71,32 @@ body {
 .accordion-header:has(.accordion-button:not(.collapsed)) {
     background-color: var(--bs-accordion-active-bg);
 }
+
+
+/* Theme styles */
+
+.theme-dark {
+  --bs-body-bg: #1a1d21;
+  --bs-body-color: #e4e6eb;
+  --bs-card-bg: #2d3035;
+  --bs-border-color: #495057;
+}
+
+.theme-monokai {
+  --bs-body-bg: #272822;
+  --bs-body-color: #f8f8f2;
+  --bs-card-bg: #3e3d32;
+  --bs-border-color: #49483e;
+  --bs-link-color: #a6e22e;
+  --bs-primary: #a6e22e;
+}
+
+.theme-eclipse {
+  --bs-body-bg: #1e1f1f;
+  --bs-body-color: #ecedef;
+  --bs-card-bg: #2b303b;
+  --bs-border-color: #4c505a;
+  --bs-primary: #5c677d;
+}
+
+/* End of Theme styles */

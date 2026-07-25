@@ -1,20 +1,55 @@
+open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
-open I18n
-let t = t
+open Lwt.Infix
 
-let content () =
+let problem_view (problem : Api.Openapi.problem) =
   section
     ~a:[a_class ["panel-section"]]
-    [ h2 [txt (t "problem_submit_solution")]
-    ; p [txt (t "problem_submit_solution")]
-    ; form
-        ~a:[a_class ["submit-form"]]
-        [ label [txt (t "problem_language_label")]
-        ; select
-            [ option ~a:[a_value "cpp"] (txt (t "problem_lang_cpp"))
-            ; option ~a:[a_value "ocaml"] (txt (t "problem_lang_ocaml"))
-            ; option ~a:[a_value "python"] (txt (t "problem_lang_python")) ]
-        ; label [txt (t "problem_source_file_label")]
-        ; input ~a:[a_input_type `File] ()
-        ; button ~a:[a_button_type `Submit] [txt (t "problem_submit_btn")] ] ]
+    [ h2 [txt (problem.code ^ ". " ^ problem.title)]
+    ; p
+        [ b [txt (I18n.t "problem_time_limit"); txt ": "]
+        ; txt (Printf.sprintf "%d ms" problem.time_limit_ms) ]
+    ; p
+        [ b [txt (I18n.t "problem_memory_limit"); txt ": "]
+        ; txt (Printf.sprintf "%d MB" problem.memory_limit_mb) ]
+    ; h3 [txt (I18n.t "problem_description")]
+    ; p [txt problem.description]
+    ; h3 [txt (I18n.t "problem_input")]
+    ; p [txt problem.input_spec]
+    ; h3 [txt (I18n.t "problem_output")]
+    ; p [txt problem.output_spec] ]
+
+let content ~contest_id ~problem_id () =
+  let subcontainer = div ~a:[a_class ["card-header"; "bg-white"]] [] in
+  let container =
+    section
+      ~a:[a_class ["panel-section"; "container"; "py-3"]]
+      [div ~a:[a_class ["card"; "shadow-sm"]] [subcontainer]]
+  in
+  Lwt.async (fun () ->
+      Api.Helpers.get_problems contest_id
+      >>= fun (resp, status) ->
+      if status <> 200 then (
+        Console.console##log
+          (Js.string (Printf.sprintf "Failed to fetch problems: %d" status)) ;
+        Lwt.return_unit )
+      else
+        let problems =
+          Api.Openapi.ContestsContestsidProblemsGetResponse2.of_yojson resp
+        in
+        ( match
+            List.find_opt
+              (fun (p : Api.Openapi.problem) -> p.code = problem_id)
+              problems
+          with
+        | None ->
+            Dom.appendChild
+              (Tyxml_js.To_dom.of_div subcontainer)
+              (Tyxml_js.To_dom.of_p (p [txt (I18n.t "problem_not_found")]))
+        | Some problem ->
+            Dom.appendChild
+              (Tyxml_js.To_dom.of_div subcontainer)
+              (Tyxml_js.To_dom.of_section (problem_view problem)) ) ;
+        Lwt.return_unit ) ;
+  container

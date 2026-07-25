@@ -2,14 +2,12 @@ open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 open Lwt.Infix
-open I18n
-let t = t
 
 let content () =
   let sel =
     select
       ~a:[a_id "problem-select"; a_class ["form-select"; "w-auto"]]
-      [option ~a:[a_value ""] (txt (t "dropdown_select_problem"))]
+      [option ~a:[a_value ""] (txt (I18n.t "dropdown_select_problem"))]
   in
   let fetch_and_populate () =
     let contest_id = Helpers.get_current_contest_id () in
@@ -22,10 +20,8 @@ let content () =
                (Printf.sprintf "Failed to fetch problems: %d" status) ) ;
           Lwt.return_unit )
         else
-          let resp_json_string = Js.to_string (Json.output resp) in
           let problems =
-            Api.Openapi.ContestsContestsidProblemsGetResponse2.of_json
-              resp_json_string
+            Api.Openapi.ContestsContestsidProblemsGetResponse2.of_yojson resp
           in
           (* Replace the select's children with our options *)
           let dom_sel = Tyxml_js.To_dom.of_select sel in
@@ -66,13 +62,18 @@ let content () =
             find_and_select 0
           in
           let _ =
-            match Helpers.get_local_variable "yoda-state-last-problem" with
+            match
+              Helpers.get_local_variable "yoda-state-last-problem-id"
+            with
             | Some code -> select_problem (Js.to_string code)
             | None -> (
               match List.rev problems with
               | last_problem :: _ ->
-                  Helpers.set_local_variable "yoda-state-last-problem"
+                  Helpers.set_local_variable "yoda-state-last-problem-id"
                     last_problem.code ;
+                  Helpers.set_local_variable
+                    "yoda-state-last-problem-description"
+                    (last_problem.code ^ ": " ^ last_problem.title) ;
                   select_problem last_problem.code
               | [] -> () )
           in
@@ -88,9 +89,16 @@ let content () =
                       with
                       | Some opt ->
                           let id = Js.to_string opt##.value in
-                          (* Do something with id *)
+                          let desc =
+                            Js.Opt.get opt##.textContent (fun () ->
+                                Js.string "" )
+                            |> Js.to_string
+                          in
+                          (* Do something with id and desc *)
                           Helpers.set_local_variable
-                            "yoda-state-last-problem" id ;
+                            "yoda-state-last-problem-id" id ;
+                          Helpers.set_local_variable
+                            "yoda-state-last-problem-description" desc ;
                           Js._true
                       | None -> Js._true ) )
                Js._false ) ;

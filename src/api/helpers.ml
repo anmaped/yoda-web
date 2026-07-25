@@ -39,13 +39,13 @@ let fetch_json url =
   XmlHttpRequest.perform_raw_url ~headers:(headers ()) url
   >>= fun resp ->
   Console.console##log (Js.string ("Response: " ^ resp.content)) ;
-  Lwt.return (Json.unsafe_input (Js.string resp.content), resp.code)
+  Lwt.return (Yojson.Safe.from_string resp.content, resp.code)
 
 let post_json url body =
   XmlHttpRequest.perform_raw_url ~override_method:`POST ~headers:(headers ())
     ~contents:(`String body) url
   >>= fun resp ->
-  Lwt.return (Json.unsafe_input (Js.string resp.content), resp.code)
+  Lwt.return (Yojson.Safe.from_string resp.content, resp.code)
 
 let login username password =
   let body =
@@ -75,3 +75,20 @@ let verify_token () =
 
 let get_problems contest_id =
   fetch_json (Printf.sprintf "%s/contests/%d/problems" base_url contest_id)
+
+(* --- admin config helpers --- *)
+let put_json url body =
+  XmlHttpRequest.perform_raw_url ~override_method:`PUT ~headers:(headers ())
+    ~contents:(`String body) url
+  >>= fun resp ->
+  Lwt.return (Json.unsafe_input (Js.string resp.content), resp.code)
+
+let get_config ()  =
+  fetch_json (base_url ^ "/admin/yodac/config")
+
+let put_config json_obj =
+  put_json (base_url ^ "/admin/yodac/config")
+    (Yojson.Basic.to_string json_obj)
+
+let get_config_history () =
+  fetch_json (base_url ^ "/admin/yodac/config/history")

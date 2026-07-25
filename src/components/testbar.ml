@@ -58,7 +58,7 @@ let accordion (t : Model.Tests.test) =
                   [ a_class ["btn"; "btn-sm"; "btn-danger"; "ms-1"; "me-2"]
                   ; a_user_data "test-id" id_suffix
                   ; a_title ("Delete test " ^ id_suffix)
-                  ; a_onclick (fun ev ->
+                  ; a_onclick (fun _ev ->
                         Model.Tests.remove_test t.id ;
                         Helpers.remove_element_by_id parent_id ;
                         false (* prevent default *) ) ]

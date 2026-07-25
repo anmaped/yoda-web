@@ -5,7 +5,7 @@ open Tyxml_js.Html
 let codeboard =
   div ~a:[a_id "codeboard"; a_style "height: 100%; min-height: 0;"] []
 
-let textarea_or_create ~root_id ~textarea_id =
+let textarea_or_create ~textarea_id =
   match
     Js.Opt.to_option
       (Dom_html.document##getElementById (Js.string textarea_id))
@@ -32,7 +32,7 @@ end
 
 let editor =
   let textarea =
-    textarea_or_create ~root_id:"codeboard" ~textarea_id:"codeboard-editor"
+    textarea_or_create ~textarea_id:"codeboard-editor"
   in
   (* Ensure CodeMirror is loaded *)
   let code_mirror =

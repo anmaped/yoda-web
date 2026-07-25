@@ -2,8 +2,6 @@ open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 open Lwt.Infix
-open I18n
-let t = t
 
 let content ?(show_progress_only = false) () =
   let contest_id = Helpers.get_current_contest_id () in
@@ -34,8 +32,7 @@ let content ?(show_progress_only = false) () =
         Lwt.return_unit )
       else
         (* resp is a json string *)
-        let resp_json_string = Js.to_string (Json.output resp) in
-        let p = Api.Openapi.Contest.of_json resp_json_string in
+        let p = Api.Openapi.Contest.of_yojson resp in
         (* find the dom of contest_title and set new title *)
         Dom.appendChild
         (Tyxml_js.To_dom.of_h2 contest_title)
@@ -103,16 +100,16 @@ let content ?(show_progress_only = false) () =
       ; ul
           ~a:[a_class ["list-unstyled"; "mb-3"]]
           [ li
-              [ span ~a:[a_class ["fw-semibold"]] [txt (t "progress_status_label")]
+              [ span ~a:[a_class ["fw-semibold"]] [txt (I18n.t "progress_status_label")]
               ; contest_status ]
           ; li
-              [ span ~a:[a_class ["fw-semibold"]] [txt (t "progress_time_left_label")]
+              [ span ~a:[a_class ["fw-semibold"]] [txt (I18n.t "progress_time_left_label")]
               ; contest_timeleft ] ]
-      ; div ~a:[a_class ["mb-1"; "small"; "text-muted"]] [txt (t "progress_progress_label")] ]
+      ; div ~a:[a_class ["mb-1"; "small"; "text-muted"]] [txt (I18n.t "progress_progress_label")] ]
     else
       [ div
           ~a:[a_class ["mb-1"; "small"; "text-muted"]]
-          [txt (t "progress_title")] ]
+          [txt (I18n.t "progress_title")] ]
   in
   section
     ~a:[a_class ["panel-section"; "container"; "py-3"]]

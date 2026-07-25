@@ -1,6 +1,5 @@
 open Js_of_ocaml
 open Js_of_ocaml_tyxml
-open Tyxml_js.Html
 open Lwt.Infix
 
 let content ~contest_id ~problem_row ~tbl () : unit =
@@ -13,10 +12,8 @@ let content ~contest_id ~problem_row ~tbl () : unit =
         Lwt.return_unit )
       else
         (* resp is a json string *)
-        let resp_json_string = Js.to_string (Json.output resp) in
         let problems =
-          Api.Openapi.ContestsContestsidProblemsGetResponse2.of_json
-            resp_json_string
+          Api.Openapi.ContestsContestsidProblemsGetResponse2.of_yojson resp
         in
         List.iter
           (fun (p : Api.Openapi.problem) ->

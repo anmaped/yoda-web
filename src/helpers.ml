@@ -1,6 +1,5 @@
 open Js_of_ocaml
 open Js_of_ocaml_tyxml
-open Tyxml_js.Html
 
 (* Strip surrounding double quotes from JSON string *)
 let cleanup_json_string json_str =
@@ -24,46 +23,6 @@ let add_element_to_app element =
   Dom.appendChild app_div dom_element ;
   Console.console##log
     (Js.string ("Element added: " ^ Js.to_string dom_element##.id))
-
-let make_modal_view name title content action () =
-  div
-    ~a:[a_id name]
-    [ (* backdrop *)
-      div ~a:[a_class ["modal-backdrop"; "fade"; "show"]] []
-    ; (* modal *)
-      div
-        ~a:[a_class ["modal"; "fade"; "show"]; a_style "display:block;"]
-        [ div
-            ~a:[a_class ["modal-dialog"]]
-            [ div
-                ~a:[a_class ["modal-content"]]
-                [ div
-                    ~a:[a_class ["modal-header"]]
-                    [ h5 ~a:[a_class ["modal-title"]] [txt title]
-                    ; button
-                        ~a:
-                          [ a_class ["btn-close"]
-                          ; a_onclick (fun _ ->
-                                remove_first_element_from_app ("#" ^ name) ;
-                                false ) ]
-                        [] ]
-                ; div ~a:[a_class ["modal-body"]] content
-                ; div
-                    ~a:[a_class ["modal-footer"]]
-                    [ button
-                        ~a:
-                          [ a_class ["btn"; "btn-secondary"]
-                          ; a_onclick (fun _ ->
-                                remove_first_element_from_app ("#" ^ name) ;
-                                false ) ]
-                        [txt "Cancel"]
-                    ; button
-                        ~a:
-                          [ a_class ["btn"; "btn-primary"]
-                          ; a_onclick (fun _ ->
-                                remove_first_element_from_app ("#" ^ name) ;
-                                action () ) ]
-                        [txt "Confirm"] ] ] ] ] ]
 
 let is_mobile () =
   let width = Dom_html.window##.innerWidth in
@@ -161,17 +120,49 @@ let remove_element_by_id id =
   ignore (Js.Unsafe.meth_call el "remove" [||]) ;
   Console.console##log (Js.string ("Element removed: #" ^ id))
 
-let navigate_to path =
+(* Navigation helpers *)
+
+(** Navigates to the specified path and reloads the page *)
+let navigate_to_with_reload path =
   Dom_html.window##.history##pushState
     Js.null (Js.string "")
     (Js.Opt.return (Js.string path)) ;
   Dom_html.window##.location##reload
 
+(** Triggers a resize event *)
+let trigger_resize () =
+  let event =
+    Js.Unsafe.new_obj
+      (Js.Unsafe.pure_js_expr "Event")
+      [|Js.Unsafe.inject (Js.string "resize")|]
+  in
+  ignore (Dom_html.window##dispatchEvent event)
+
+(** Triggers a render event *)
+let trigger_render () =
+  let event =
+    Js.Unsafe.new_obj
+      (Js.Unsafe.pure_js_expr "Event")
+      [|Js.Unsafe.inject (Js.string "render")|]
+  in
+  ignore (Dom_html.window##dispatchEvent event)
+
+(** Navigates to the specified path and triggers a render event *)
+let navigate_to path =
+  Dom_html.window##.history##pushState
+    Js.null (Js.string "")
+    (Js.Opt.return (Js.string path)) ;
+  trigger_render ()
+
+(* Current contest ID helpers *)
+
+(** Returns the ID of the currently selected contest *)
 let get_current_contest_id () =
   match get_local_variable "yoda-state-contest-id" with
   | Some id -> int_of_string (Js.to_string id)
-  | None -> navigate_to "#contests"; 0
+  | None -> navigate_to "#contests" ; 0
 
+(** Sets the ID of the currently selected contest *)
 let set_current_contest_id id =
   set_local_variable "yoda-state-contest-id" (string_of_int id) ;
   Console.console##log

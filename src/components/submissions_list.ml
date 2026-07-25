@@ -1,10 +1,7 @@
 open Js_of_ocaml
-open Js_of_ocaml_lwt
 open Lwt.Infix
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
-open I18n
-let t = t
 
 type submission_status =
   | Accepted
@@ -61,11 +58,11 @@ let content ~contest_id ~last () =
         (thead
            ~a:[a_class ["table-light"]]
            [ tr
-               [ th [txt (t "submissions_col_id")]
-               ; th [txt (t "submissions_col_problem")]
-               ; th [txt (t "submissions_col_language")]
-               ; th [txt (t "submissions_col_result")]
-               ; th [txt (t "submissions_col_time")] ] ] )
+               [ th [txt (I18n.t "submissions_col_id")]
+               ; th [txt (I18n.t "submissions_col_problem")]
+               ; th [txt (I18n.t "submissions_col_language")]
+               ; th [txt (I18n.t "submissions_col_result")]
+               ; th [txt (I18n.t "submissions_col_time")] ] ] )
       []
   in
   Lwt.async (fun () ->
@@ -81,10 +78,8 @@ let content ~contest_id ~last () =
              (Printf.sprintf "Failed to fetch submissions: %d" status) ) ;
         Lwt.return_unit )
       else (* code 200 *)
-        let resp_json_string = Js.to_string (Json.output resp) in
         let submissions : Api.Openapi.submission list =
-          Api.Openapi.ContestsContestidSubmissionsGetResponse2.of_json
-            resp_json_string
+          Api.Openapi.ContestsContestidSubmissionsGetResponse2.of_yojson resp
         in
         List.iter
           (fun (sub : Api.Openapi.submission) ->
@@ -104,10 +99,7 @@ let content ~contest_id ~last () =
                           problem_status ) ) ;
                   Lwt.return_unit )
                 else
-                  let p =
-                    Api.Openapi.Problem.of_json
-                      (Js.to_string (Json.output problem_resp))
-                  in
+                  let p = Api.Openapi.Problem.of_yojson problem_resp in
                   let lang =
                     try Option.get sub.language with _ -> "Unknown"
                   in

@@ -1,8 +1,5 @@
-open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
-open I18n
-let t = t
 
 let content ~contest_id ?(last = 50) () =
   section
@@ -11,5 +8,5 @@ let content ~contest_id ?(last = 50) () =
         ~a:[a_class ["card"; "shadow-sm"]]
         [ div
             ~a:[a_class ["card-header"; "bg-white"]]
-            [h2 ~a:[a_class ["h5"; "mb-0"]] [txt (t "submissions_recent_title")]]
+            [h2 ~a:[a_class ["h5"; "mb-0"]] [txt (I18n.t "submissions_recent_title")]]
         ; Submissions_list.content ~contest_id ~last () ] ]

@@ -14,18 +14,17 @@ let content ul () =
           (Js.string (Printf.sprintf "Failed to fetch contests: %d" status)) ;
         Lwt.return_unit )
       else
-        let contests = Js.to_array json in
-        Array.iter
-          (fun c ->
+        let contests = Api.Openapi.ContestsGetResponse2.of_yojson json in
+        List.iter
+          (fun (c : Api.Openapi.contest) ->
             let select_btn =
               a
               (*~a: [ a_href ( Api.Helpers.base_url ^ "/contests/" ^
                 Int32.to_string (Js.to_int32 c##.id) ^ "/problems" ) ]*)
                 ~a:[a_href "#dashboard"]
                 [ txt
-                    ( Js.to_string c##.title
-                    ^ " ("
-                    ^ Js.to_string c##.status
+                    ( c.title ^ " ("
+                    ^ Api.Openapi.ContestStatus.to_json c.status
                     ^ ")" ) ]
             in
             let li = li [select_btn] in
@@ -35,8 +34,7 @@ let content ul () =
                   (* print to console *)
                   Console.console##log (Js.string "Clicked!") ;
                   (* set contest ID session *)
-                  Helpers.set_current_contest_id
-                    (Int32.to_int (Js.to_int32 c##.id)) ;
+                  Helpers.set_current_contest_id c.id ;
                   (* set last problem to None *)
 
                   (* navigate to dashboard page *)

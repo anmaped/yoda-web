@@ -1,4 +1,3 @@
-open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 

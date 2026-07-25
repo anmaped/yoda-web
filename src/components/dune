@@ -4,6 +4,7 @@
  (modules
   contest_list
   login_form
+  modal_view
   problem_dropdown
   problem_list
   scoreboard
@@ -11,6 +12,7 @@
   submissions_list
   user_list
   sidebar
+  spinner_modal
   view_summary
   view_submissions
   view_problem

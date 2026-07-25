@@ -1,13 +1,11 @@
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 open Lwt.Infix
-open I18n
-let t = t
 
 let render ~on_success () =
   (* check if user is already logged in *)
   match Helpers.get_session_variable "token" with
-  | Some p ->
+  | Some _token ->
       (* need to check if token is valid *)
       Lwt.async (fun () ->
           Api.Helpers.verify_token ()
@@ -28,4 +26,4 @@ let render ~on_success () =
         ; p
             ~a:
               [a_class ["mt-5"; "mb-3"; "text-body-secondary"; "text-center"]]
-            [txt (t "login_footer")] ]
+            [txt (I18n.t "login_footer")] ]

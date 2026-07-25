@@ -1,6 +1,4 @@
 open Js_of_ocaml
-open Js_of_ocaml_tyxml
-open Tyxml_js.Html
 
 type language = EN | FR | ES | PT | AR
 
@@ -45,6 +43,29 @@ let t key =
   let tr = get_translations () in
   try Hashtbl.find (Translations.map tr) key
   with Not_found -> failwith ("Translation key not found: " ^ key)
+
+let interpolate template values =
+  let buf = Buffer.create (String.length template) in
+  let i = ref 0 in
+  let values = ref values in
+  while !i < String.length template do
+    if !i + 1 < String.length template
+       && template.[!i] = '%'
+       && template.[!i + 1] = 's'
+    then begin
+      (match !values with
+      | v :: vs ->
+          Buffer.add_string buf v;
+          values := vs
+      | [] ->
+          Buffer.add_string buf "%s");
+      i := !i + 2
+    end else begin
+      Buffer.add_char buf template.[!i];
+      incr i
+    end
+  done;
+  Buffer.contents buf
 
 let init () =
   match current_language () with

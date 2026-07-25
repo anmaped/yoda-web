@@ -38,14 +38,22 @@ let render ~on_login () =
   let form_div =
     form
       ~a:[a_method `Post; a_onsubmit (fun _ -> false)]
-      [ h1 ~a:[a_class ["h3"; "mb-3"; "fw-normal"]] [txt (I18n.t "login_title")]
+      [ h1
+          ~a:[a_class ["h3"; "mb-3"; "fw-normal"]]
+          [txt (I18n.t "login_title")]
       ; error_div
       ; div
           ~a:[a_class ["form-floating"]]
-          [username; label ~a:[a_label_for "username"] [txt (I18n.t "login_label_email")]]
+          [ username
+          ; label
+              ~a:[a_label_for "username"]
+              [txt (I18n.t "login_label_email")] ]
       ; div
           ~a:[a_class ["form-floating"]]
-          [password; label ~a:[a_label_for "password"] [txt (I18n.t "login_label_password")]]
+          [ password
+          ; label
+              ~a:[a_label_for "password"]
+              [txt (I18n.t "login_label_password")] ]
       ; div
           ~a:[a_class ["form-check"; "text-start"; "my-3"]]
           [ input
@@ -72,13 +80,13 @@ let render ~on_login () =
           (Api.Helpers.base_url ^ "/auth/login")
           (Api.Openapi.AuthLoginPostRequest.to_json x)
         >>= fun (resp, status) ->
-        let resp_json_string = Js.to_string (Json.output resp) in
         (* check response type *)
         if status = 200 then (
-          Console.console##log
-            (Js.string ("Login successful: " ^ resp_json_string)) ;
           (* Parse the response JSON into the appropriate type *)
-          let y = Api.Openapi.AuthToken.of_json resp_json_string in
+          let y = Api.Openapi.AuthToken.of_yojson resp in
+          Console.console##log
+            (Js.string
+               ("Login successful: " ^ Api.Openapi.AuthToken.to_json y) ) ;
           (* Store the token in local storage *)
           Helpers.set_session_variable "token" y.token ;
           Helpers.set_session_variable "user"
@@ -89,21 +97,20 @@ let render ~on_login () =
           ignore (dom_err##.classList##add (Js.string "d-none")) ;
           on_login () ;
           Lwt.return_unit )
-        else (
+        else
+          (* Parse the response JSON into the appropriate type *)
+          let x = Api.Openapi.AuthLoginPostResponse41.of_yojson resp in
           Console.console##log
             (Js.string
                ( "Login failed with status: " ^ string_of_int status
-               ^ ", response: " ^ resp_json_string ) ) ;
-          (* Parse the response JSON into the appropriate type *)
-          let x =
-            Api.Openapi.AuthLoginPostResponse41.of_json resp_json_string
-          in
+               ^ ", response: "
+               ^ Api.Openapi.AuthLoginPostResponse41.to_json x ) ) ;
           Helpers.set_session_variable "error"
             (Api.Openapi.AuthLoginPostResponse41.to_json x) ;
           (* Show error message on failure *)
           let dom_err = Tyxml_js.To_dom.of_div error_div in
           ignore (dom_err##.classList##remove (Js.string "d-none")) ;
           ignore (dom_err##.innerHTML := Js.string x.error) ;
-          Lwt.return_unit ) )
+          Lwt.return_unit )
   in
   form_div

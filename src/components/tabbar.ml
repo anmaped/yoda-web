@@ -1,7 +1,5 @@
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
-open I18n
-let t = t
 
 let on_tab_click tab_id _ev =
   ignore
@@ -32,7 +30,7 @@ let actions_bar =
               [ a_id "copy-all-btn"
               ; a_class ["btn"; "btn-outline-secondary"; "btn-sm"]
               ; a_title "Copy all code to clipboard" ]
-            [i ~a:[a_class ["bi"; "bi-clipboard"]] []; txt (" " ^ t "tabbar_copy")]
+            [i ~a:[a_class ["bi"; "bi-clipboard"]] []; txt (" " ^ I18n.t "tabbar_copy")]
         ; button
             ~a:
               [ a_id "add-file-btn"
@@ -40,12 +38,12 @@ let actions_bar =
               ; a_title "Set Skeleton"
               ; a_onclick (fun _ ->
                     Helpers.add_element_to_app
-                      (Helpers.make_modal_view "run-modal" "Confirm action"
-                         [txt (t "tabbar_confirm_skeleton")]
+                      (Modal_view.make "run-modal" (I18n.t "modal_confirm_action")
+                         [txt (I18n.t "tabbar_confirm_skeleton")]
                          (fun _ -> false)
                          () ) ;
                     false ) ]
-            [i ~a:[a_class ["bi"; "bi-arrow-clockwise"]] []; txt (" " ^ t "tabbar_skeleton")]
+            [i ~a:[a_class ["bi"; "bi-arrow-clockwise"]] []; txt (" " ^ I18n.t "tabbar_skeleton")]
         ] ]
 
 let content () =
