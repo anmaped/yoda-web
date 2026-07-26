@@ -10,7 +10,10 @@
   dashboard
   submissions
   codeboard
-  settings)
+  settings
+  settings_user
+  settings_yodac
+  settings_helpers)
  (libraries
   components
   api

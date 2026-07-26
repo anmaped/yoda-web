@@ -13,7 +13,7 @@ let render () =
           (Js.string (Printf.sprintf "Failed to fetch users: %d" status)) ;
         Lwt.return_unit )
       else
-        let users = Api.Openapi.UsersGetResponse2.of_yojson json in
+        let users = Api.Openapi.AdminUsersGetResponse2.of_yojson json in
         List.iter
           (fun (u : Api.Openapi.user) ->
             let li =

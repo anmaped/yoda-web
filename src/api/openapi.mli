@@ -134,83 +134,6 @@ module YodacConfigGetResponse : sig
   val to_json : t -> string
 end
 
-type usersPostRequestRole =
-  | User
-  | Judge
-  | Admin
-
-val usersPostRequestRole_of_yojson : Yojson.Safe.t -> usersPostRequestRole
-val yojson_of_usersPostRequestRole : usersPostRequestRole -> Yojson.Safe.t
-val usersPostRequestRole_of_json : string -> usersPostRequestRole
-val json_of_usersPostRequestRole : usersPostRequestRole -> string
-
-module UsersPostRequestRole : sig
-  type nonrec t = usersPostRequestRole
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
-type usersPostRequest = {
-  username: string;
-  password: string;
-  role: usersPostRequestRole;
-}
-
-val create_usersPostRequest : username:string -> password:string -> role:usersPostRequestRole -> unit -> usersPostRequest
-val usersPostRequest_of_yojson : Yojson.Safe.t -> usersPostRequest
-val yojson_of_usersPostRequest : usersPostRequest -> Yojson.Safe.t
-val usersPostRequest_of_json : string -> usersPostRequest
-val json_of_usersPostRequest : usersPostRequest -> string
-
-module UsersPostRequest : sig
-  type nonrec t = usersPostRequest
-  val create : username:string -> password:string -> role:usersPostRequestRole -> unit -> t
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
-type usersIdPutRequestRole =
-  | User
-  | Judge
-  | Admin
-
-val usersIdPutRequestRole_of_yojson : Yojson.Safe.t -> usersIdPutRequestRole
-val yojson_of_usersIdPutRequestRole : usersIdPutRequestRole -> Yojson.Safe.t
-val usersIdPutRequestRole_of_json : string -> usersIdPutRequestRole
-val json_of_usersIdPutRequestRole : usersIdPutRequestRole -> string
-
-module UsersIdPutRequestRole : sig
-  type nonrec t = usersIdPutRequestRole
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
-type usersIdPutRequest = {
-  username: string option;
-  role: usersIdPutRequestRole option;
-}
-
-val create_usersIdPutRequest : ?username:string -> ?role:usersIdPutRequestRole -> unit -> usersIdPutRequest
-val usersIdPutRequest_of_yojson : Yojson.Safe.t -> usersIdPutRequest
-val yojson_of_usersIdPutRequest : usersIdPutRequest -> Yojson.Safe.t
-val usersIdPutRequest_of_json : string -> usersIdPutRequest
-val json_of_usersIdPutRequest : usersIdPutRequest -> string
-
-module UsersIdPutRequest : sig
-  type nonrec t = usersIdPutRequest
-  val create : ?username:string -> ?role:usersIdPutRequestRole -> unit -> t
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
 type userRole =
   | User
   | Judge
@@ -229,14 +152,73 @@ module UserRole : sig
   val to_json : t -> string
 end
 
+type userGroup = string list
+
+val userGroup_of_yojson : Yojson.Safe.t -> userGroup
+val yojson_of_userGroup : userGroup -> Yojson.Safe.t
+val userGroup_of_json : string -> userGroup
+val json_of_userGroup : userGroup -> string
+
+module UserGroup : sig
+  type nonrec t = userGroup
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type userUpdateRequest = {
+  username: string option;
+  role: userRole option;
+  groups: userGroup option;
+}
+
+val create_userUpdateRequest : ?username:string -> ?role:userRole -> ?groups:userGroup -> unit -> userUpdateRequest
+val userUpdateRequest_of_yojson : Yojson.Safe.t -> userUpdateRequest
+val yojson_of_userUpdateRequest : userUpdateRequest -> Yojson.Safe.t
+val userUpdateRequest_of_json : string -> userUpdateRequest
+val json_of_userUpdateRequest : userUpdateRequest -> string
+
+module UserUpdateRequest : sig
+  type nonrec t = userUpdateRequest
+  val create : ?username:string -> ?role:userRole -> ?groups:userGroup -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type userCreateRequest = {
+  username: string;
+  password: string;
+  role: userRole;
+  groups: userGroup option;
+}
+
+val create_userCreateRequest : username:string -> password:string -> role:userRole -> ?groups:userGroup -> unit -> userCreateRequest
+val userCreateRequest_of_yojson : Yojson.Safe.t -> userCreateRequest
+val yojson_of_userCreateRequest : userCreateRequest -> Yojson.Safe.t
+val userCreateRequest_of_json : string -> userCreateRequest
+val json_of_userCreateRequest : userCreateRequest -> string
+
+module UserCreateRequest : sig
+  type nonrec t = userCreateRequest
+  val create : username:string -> password:string -> role:userRole -> ?groups:userGroup -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
 type user = {
   id: int;
   username: string;
   role: userRole;
+  groups: userGroup;
   created_at: string;
 }
 
-val create_user : id:int -> username:string -> role:userRole -> created_at:string -> unit -> user
+val create_user : id:int -> username:string -> role:userRole -> groups:userGroup -> created_at:string -> unit -> user
 val user_of_yojson : Yojson.Safe.t -> user
 val yojson_of_user : user -> Yojson.Safe.t
 val user_of_json : string -> user
@@ -244,22 +226,7 @@ val json_of_user : user -> string
 
 module User : sig
   type nonrec t = user
-  val create : id:int -> username:string -> role:userRole -> created_at:string -> unit -> t
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
-type usersGetResponse2 = user list
-
-val usersGetResponse2_of_yojson : Yojson.Safe.t -> usersGetResponse2
-val yojson_of_usersGetResponse2 : usersGetResponse2 -> Yojson.Safe.t
-val usersGetResponse2_of_json : string -> usersGetResponse2
-val json_of_usersGetResponse2 : usersGetResponse2 -> string
-
-module UsersGetResponse2 : sig
-  type nonrec t = usersGetResponse2
+  val create : id:int -> username:string -> role:userRole -> groups:userGroup -> created_at:string -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -621,6 +588,27 @@ module AuthToken : sig
   val to_json : t -> string
 end
 
+type authRegisterPostRequest = {
+  username: string;
+  password: string;
+  role: userRole;
+}
+
+val create_authRegisterPostRequest : username:string -> password:string -> role:userRole -> unit -> authRegisterPostRequest
+val authRegisterPostRequest_of_yojson : Yojson.Safe.t -> authRegisterPostRequest
+val yojson_of_authRegisterPostRequest : authRegisterPostRequest -> Yojson.Safe.t
+val authRegisterPostRequest_of_json : string -> authRegisterPostRequest
+val json_of_authRegisterPostRequest : authRegisterPostRequest -> string
+
+module AuthRegisterPostRequest : sig
+  type nonrec t = authRegisterPostRequest
+  val create : username:string -> password:string -> role:userRole -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
 type authLoginPostResponse41 = {
   error: string;
 }
@@ -654,6 +642,88 @@ val json_of_authLoginPostRequest : authLoginPostRequest -> string
 module AuthLoginPostRequest : sig
   type nonrec t = authLoginPostRequest
   val create : username:string -> password:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type adminYodacStats = {
+  queued_jobs_total: int option;
+  queued_jobs_per_minute: int;
+  processed_jobs_total: int;
+  processed_jobs_per_minute: int;
+}
+
+val create_adminYodacStats : ?queued_jobs_total:int -> queued_jobs_per_minute:int -> processed_jobs_total:int -> processed_jobs_per_minute:int -> unit -> adminYodacStats
+val adminYodacStats_of_yojson : Yojson.Safe.t -> adminYodacStats
+val yojson_of_adminYodacStats : adminYodacStats -> Yojson.Safe.t
+val adminYodacStats_of_json : string -> adminYodacStats
+val json_of_adminYodacStats : adminYodacStats -> string
+
+module AdminYodacStats : sig
+  type nonrec t = adminYodacStats
+  val create : ?queued_jobs_total:int -> queued_jobs_per_minute:int -> processed_jobs_total:int -> processed_jobs_per_minute:int -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type adminYodabStats = {
+  yodab_requests_total: int;
+  yodab_requests_per_minute: int;
+  submissions_total: int;
+  submissions_per_minute: int;
+}
+
+val create_adminYodabStats : yodab_requests_total:int -> yodab_requests_per_minute:int -> submissions_total:int -> submissions_per_minute:int -> unit -> adminYodabStats
+val adminYodabStats_of_yojson : Yojson.Safe.t -> adminYodabStats
+val yojson_of_adminYodabStats : adminYodabStats -> Yojson.Safe.t
+val adminYodabStats_of_json : string -> adminYodabStats
+val json_of_adminYodabStats : adminYodabStats -> string
+
+module AdminYodabStats : sig
+  type nonrec t = adminYodabStats
+  val create : yodab_requests_total:int -> yodab_requests_per_minute:int -> submissions_total:int -> submissions_per_minute:int -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type adminUsersGetResponse2 = user list
+
+val adminUsersGetResponse2_of_yojson : Yojson.Safe.t -> adminUsersGetResponse2
+val yojson_of_adminUsersGetResponse2 : adminUsersGetResponse2 -> Yojson.Safe.t
+val adminUsersGetResponse2_of_json : string -> adminUsersGetResponse2
+val json_of_adminUsersGetResponse2 : adminUsersGetResponse2 -> string
+
+module AdminUsersGetResponse2 : sig
+  type nonrec t = adminUsersGetResponse2
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type adminStatsResponse = {
+  api_version: string;
+  yoda_version: string;
+  contributors: string list;
+  yodab: adminYodabStats;
+  yodac: adminYodacStats;
+}
+
+val create_adminStatsResponse : api_version:string -> yoda_version:string -> contributors:string list -> yodab:adminYodabStats -> yodac:adminYodacStats -> unit -> adminStatsResponse
+val adminStatsResponse_of_yojson : Yojson.Safe.t -> adminStatsResponse
+val yojson_of_adminStatsResponse : adminStatsResponse -> Yojson.Safe.t
+val adminStatsResponse_of_json : string -> adminStatsResponse
+val json_of_adminStatsResponse : adminStatsResponse -> string
+
+module AdminStatsResponse : sig
+  type nonrec t = adminStatsResponse
+  val create : api_version:string -> yoda_version:string -> contributors:string list -> yodab:adminYodabStats -> yodac:adminYodacStats -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

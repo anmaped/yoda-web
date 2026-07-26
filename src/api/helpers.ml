@@ -44,8 +44,7 @@ let fetch_json url =
 let post_json url body =
   XmlHttpRequest.perform_raw_url ~override_method:`POST ~headers:(headers ())
     ~contents:(`String body) url
-  >>= fun resp ->
-  Lwt.return (Yojson.Safe.from_string resp.content, resp.code)
+  >>= fun resp -> Lwt.return (Yojson.Safe.from_string resp.content, resp.code)
 
 let login username password =
   let body =
@@ -80,14 +79,23 @@ let get_problems contest_id =
 let put_json url body =
   XmlHttpRequest.perform_raw_url ~override_method:`PUT ~headers:(headers ())
     ~contents:(`String body) url
-  >>= fun resp ->
-  Lwt.return (Json.unsafe_input (Js.string resp.content), resp.code)
+  >>= fun resp -> Lwt.return (Yojson.Safe.from_string resp.content, resp.code)
 
-let get_config ()  =
-  fetch_json (base_url ^ "/admin/yodac/config")
+let post_admin_user json_obj =
+  post_json (base_url ^ "/admin/users") (Yojson.Basic.to_string json_obj)
+
+let get_admin_users () = fetch_json (base_url ^ "/admin/users")
+
+let put_admin_user user_id json_obj =
+  put_json
+    (Printf.sprintf "%s/admin/users/%d" base_url user_id)
+    (Yojson.Basic.to_string json_obj)
+
+let get_config () = fetch_json (base_url ^ "/admin/yodac/config")
 
 let put_config json_obj =
-  put_json (base_url ^ "/admin/yodac/config")
+  put_json
+    (base_url ^ "/admin/yodac/config")
     (Yojson.Basic.to_string json_obj)
 
 let get_config_history () =

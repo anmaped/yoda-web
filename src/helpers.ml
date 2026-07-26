@@ -85,6 +85,20 @@ let get_username () =
       with _ -> "Guest" )
   | None -> "Guest"
 
+let is_admin () : bool =
+  match get_session_variable "user" with
+  | Some t -> (
+      let json_str = Js.to_string t in
+      try
+        let raw =
+          Yojson.Basic.from_string json_str
+          |> Yojson.Basic.Util.member "role"
+          |> Yojson.Basic.to_string
+        in
+        Astring.String.is_suffix ~affix:"admin" (String.lowercase_ascii (cleanup_json_string raw))
+      with _ -> false)
+  | None -> false
+
 let is_valid_json s =
   try
     ignore (Yojson.Basic.from_string s) ;

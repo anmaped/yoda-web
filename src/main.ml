@@ -40,7 +40,8 @@ let () =
       | "#logout" ->
           Helpers.remove_session_variable "token" ;
           Helpers.remove_cookies_variable "dream.session" ;
-          Helpers.navigate_to "#login" ;
+          Pages.Settings_user.reset_state () ;
+          Helpers.navigate_to_with_reload "#login" ;
           []
       | "#users" -> [Pages.Users.render ()]
       | "#contests" -> Pages.Contests.render ()
