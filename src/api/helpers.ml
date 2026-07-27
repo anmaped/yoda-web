@@ -81,6 +81,11 @@ let put_json url body =
     ~contents:(`String body) url
   >>= fun resp -> Lwt.return (Yojson.Safe.from_string resp.content, resp.code)
 
+let delete_json url =
+  XmlHttpRequest.perform_raw_url ~override_method:`DELETE ~headers:(headers ())
+    url
+  >>= fun resp -> Lwt.return (resp.code)
+
 let post_admin_user json_obj =
   post_json (base_url ^ "/admin/users") (Yojson.Basic.to_string json_obj)
 
@@ -90,6 +95,9 @@ let put_admin_user user_id json_obj =
   put_json
     (Printf.sprintf "%s/admin/users/%d" base_url user_id)
     (Yojson.Basic.to_string json_obj)
+
+let delete_admin_user user_id =
+  delete_json (Printf.sprintf "%s/admin/users/%d" base_url user_id)
 
 let get_config () = fetch_json (base_url ^ "/admin/yodac/config")
 

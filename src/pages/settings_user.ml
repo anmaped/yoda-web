@@ -36,6 +36,10 @@ let user_row_username : string ref = ref ""
 
 let user_row_role : string ref = ref "user"
 
+let user_row_groups : string ref = ref ""
+
+let selected_user_ids : int list ref = ref []
+
 let user_create_username : string ref = ref ""
 
 let user_create_password : string ref = ref ""
@@ -44,10 +48,17 @@ let user_create_role : string ref = ref "user"
 
 let user_action_busy : bool ref = ref false
 
+let clear_selected_users () = selected_user_ids := []
+
+let clear_user_notice_error () =
+  users_error := None ;
+  users_notice := None
+
 let reset_user_edit_state () =
   user_row_editing_id := None ;
   user_row_username := "" ;
-  user_row_role := "user"
+  user_row_role := "user" ;
+  user_row_groups := ""
 
 let reset_user_create_state () =
   user_create_username := "" ;
@@ -57,11 +68,11 @@ let reset_user_create_state () =
 let reset_state () =
   users_loaded := false ;
   users_loading := false ;
-  users_error := None ;
-  users_notice := None ;
+  clear_user_notice_error () ;
   users_list := [] ;
   reset_user_edit_state () ;
   reset_user_create_state () ;
+  clear_selected_users () ;
   user_action_busy := false
 
 let admin_role_of_string r = Api.Openapi.UserRole.of_json ("\"" ^ r ^ "\"")
@@ -82,6 +93,138 @@ let user_role_badge_class = function
   | Api.Openapi.Judge -> "text-bg-warning"
   | _ -> "text-bg-secondary"
 
+let is_user_selected user_id = List.mem user_id !selected_user_ids
+
+let set_user_selected user_id selected =
+  if selected then (
+    if not (is_user_selected user_id) then
+      selected_user_ids := user_id :: !selected_user_ids )
+  else
+    selected_user_ids :=
+      List.filter (fun id -> id <> user_id) !selected_user_ids
+
+let selected_users_count () = List.length !selected_user_ids
+
+let all_users_selected () =
+  !users_list <> []
+  && List.for_all
+       (fun (user : Api.Openapi.user) -> is_user_selected user.id)
+       !users_list
+
+let set_all_users_selected selected =
+  if selected then
+    selected_user_ids :=
+      List.map (fun (user : Api.Openapi.user) -> user.id) !users_list
+  else clear_selected_users ()
+
+let parse_groups_field groups_text =
+  groups_text |> String.split_on_char ',' |> List.map String.trim
+  |> List.filter (fun group -> group <> "")
+
+let user_selection_cell (user : Api.Openapi.user) =
+  td
+    ~a:[a_class ["text-center"]]
+    [ input
+        ~a:
+          ( [a_class ["form-check-input"]; a_input_type `Checkbox]
+          @ [ a_onchange (fun ev ->
+                  let target =
+                    Js.Opt.get
+                      (Dom_html.CoerceTo.input
+                         (Js.Opt.get ev##.target (fun () -> assert false)) )
+                      (fun () -> assert false)
+                  in
+                  Console.console##log
+                    (Js.string
+                       (Printf.sprintf "User %d selection changed: %b"
+                          user.id
+                          (Js.to_bool target##.checked) ) ) ;
+                  set_user_selected user.id (Js.to_bool target##.checked) ;
+                  Helpers.trigger_render () ;
+                  false ) ]
+          @ if is_user_selected user.id then [a_checked ()] else [] )
+        () ]
+
+let user_select_all_cell () =
+  th
+    ~a:[a_class ["text-center"]]
+    [ input
+        ~a:
+          ( [a_class ["form-check-input"]; a_input_type `Checkbox]
+          @ [ a_onchange (fun ev ->
+                  let target =
+                    Js.Opt.get
+                      (Dom_html.CoerceTo.input
+                         (Js.Opt.get ev##.target (fun () -> assert false)) )
+                      (fun () -> assert false)
+                  in
+                  Console.console##log
+                    (Js.string
+                       (Printf.sprintf "Select all changed: %b"
+                          (Js.to_bool target##.checked) ) ) ;
+                  set_all_users_selected (Js.to_bool target##.checked) ;
+                  Helpers.trigger_render () ;
+                  false ) ]
+          @ if all_users_selected () then [a_checked ()] else [] )
+        () ]
+
+let user_groups_cell editing (user : Api.Openapi.user) =
+  td
+    [ ( if editing then
+          input
+            ~a:
+              [ a_class ["form-control"; "form-control-sm"]
+              ; a_value !user_row_groups
+              ; a_placeholder (I18n.t "users_groups_placeholder")
+              ; a_oninput (fun ev ->
+                    let target =
+                      Js.Opt.get
+                        (Dom_html.CoerceTo.input
+                           (Js.Opt.get ev##.target (fun () -> assert false)) )
+                        (fun () -> assert false)
+                    in
+                    user_row_groups := Js.to_string target##.value ;
+                    false ) ]
+            ()
+        else if user.groups = [] then txt "-"
+        else
+          span
+            ~a:[a_class ["d-inline-flex"; "flex-wrap"; "gap-1"]]
+            (List.map
+               (fun group ->
+                 span
+                   ~a:
+                     [ a_class
+                         [ "badge"
+                         ; "rounded-pill"
+                         ; "border"
+                         ; "border-secondary"
+                         ; "text-secondary" ] ]
+                   [txt group] )
+               user.groups ) ) ]
+
+let user_id_cell (user : Api.Openapi.user) =
+  td ~a:[a_class ["fw-semibold"]] [txt (string_of_int user.id)]
+
+let user_username_cell editing (user : Api.Openapi.user) =
+  td
+    [ ( if editing then
+          input
+            ~a:
+              [ a_class ["form-control"; "form-control-sm"]
+              ; a_value !user_row_username
+              ; a_oninput (fun ev ->
+                    let target =
+                      Js.Opt.get
+                        (Dom_html.CoerceTo.input
+                           (Js.Opt.get ev##.target (fun () -> assert false)) )
+                        (fun () -> assert false)
+                    in
+                    user_row_username := Js.to_string target##.value ;
+                    false ) ]
+            ()
+        else txt user.username ) ]
+
 let load_users () : unit Lwt.t =
   users_loading := true ;
   Api.Helpers.get_admin_users ()
@@ -90,6 +233,7 @@ let load_users () : unit Lwt.t =
   if code = 200 then (
     users_list := Api.Openapi.adminUsersGetResponse2_of_yojson json ;
     users_loaded := true ;
+    clear_selected_users () ;
     users_error := None ;
     Helpers.trigger_render () ;
     Lwt.return () )
@@ -133,6 +277,7 @@ let start_edit_user (user : Api.Openapi.user) =
   user_row_editing_id := Some user.id ;
   user_row_username := user.username ;
   user_row_role := string_of_user_role user.role ;
+  user_row_groups := String.concat ", " user.groups ;
   users_error := None ;
   users_notice := None
 
@@ -146,10 +291,11 @@ let save_user_row (user : Api.Openapi.user) : unit Lwt.t =
     user_action_busy := true ;
     users_error := None ;
     users_notice := None ;
+    let groups = parse_groups_field !user_row_groups in
     let req =
       Api.Openapi.UserUpdateRequest.create ~username
         ~role:(admin_update_role_of_string !user_row_role)
-        ()
+        ~groups ()
     in
     Api.Helpers.put_admin_user user.id
       (Api.Openapi.UserUpdateRequest.to_yojson req |> Yojson.Safe.to_basic)
@@ -165,6 +311,50 @@ let save_user_row (user : Api.Openapi.user) : unit Lwt.t =
       Helpers.trigger_render () ;
       Lwt.return () ) )
 
+(* [TODO] this has a ugly conmfirm form *)
+let delete_selected_users () : unit Lwt.t =
+  let selected_ids = List.rev !selected_user_ids in
+  if selected_ids = [] then Lwt.return ()
+  else
+    let confirmation_message =
+      I18n.interpolate
+        (I18n.t "users_delete_confirm")
+        [string_of_int (List.length selected_ids)]
+    in
+    if
+      not
+        (Js.to_bool
+           (Dom_html.window##confirm (Js.string confirmation_message)) )
+    then Lwt.return ()
+    else (
+      user_action_busy := true ;
+      users_error := None ;
+      users_notice := None ;
+      Helpers.trigger_render () ;
+      let delete_one failed_ids user_id =
+        Api.Helpers.delete_admin_user user_id
+        >>= fun code ->
+        if code = 200 || code = 201 || code = 204 then Lwt.return failed_ids
+        else Lwt.return (user_id :: failed_ids)
+      in
+      Lwt_list.fold_left_s delete_one [] selected_ids
+      >>= fun failed_ids ->
+      user_action_busy := false ;
+      clear_selected_users () ;
+      if failed_ids = [] then (
+        users_notice := Some (I18n.t "users_notice_deleted") ;
+        load_users () )
+      else
+        load_users ()
+        >>= fun () ->
+        users_error :=
+          Some
+            (I18n.interpolate
+               (I18n.t "users_delete_failed")
+               [string_of_int (List.length failed_ids)] ) ;
+        Helpers.trigger_render () ;
+        Lwt.return () )
+
 let user_role_select current on_change =
   select
     ~a:
@@ -179,6 +369,50 @@ let user_role_select current on_change =
             on_change (Js.to_string target##.value) ;
             false ) ]
     (select_options role_options current)
+
+let user_role_cell editing (user : Api.Openapi.user) =
+  td
+    [ ( if editing then
+          user_role_select !user_row_role (fun value ->
+              user_row_role := value )
+        else
+          span
+            ~a:[a_class ["badge"; user_role_badge_class user.role]]
+            [txt (String.capitalize_ascii (string_of_user_role user.role))]
+      ) ]
+
+let user_created_at_cell (user : Api.Openapi.user) = td [txt user.created_at]
+
+let user_actions_cell editing (user : Api.Openapi.user) =
+  td
+    ~a:[a_class ["text-end"]]
+    ( if editing then
+        [ div
+            ~a:[a_class ["btn-group"; "btn-group-sm"]]
+            [ button
+                ~a:
+                  ( [ a_class ["btn"; "btn-success"]
+                    ; a_onclick (fun _ ->
+                          ignore (save_user_row user) ;
+                          false ) ]
+                  @ if !user_action_busy then [a_disabled ()] else [] )
+                [txt (I18n.t "users_action_save")]
+            ; button
+                ~a:
+                  [ a_class ["btn"; "btn-outline-secondary"]
+                  ; a_onclick (fun _ ->
+                        reset_user_edit_state () ;
+                        Helpers.trigger_render () ;
+                        false ) ]
+                [txt (I18n.t "users_action_cancel")] ] ]
+      else
+        [ button
+            ~a:
+              [ a_class ["btn"; "btn-outline-primary"; "btn-sm"]
+              ; a_onclick (fun _ ->
+                    start_edit_user user ; Helpers.trigger_render () ; false )
+              ]
+            [txt (I18n.t "users_action_edit")] ] )
 
 (* ---                       --- *)
 (* --- Users import from CSV --- *)
@@ -453,70 +687,52 @@ let render_users_tab () =
                 @ if !user_action_busy then [a_disabled ()] else [] )
               [txt (I18n.t "users_create_submit")] ] ]
   in
+  let toolbar_actions () =
+    let selected_count = selected_users_count () in
+    div
+      ~a:[a_class ["d-flex"; "flex-wrap"; "gap-2"; "align-items-center"]]
+      [ button
+          ~a:
+            ( [ a_class ["btn"; "btn-outline-secondary"; "btn-sm"]
+              ; a_onclick (fun _ ->
+                    ignore (import_users ()) ;
+                    false ) ]
+            @ if !user_action_busy then [a_disabled ()] else [] )
+          [txt (I18n.t "users_import_btn")]
+      ; button
+          ~a:
+            ( [ a_class ["btn"; "btn-outline-secondary"; "btn-sm"]
+              ; a_onclick (fun _ ->
+                    ignore
+                      ( clear_user_notice_error () ;
+                        load_users () ) ;
+                    false ) ]
+            @ if !user_action_busy then [a_disabled ()] else [] )
+          [txt (I18n.t "users_refresh_btn")]
+      ; button
+          ~a:
+            ( [ a_class ["btn"; "btn-outline-danger"; "btn-sm"]
+              ; a_onclick (fun _ ->
+                    ignore (delete_selected_users ()) ;
+                    false ) ]
+            @
+            if selected_count = 0 || !user_action_busy then [a_disabled ()]
+            else [] )
+          [ txt
+              (I18n.interpolate
+                 (I18n.t "users_delete_selected_btn")
+                 [string_of_int selected_count] ) ] ]
+  in
   let user_table_row (user : Api.Openapi.user) =
     let editing = !user_row_editing_id = Some user.id in
     tr
-      [ td ~a:[a_class ["fw-semibold"]] [txt (string_of_int user.id)]
-      ; td
-          [ ( if editing then
-                input
-                  ~a:
-                    [ a_class ["form-control"; "form-control-sm"]
-                    ; a_value !user_row_username
-                    ; a_oninput (fun ev ->
-                          let target =
-                            Js.Opt.get
-                              (Dom_html.CoerceTo.input
-                                 (Js.Opt.get ev##.target (fun () ->
-                                      assert false ) ) )
-                              (fun () -> assert false)
-                          in
-                          user_row_username := Js.to_string target##.value ;
-                          false ) ]
-                  ()
-              else txt user.username ) ]
-      ; td
-          [ ( if editing then
-                user_role_select !user_row_role (fun value ->
-                    user_row_role := value )
-              else
-                span
-                  ~a:[a_class ["badge"; user_role_badge_class user.role]]
-                  [ txt
-                      (String.capitalize_ascii
-                         (string_of_user_role user.role) ) ] ) ]
-      ; td [txt user.created_at]
-      ; td
-          ~a:[a_class ["text-end"]]
-          ( if editing then
-              [ div
-                  ~a:[a_class ["btn-group"; "btn-group-sm"]]
-                  [ button
-                      ~a:
-                        ( [ a_class ["btn"; "btn-success"]
-                          ; a_onclick (fun _ ->
-                                ignore (save_user_row user) ;
-                                false ) ]
-                        @ if !user_action_busy then [a_disabled ()] else []
-                        )
-                      [txt (I18n.t "users_action_save")]
-                  ; button
-                      ~a:
-                        [ a_class ["btn"; "btn-outline-secondary"]
-                        ; a_onclick (fun _ ->
-                              reset_user_edit_state () ;
-                              Helpers.trigger_render () ;
-                              false ) ]
-                      [txt (I18n.t "users_action_cancel")] ] ]
-            else
-              [ button
-                  ~a:
-                    [ a_class ["btn"; "btn-outline-primary"; "btn-sm"]
-                    ; a_onclick (fun _ ->
-                          start_edit_user user ;
-                          Helpers.trigger_render () ;
-                          false ) ]
-                  [txt (I18n.t "users_action_edit")] ] ) ]
+      [ user_selection_cell user
+      ; user_id_cell user
+      ; user_username_cell editing user
+      ; user_role_cell editing user
+      ; user_groups_cell editing user
+      ; user_created_at_cell user
+      ; user_actions_cell editing user ]
   in
   let body () =
     if !users_loading && !users_list = [] then
@@ -543,22 +759,7 @@ let render_users_tab () =
                   ; a_accept [".csv,text/csv"]
                   ; a_onchange import_users_file_input_change ]
                 ()
-            ; button
-                ~a:
-                  ( [ a_class ["btn"; "btn-outline-secondary"; "btn-sm"]
-                    ; a_onclick (fun _ ->
-                          ignore (import_users ()) ;
-                          false ) ]
-                  @ if !user_action_busy then [a_disabled ()] else [] )
-                [txt (I18n.t "users_import_btn")]
-            ; button
-                ~a:
-                  ( [ a_class ["btn"; "btn-outline-secondary"; "btn-sm"]
-                    ; a_onclick (fun _ ->
-                          ignore (load_users ()) ;
-                          false ) ]
-                  @ if !user_action_busy then [a_disabled ()] else [] )
-                [txt (I18n.t "users_refresh_btn")] ]
+            ; toolbar_actions () ]
         ; section_card (I18n.t "users_create_title") [create_form ()]
         ; ( match !users_error with
           | None -> div []
@@ -582,9 +783,11 @@ let render_users_tab () =
                       ; "mb-0" ] ]
                 ( tr
                     ~a:[a_class ["table-light"]]
-                    [ th [txt (I18n.t "users_col_id")]
+                    [ user_select_all_cell ()
+                    ; th [txt (I18n.t "users_col_id")]
                     ; th [txt (I18n.t "users_col_username")]
                     ; th [txt (I18n.t "users_col_role")]
+                    ; th [txt (I18n.t "users_col_groups")]
                     ; th [txt (I18n.t "users_col_created_at")]
                     ; th
                         ~a:[a_class ["text-end"]]
