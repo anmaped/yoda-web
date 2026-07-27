@@ -625,10 +625,11 @@ type user = {
   role: userRole;
   groups: userGroup;
   created_at: string;
+  last_seen_at: string option;
 }
 
-let create_user ~id ~username ~role ~groups ~created_at () : user =
-  { id; username; role; groups; created_at }
+let create_user ~id ~username ~role ~groups ~created_at ?last_seen_at () : user =
+  { id; username; role; groups; created_at; last_seen_at }
 
 let user_of_yojson (x : Yojson.Safe.t) : user =
   match x with
@@ -668,7 +669,12 @@ let user_of_yojson (x : Yojson.Safe.t) : user =
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "user" "created_at"
     in
-    { id; username; role; groups; created_at }
+    let last_seen_at =
+      match assoc "last_seen_at" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    { id; username; role; groups; created_at; last_seen_at }
   | _ -> Atdml_runtime.Yojson.bad_type "user" x
 
 let yojson_of_user (x : user) : Yojson.Safe.t =
@@ -678,6 +684,7 @@ let yojson_of_user (x : user) : Yojson.Safe.t =
     [("role", yojson_of_userRole x.role)];
     [("groups", yojson_of_userGroup x.groups)];
     [("created_at", Atdml_runtime.Yojson.yojson_of_string x.created_at)];
+    (match x.last_seen_at with None -> [] | Some v -> [("last_seen_at", Atdml_runtime.Yojson.yojson_of_string v)]);
   ])
 
 let user_of_json s =
@@ -1199,6 +1206,54 @@ module Int64 = struct
   let to_json = json_of_int64
 end
 
+type errorResponse = {
+  error: string;
+}
+
+let create_errorResponse ~error () : errorResponse =
+  { error }
+
+let errorResponse_of_yojson (x : Yojson.Safe.t) : errorResponse =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let error =
+      match assoc "error" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "errorResponse" "error"
+    in
+    { error }
+  | _ -> Atdml_runtime.Yojson.bad_type "errorResponse" x
+
+let yojson_of_errorResponse (x : errorResponse) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("error", Atdml_runtime.Yojson.yojson_of_string x.error)];
+  ])
+
+let errorResponse_of_json s =
+  errorResponse_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_errorResponse x =
+  Yojson.Safe.to_string (yojson_of_errorResponse x)
+
+module ErrorResponse = struct
+  type nonrec t = errorResponse
+  let create = create_errorResponse
+  let of_yojson = errorResponse_of_yojson
+  let to_yojson = yojson_of_errorResponse
+  let of_json = errorResponse_of_json
+  let to_json = json_of_errorResponse
+end
+
 type contestsPostRequest = {
   title: string;
   description: string option;
@@ -1694,54 +1749,6 @@ module AuthRegisterPostRequest = struct
   let to_yojson = yojson_of_authRegisterPostRequest
   let of_json = authRegisterPostRequest_of_json
   let to_json = json_of_authRegisterPostRequest
-end
-
-type authLoginPostResponse41 = {
-  error: string;
-}
-
-let create_authLoginPostResponse41 ~error () : authLoginPostResponse41 =
-  { error }
-
-let authLoginPostResponse41_of_yojson (x : Yojson.Safe.t) : authLoginPostResponse41 =
-  match x with
-  | `Assoc fields ->
-    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
-       be unique). Below the threshold, List.assoc_opt returns the first binding;
-       above it, the hashtable returns the last. *)
-    let assoc =
-      if Atdml_runtime.list_length_gt 5 fields then
-        let tbl = Hashtbl.create 16 in
-        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
-        (fun key -> Hashtbl.find_opt tbl key)
-      else (fun key -> List.assoc_opt key fields)
-    in
-    let error =
-      match assoc "error" with
-      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "authLoginPostResponse41" "error"
-    in
-    { error }
-  | _ -> Atdml_runtime.Yojson.bad_type "authLoginPostResponse41" x
-
-let yojson_of_authLoginPostResponse41 (x : authLoginPostResponse41) : Yojson.Safe.t =
-  `Assoc (List.concat [
-    [("error", Atdml_runtime.Yojson.yojson_of_string x.error)];
-  ])
-
-let authLoginPostResponse41_of_json s =
-  authLoginPostResponse41_of_yojson (Yojson.Safe.from_string s)
-
-let json_of_authLoginPostResponse41 x =
-  Yojson.Safe.to_string (yojson_of_authLoginPostResponse41 x)
-
-module AuthLoginPostResponse41 = struct
-  type nonrec t = authLoginPostResponse41
-  let create = create_authLoginPostResponse41
-  let of_yojson = authLoginPostResponse41_of_yojson
-  let to_yojson = yojson_of_authLoginPostResponse41
-  let of_json = authLoginPostResponse41_of_json
-  let to_json = json_of_authLoginPostResponse41
 end
 
 type authLoginPostRequest = {

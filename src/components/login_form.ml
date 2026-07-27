@@ -99,14 +99,14 @@ let render ~on_login () =
           Lwt.return_unit )
         else
           (* Parse the response JSON into the appropriate type *)
-          let x = Api.Openapi.AuthLoginPostResponse41.of_yojson resp in
+          let x = Api.Openapi.ErrorResponse.of_yojson resp in
           Console.console##log
             (Js.string
                ( "Login failed with status: " ^ string_of_int status
                ^ ", response: "
-               ^ Api.Openapi.AuthLoginPostResponse41.to_json x ) ) ;
+               ^ Api.Openapi.ErrorResponse.to_json x ) ) ;
           Helpers.set_session_variable "error"
-            (Api.Openapi.AuthLoginPostResponse41.to_json x) ;
+            (Api.Openapi.ErrorResponse.to_json x) ;
           (* Show error message on failure *)
           let dom_err = Tyxml_js.To_dom.of_div error_div in
           ignore (dom_err##.classList##remove (Js.string "d-none")) ;

@@ -274,9 +274,10 @@ let icon_only_sidebar () =
            ul
              ~a:
                [a_class ["dropdown-menu"; "text-small"; "shadow"]; a_style ""]
-             [ dropdown_item (I18n.t "settings_title")
+             [ dropdown_item ~href:"#settings" (I18n.t "settings_title")
              ; dropdown_divider ()
-             ; dropdown_item (I18n.t "login_sign_out") ] ) ] ]
+             ; dropdown_item ~href:"#logout" (I18n.t "login_sign_out") ] ) ]
+    ]
 
 let full_sidebar () =
   let current_hash = Js.to_string Dom_html.window##.location##.hash in
@@ -392,9 +393,10 @@ let full_sidebar () =
            in
            ul
              ~a:[a_class ["dropdown-menu"; "text-small"; "shadow"]]
-             [ dropdown_item ~href:"#settings" "Settings"
+             [ dropdown_item ~href:"#settings" (I18n.t "settings_title")
              ; dropdown_divider ()
-             ; dropdown_item ~href:"#logout" "Sign out" ] ) ] ]
+             ; dropdown_item ~href:"#logout" (I18n.t "login_sign_out") ] ) ]
+    ]
 
 let sidebar () =
   if Helpers.is_mobile () then div []

@@ -108,3 +108,5 @@ let put_config json_obj =
 
 let get_config_history () =
   fetch_json (base_url ^ "/admin/yodac/config/history")
+
+let get_admin_stats () = fetch_json (base_url ^ "/admin/stats")

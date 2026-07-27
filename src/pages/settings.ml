@@ -18,11 +18,12 @@ let key_settings_referrer = "yoda-settings-referrer"
 let key_language = "yoda-language"
 
 (* Tab state *)
-type tab = Settings | Config | Users
+type tab = Settings | Config | Stats | Users
 
 let tab_label = function
   | Settings -> I18n.t "settings_tab_general"
   | Config -> I18n.t "settings_tab_yodac"
+  | Stats -> I18n.t "settings_tab_stats"
   | Users -> I18n.t "settings_tab_users"
 
 let active_tab : tab ref = ref Settings
@@ -307,6 +308,25 @@ let render_tabs () =
                     ~a:
                       [ a_class
                           ( "nav-link"
+                          :: (if !active_tab = Stats then ["active"] else [])
+                          )
+                      ; a_href "#settings-stats"
+                      ; a_onclick (fun _ ->
+                            Helpers.navigate_to "#settings-stats" ;
+                            false ) ]
+                    [txt (tab_label Stats)] ]
+            else
+              li
+                ~a:[a_class ["nav-item"; "disabled"]]
+                [a ~a:[a_class ["nav-link disabled"]] [txt (tab_label Stats)]]
+          )
+        ; ( if Helpers.is_admin () then
+              li
+                ~a:[a_class ["nav-item"]]
+                [ a
+                    ~a:
+                      [ a_class
+                          ( "nav-link"
                           :: (if !active_tab = Config then ["active"] else [])
                           )
                       ; a_href "#settings-yodac"
@@ -380,6 +400,9 @@ let render ?(tab = "general") () =
               | "yodac" ->
                   active_tab := Config ;
                   Settings_yodac.render_config_tab ()
+                | "stats" ->
+                  active_tab := Stats ;
+                  Settings_stats.render_stats_tab ()
               | "users" ->
                   active_tab := Users ;
                   Settings_user.render_users_tab ()

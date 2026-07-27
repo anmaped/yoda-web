@@ -13,6 +13,8 @@
   settings
   settings_user
   settings_yodac
+  settings_stats
+  settings_stats_graphs
   settings_helpers)
  (libraries
   components

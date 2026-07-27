@@ -116,6 +116,7 @@ type translations = {
   users_col_role : string;
   users_col_groups : string;
   users_col_created_at : string;
+  users_col_last_seen_at : string;
   users_col_actions : string;
   users_select_all : string;
   users_delete_selected_btn : string;
@@ -137,6 +138,26 @@ type translations = {
   users_import_input_missing : string;
   users_import_empty_file : string;
   users_import_btn : string;
+  settings_tab_stats : string;
+  stats_loading : string;
+  stats_empty : string;
+  stats_refresh_btn : string;
+  stats_error_prefix : string;
+  stats_parse_error : string;
+  stats_service_info : string;
+  stats_yodab : string;
+  stats_yodac : string;
+  stats_api_version : string;
+  stats_yoda_version : string;
+  stats_contributors : string;
+  stats_requests_total : string;
+  stats_requests_per_minute : string;
+  stats_submissions_total : string;
+  stats_submissions_per_minute : string;
+  stats_queued_jobs_total : string;
+  stats_queued_jobs_per_minute : string;
+  stats_processed_jobs_total : string;
+  stats_processed_jobs_per_minute : string;
 }
 
 let en = {
@@ -257,6 +278,7 @@ let en = {
   users_col_role = "Role";
   users_col_groups = "Groups";
   users_col_created_at = "Created";
+  users_col_last_seen_at = "Last Seen";
   users_col_actions = "Actions";
   users_select_all = "Select all";
   users_delete_selected_btn = "Delete selected (%s)";
@@ -271,13 +293,33 @@ let en = {
   users_validation_required = "Username and password are required for new users.";
   users_import_in_progress = "Importing users...";
   users_import_summary = "Import completed: %s users created, %s errors.";
-  users_import_invalid_header = "Invalid CSV header. Expected: username,password,role";
+  users_import_invalid_header = "Invalid CSV header. Expected: username,password,role,groups";
   users_import_invalid_row = "Invalid CSV row at line";
   users_import_invalid_role = "Invalid role at line";
   users_import_read_failed = "Failed to read the selected CSV file.";
   users_import_input_missing = "Import file input is unavailable on this page.";
   users_import_empty_file = "The selected CSV file is empty.";
   users_import_btn = "Import users";
+  settings_tab_stats = "Stats";
+  stats_loading = "Loading stats...";
+  stats_empty = "No stats available.";
+  stats_refresh_btn = "Refresh";
+  stats_error_prefix = "Failed to load stats (HTTP %s)";
+  stats_parse_error = "Failed to parse stats: %s";
+  stats_service_info = "Service Info";
+  stats_yodab = "YodaB Metrics";
+  stats_yodac = "YodaC Metrics";
+  stats_api_version = "API Version";
+  stats_yoda_version = "Yoda Version";
+  stats_contributors = "Contributors";
+  stats_requests_total = "Requests Total";
+  stats_requests_per_minute = "Requests per Minute";
+  stats_submissions_total = "Submissions Total";
+  stats_submissions_per_minute = "Submissions per Minute";
+  stats_queued_jobs_total = "Queued Jobs";
+  stats_queued_jobs_per_minute = "Queued Jobs per Minute";
+  stats_processed_jobs_total = "Processed Jobs Total";
+  stats_processed_jobs_per_minute = "Processed Jobs per Minute";
 }
 
 let fr = {
@@ -398,6 +440,7 @@ let fr = {
   users_col_role = "Rôle";
   users_col_groups = "Groupes";
   users_col_created_at = "Créé le";
+  users_col_last_seen_at = "Dernière activité";
   users_col_actions = "Actions";
   users_select_all = "Tout sélectionner";
   users_delete_selected_btn = "Supprimer la sélection (%s)";
@@ -412,13 +455,33 @@ let fr = {
   users_validation_required = "Le nom d'utilisateur et le mot de passe sont requis pour créer un utilisateur.";
   users_import_in_progress = "Importation des utilisateurs...";
   users_import_summary = "Import terminé : %s utilisateurs créés, %s erreurs.";
-  users_import_invalid_header = "En-tête CSV invalide. Attendu : username,password,role";
+  users_import_invalid_header = "En-tête CSV invalide. Attendu : username,password,role,groups";
   users_import_invalid_row = "Ligne CSV invalide à la ligne";
   users_import_invalid_role = "Rôle invalide à la ligne";
   users_import_read_failed = "Impossible de lire le fichier CSV sélectionné.";
   users_import_input_missing = "Le champ de fichier d'import n'est pas disponible sur cette page.";
   users_import_empty_file = "Le fichier CSV sélectionné est vide.";
   users_import_btn = "Importer les utilisateurs";
+  settings_tab_stats = "Statistiques";
+  stats_loading = "Chargement des statistiques...";
+  stats_empty = "Aucune statistique disponible.";
+  stats_refresh_btn = "Actualiser";
+  stats_error_prefix = "Impossible de charger les statistiques (HTTP %s)";
+  stats_parse_error = "Impossible d'analyser les statistiques : %s";
+  stats_service_info = "Informations du service";
+  stats_yodab = "Métriques YodaB";
+  stats_yodac = "Métriques YodaC";
+  stats_api_version = "Version API";
+  stats_yoda_version = "Version Yoda";
+  stats_contributors = "Contributeurs";
+  stats_requests_total = "Total des requêtes";
+  stats_requests_per_minute = "Requêtes par minute";
+  stats_submissions_total = "Total des soumissions";
+  stats_submissions_per_minute = "Soumissions par minute";
+  stats_queued_jobs_total = "Taches en file";
+  stats_queued_jobs_per_minute = "Taches en file par minute";
+  stats_processed_jobs_total = "Total des taches traitees";
+  stats_processed_jobs_per_minute = "Taches traitees par minute";
 }
 
 let es = {
@@ -539,6 +602,7 @@ let es = {
   users_col_role = "Rol";
   users_col_groups = "Grupos";
   users_col_created_at = "Creado";
+  users_col_last_seen_at = "Última actividad";
   users_col_actions = "Acciones";
   users_select_all = "Seleccionar todo";
   users_delete_selected_btn = "Eliminar seleccionados (%s)";
@@ -553,13 +617,33 @@ let es = {
   users_validation_required = "El nombre de usuario y la contraseña son obligatorios para crear un usuario.";
   users_import_in_progress = "Importando usuarios...";
   users_import_summary = "Importación completada: %s usuarios creados, %s errores.";
-  users_import_invalid_header = "Encabezado CSV inválido. Se espera: username,password,role";
+  users_import_invalid_header = "Encabezado CSV inválido. Se espera: username,password,role,groups";
   users_import_invalid_row = "Fila CSV inválida en la línea";
   users_import_invalid_role = "Rol inválido en la línea";
   users_import_read_failed = "No se pudo leer el archivo CSV seleccionado.";
   users_import_input_missing = "El campo de archivo para importar no está disponible en esta página.";
   users_import_empty_file = "El archivo CSV seleccionado está vacío.";
   users_import_btn = "Importar usuarios";
+  settings_tab_stats = "Estadisticas";
+  stats_loading = "Cargando estadisticas...";
+  stats_empty = "No hay estadisticas disponibles.";
+  stats_refresh_btn = "Actualizar";
+  stats_error_prefix = "No se pudieron cargar las estadisticas (HTTP %s)";
+  stats_parse_error = "No se pudieron analizar las estadisticas: %s";
+  stats_service_info = "Informacion del servicio";
+  stats_yodab = "Metricas de YodaB";
+  stats_yodac = "Metricas de YodaC";
+  stats_api_version = "Version de API";
+  stats_yoda_version = "Version de Yoda";
+  stats_contributors = "Contribuidores";
+  stats_requests_total = "Solicitudes totales";
+  stats_requests_per_minute = "Solicitudes por minuto";
+  stats_submissions_total = "Envios totales";
+  stats_submissions_per_minute = "Envios por minuto";
+  stats_queued_jobs_total = "Trabajos en cola";
+  stats_queued_jobs_per_minute = "Trabajos en cola por minuto";
+  stats_processed_jobs_total = "Trabajos procesados totales";
+  stats_processed_jobs_per_minute = "Trabajos procesados por minuto";
 }
 
 let pt = {
@@ -680,6 +764,7 @@ let pt = {
   users_col_role = "Função";
   users_col_groups = "Grupos";
   users_col_created_at = "Criado";
+  users_col_last_seen_at = "Última atividade";
   users_col_actions = "Ações";
   users_select_all = "Selecionar tudo";
   users_delete_selected_btn = "Eliminar selecionados (%s)";
@@ -694,13 +779,33 @@ let pt = {
   users_validation_required = "Nome de utilizador e senha são obrigatórios para criar um utilizador.";
   users_import_in_progress = "Importando utilizadores...";
   users_import_summary = "Importação concluída: %s utilizadores criados, %s erros.";
-  users_import_invalid_header = "Cabeçalho CSV inválido. Esperado: username,password,role";
+  users_import_invalid_header = "Cabeçalho CSV inválido. Esperado: username,password,role,groups";
   users_import_invalid_row = "Linha CSV inválida na linha";
   users_import_invalid_role = "Função inválida na linha";
   users_import_read_failed = "Falha ao ler o ficheiro CSV selecionado.";
   users_import_input_missing = "O campo de ficheiro de importação não está disponível nesta página.";
   users_import_empty_file = "O ficheiro CSV selecionado está vazio.";
   users_import_btn = "Importar utilizadores";
+  settings_tab_stats = "Estatisticas";
+  stats_loading = "Carregando estatisticas...";
+  stats_empty = "Sem estatisticas disponiveis.";
+  stats_refresh_btn = "Atualizar";
+  stats_error_prefix = "Falha ao carregar estatisticas (HTTP %s)";
+  stats_parse_error = "Falha ao analisar estatisticas: %s";
+  stats_service_info = "Informacoes do servico";
+  stats_yodab = "Metricas do YodaB";
+  stats_yodac = "Metricas do YodaC";
+  stats_api_version = "Versao da API";
+  stats_yoda_version = "Versao do Yoda";
+  stats_contributors = "Contribuidores";
+  stats_requests_total = "Total de requisicoes";
+  stats_requests_per_minute = "Requisicoes por minuto";
+  stats_submissions_total = "Total de envios";
+  stats_submissions_per_minute = "Envios por minuto";
+  stats_queued_jobs_total = "Tarefas na fila";
+  stats_queued_jobs_per_minute = "Tarefas na fila por minuto";
+  stats_processed_jobs_total = "Total de tarefas processadas";
+  stats_processed_jobs_per_minute = "Tarefas processadas por minuto";
 }
 
 let ar = {
@@ -821,6 +926,7 @@ let ar = {
   users_col_role = "الدور";
   users_col_groups = "المجموعات";
   users_col_created_at = "تاريخ الإنشاء";
+  users_col_last_seen_at = "آخر ظهور";
   users_col_actions = "الإجراءات";
   users_select_all = "تحديد الكل";
   users_delete_selected_btn = "حذف المحدد (%s)";
@@ -835,13 +941,33 @@ let ar = {
   users_validation_required = "اسم المستخدم وكلمة المرور مطلوبان لإنشاء مستخدم جديد.";
   users_import_in_progress = "جارٍ استيراد المستخدمين...";
   users_import_summary = "اكتمل الاستيراد: تم إنشاء %s مستخدمين، و%s أخطاء.";
-  users_import_invalid_header = "رأس CSV غير صالح. المتوقع: username,password,role";
+  users_import_invalid_header = "رأس CSV غير صالح. المتوقع: username,password,role,groups";
   users_import_invalid_row = "صف CSV غير صالح في السطر";
   users_import_invalid_role = "دور غير صالح في السطر";
   users_import_read_failed = "فشل في قراءة ملف CSV المحدد.";
   users_import_input_missing = "حقل ملف الاستيراد غير متوفر في هذه الصفحة.";
   users_import_empty_file = "ملف CSV المحدد فارغ.";
   users_import_btn = "استيراد المستخدمين";
+  settings_tab_stats = "الإحصاءات";
+  stats_loading = "جارٍ تحميل الإحصاءات...";
+  stats_empty = "لا توجد إحصاءات متاحة.";
+  stats_refresh_btn = "تحديث";
+  stats_error_prefix = "تعذر تحميل الإحصاءات (HTTP %s)";
+  stats_parse_error = "تعذر تحليل الإحصاءات: %s";
+  stats_service_info = "معلومات الخدمة";
+  stats_yodab = "مقاييس YodaB";
+  stats_yodac = "مقاييس YodaC";
+  stats_api_version = "إصدار API";
+  stats_yoda_version = "إصدار Yoda";
+  stats_contributors = "المساهمون";
+  stats_requests_total = "إجمالي الطلبات";
+  stats_requests_per_minute = "الطلبات في الدقيقة";
+  stats_submissions_total = "إجمالي الإرسالات";
+  stats_submissions_per_minute = "الإرسالات في الدقيقة";
+  stats_queued_jobs_total = "المهام في الطابور";
+  stats_queued_jobs_per_minute = "المهام في الطابور لكل دقيقة";
+  stats_processed_jobs_total = "إجمالي المهام المعالجة";
+  stats_processed_jobs_per_minute = "المهام المعالجة لكل دقيقة";
 }
 
 let map : translations -> (string, string) Hashtbl.t = fun tr ->
@@ -964,6 +1090,7 @@ let map : translations -> (string, string) Hashtbl.t = fun tr ->
   add "users_col_role" tr.users_col_role;
   add "users_col_groups" tr.users_col_groups;
   add "users_col_created_at" tr.users_col_created_at;
+  add "users_col_last_seen_at" tr.users_col_last_seen_at;
   add "users_col_actions" tr.users_col_actions;
   add "users_select_all" tr.users_select_all;
   add "users_delete_selected_btn" tr.users_delete_selected_btn;
@@ -985,4 +1112,24 @@ let map : translations -> (string, string) Hashtbl.t = fun tr ->
   add "users_import_input_missing" tr.users_import_input_missing;
   add "users_import_empty_file" tr.users_import_empty_file;
   add "users_import_btn" tr.users_import_btn;
+  add "settings_tab_stats" tr.settings_tab_stats;
+  add "stats_loading" tr.stats_loading;
+  add "stats_empty" tr.stats_empty;
+  add "stats_refresh_btn" tr.stats_refresh_btn;
+  add "stats_error_prefix" tr.stats_error_prefix;
+  add "stats_parse_error" tr.stats_parse_error;
+  add "stats_service_info" tr.stats_service_info;
+  add "stats_yodab" tr.stats_yodab;
+  add "stats_yodac" tr.stats_yodac;
+  add "stats_api_version" tr.stats_api_version;
+  add "stats_yoda_version" tr.stats_yoda_version;
+  add "stats_contributors" tr.stats_contributors;
+  add "stats_requests_total" tr.stats_requests_total;
+  add "stats_requests_per_minute" tr.stats_requests_per_minute;
+  add "stats_submissions_total" tr.stats_submissions_total;
+  add "stats_submissions_per_minute" tr.stats_submissions_per_minute;
+  add "stats_queued_jobs_total" tr.stats_queued_jobs_total;
+  add "stats_queued_jobs_per_minute" tr.stats_queued_jobs_per_minute;
+  add "stats_processed_jobs_total" tr.stats_processed_jobs_total;
+  add "stats_processed_jobs_per_minute" tr.stats_processed_jobs_per_minute;
   h

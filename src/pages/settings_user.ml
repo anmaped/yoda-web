@@ -75,7 +75,9 @@ let reset_state () =
   clear_selected_users () ;
   user_action_busy := false
 
-let admin_role_of_string r = Api.Openapi.UserRole.of_json ("\"" ^ r ^ "\"")
+let admin_role_of_string r =
+  try Api.Openapi.UserRole.of_json ("\"" ^ r ^ "\"")
+  with _ -> Api.Openapi.User
 
 let admin_update_role_of_string r =
   Api.Openapi.UserRole.of_json ("\"" ^ r ^ "\"")
@@ -243,6 +245,20 @@ let load_users () : unit Lwt.t =
     Helpers.trigger_render () ;
     Lwt.return () )
 
+let create_admin_user ~username ~password ~role ?(groups = []) () =
+  let req =
+    Api.Openapi.UserCreateRequest.create ~username ~password
+      ~role:(admin_role_of_string role)
+      ~groups ()
+  in
+  Api.Helpers.post_admin_user
+    (Api.Openapi.UserCreateRequest.to_yojson req |> Yojson.Safe.to_basic)
+  >>= fun (json, code) ->
+  if code = 200 || code = 201 then Lwt.return (Ok ())
+  else
+    let json = Api.Openapi.ErrorResponse.of_yojson json in
+    Lwt.return (Error (json.error, code))
+
 let save_new_user () : unit Lwt.t =
   let username = String.trim !user_create_username in
   let password = String.trim !user_create_password in
@@ -252,26 +268,22 @@ let save_new_user () : unit Lwt.t =
     Lwt.return () )
   else (
     user_action_busy := true ;
-    users_error := None ;
-    users_notice := None ;
-    let req =
-      Api.Openapi.UserCreateRequest.create ~username ~password
-        ~role:(admin_role_of_string !user_create_role)
-        ()
-    in
-    Api.Helpers.post_admin_user
-      (Api.Openapi.UserCreateRequest.to_yojson req |> Yojson.Safe.to_basic)
-    >>= fun (_json, code) ->
-    user_action_busy := false ;
-    if code = 200 || code = 201 then (
-      reset_user_create_state () ;
-      users_notice := Some (I18n.t "users_notice_created") ;
-      load_users () )
-    else (
-      users_error :=
-        Some ("Failed to create user (HTTP " ^ string_of_int code ^ ")") ;
-      Helpers.trigger_render () ;
-      Lwt.return () ) )
+    clear_user_notice_error () ;
+    create_admin_user ~username ~password ~role:!user_create_role ()
+    >>= function
+    | Ok () ->
+        user_action_busy := false ;
+        reset_user_create_state () ;
+        users_notice := Some (I18n.t "users_notice_created") ;
+        load_users ()
+    | Error (error, code) ->
+        user_action_busy := false ;
+        users_error :=
+          Some
+            ( "Failed to create user (HTTP " ^ string_of_int code ^ "): "
+            ^ error ) ;
+        Helpers.trigger_render () ;
+        Lwt.return () )
 
 let start_edit_user (user : Api.Openapi.user) =
   user_row_editing_id := Some user.id ;
@@ -289,8 +301,7 @@ let save_user_row (user : Api.Openapi.user) : unit Lwt.t =
     Lwt.return () )
   else (
     user_action_busy := true ;
-    users_error := None ;
-    users_notice := None ;
+    clear_user_notice_error () ;
     let groups = parse_groups_field !user_row_groups in
     let req =
       Api.Openapi.UserUpdateRequest.create ~username
@@ -316,44 +327,40 @@ let delete_selected_users () : unit Lwt.t =
   let selected_ids = List.rev !selected_user_ids in
   if selected_ids = [] then Lwt.return ()
   else
-    let confirmation_message =
+    let confirmation =
       I18n.interpolate
         (I18n.t "users_delete_confirm")
         [string_of_int (List.length selected_ids)]
     in
-    if
-      not
-        (Js.to_bool
-           (Dom_html.window##confirm (Js.string confirmation_message)) )
+    if not (Js.to_bool (Dom_html.window##confirm (Js.string confirmation)))
     then Lwt.return ()
     else (
       user_action_busy := true ;
-      users_error := None ;
       users_notice := None ;
+      users_error := None ;
       Helpers.trigger_render () ;
       let delete_one failed_ids user_id =
         Api.Helpers.delete_admin_user user_id
-        >>= fun code ->
-        if code = 200 || code = 201 || code = 204 then Lwt.return failed_ids
-        else Lwt.return (user_id :: failed_ids)
+        >|= fun code ->
+        if List.mem code [200; 201; 204] then failed_ids
+        else user_id :: failed_ids
       in
       Lwt_list.fold_left_s delete_one [] selected_ids
       >>= fun failed_ids ->
       user_action_busy := false ;
       clear_selected_users () ;
-      if failed_ids = [] then (
-        users_notice := Some (I18n.t "users_notice_deleted") ;
-        load_users () )
+      load_users ()
+      >>= fun () ->
+      if failed_ids = [] then
+        users_notice := Some (I18n.t "users_notice_deleted")
       else
-        load_users ()
-        >>= fun () ->
         users_error :=
           Some
             (I18n.interpolate
                (I18n.t "users_delete_failed")
                [string_of_int (List.length failed_ids)] ) ;
-        Helpers.trigger_render () ;
-        Lwt.return () )
+      Helpers.trigger_render () ;
+      Lwt.return () )
 
 let user_role_select current on_change =
   select
@@ -382,6 +389,9 @@ let user_role_cell editing (user : Api.Openapi.user) =
       ) ]
 
 let user_created_at_cell (user : Api.Openapi.user) = td [txt user.created_at]
+
+let user_last_seen_at_cell (user : Api.Openapi.user) =
+  td [txt (match user.last_seen_at with Some value -> value | None -> "-")]
 
 let user_actions_cell editing (user : Api.Openapi.user) =
   td
@@ -418,7 +428,11 @@ let user_actions_cell editing (user : Api.Openapi.user) =
 (* --- Users import from CSV --- *)
 (* ---                       --- *)
 type import_user_row =
-  {line_number: int; username: string; password: string; role: string}
+  { line_number: int
+  ; username: string
+  ; password: string
+  ; role: string
+  ; groups: string list }
 
 let read_file_text (file : File.file Js.t) : string Lwt.t =
   let waiter, wakener = Lwt.wait () in
@@ -436,16 +450,28 @@ let read_file_text (file : File.file Js.t) : string Lwt.t =
        [|Js.Unsafe.inject on_success; Js.Unsafe.inject on_error|] ) ;
   waiter
 
-let normalize_import_role role =
-  match String.lowercase_ascii (String.trim role) with
-  | "" -> Ok "user"
-  | "user" -> Ok "user"
-  | "judge" -> Ok "judge"
-  | "admin" -> Ok "admin"
-  | _ -> Error role
-
 let split_csv_columns line =
-  String.split_on_char ',' line |> List.map String.trim
+  let len = String.length line in
+  let buf = Buffer.create len in
+  let emit acc =
+    let column = Buffer.contents buf |> String.trim in
+    Buffer.clear buf ; column :: acc
+  in
+  let rec parse i quoted acc =
+    if i = len then List.rev (emit acc)
+    else
+      match line.[i] with
+      | '"' ->
+          if quoted && i + 1 < len && line.[i + 1] = '"' then (
+            Buffer.add_char buf '"' ;
+            parse (i + 2) quoted acc )
+          else parse (i + 1) (not quoted) acc
+      | ',' when not quoted -> parse (i + 1) quoted (emit acc)
+      | c ->
+          Buffer.add_char buf c ;
+          parse (i + 1) quoted acc
+  in
+  if len = 0 then [] else parse 0 false []
 
 let parse_import_users_csv (csv_text : string) :
     import_user_row list * string list =
@@ -459,38 +485,41 @@ let parse_import_users_csv (csv_text : string) :
       let header_cols =
         split_csv_columns header |> List.map String.lowercase_ascii
       in
-      if header_cols <> ["username"; "password"; "role"] then
+      let has_groups_header =
+        header_cols = ["username"; "password"; "role"; "groups"]
+      in
+      if not has_groups_header then
         ([], [I18n.t "users_import_invalid_header"])
       else
         let rec loop line_no rows errors = function
           | [] -> (List.rev rows, List.rev errors)
           | line :: rest -> (
               let cols = split_csv_columns line in
+              Console.console##log
+                (Js.string
+                   (Printf.sprintf "Parsing line %d: %s" line_no line) ) ;
               let next_line = line_no + 1 in
               match cols with
-              | [username; password; role] -> (
+              | [username; password; role; groups] ->
                   let username = String.trim username in
                   let password = String.trim password in
+                  let groups_lst =
+                    String.split_on_char ',' (String.trim groups)
+                  in
                   if username = "" || password = "" then
                     loop next_line rows
                       [ I18n.t "users_import_invalid_row"
                         ^ " " ^ string_of_int line_no ]
                       rest
                   else
-                    match normalize_import_role role with
-                    | Ok normalized_role ->
-                        loop next_line
-                          ( { line_number= line_no
-                            ; username
-                            ; password
-                            ; role= normalized_role }
-                          :: rows )
-                          errors rest
-                    | Error _ ->
-                        loop next_line rows
-                          [ I18n.t "users_import_invalid_role"
-                            ^ " " ^ string_of_int line_no ]
-                          rest )
+                    loop next_line
+                      ( { line_number= line_no
+                        ; username
+                        ; password
+                        ; role
+                        ; groups= groups_lst }
+                      :: rows )
+                      errors rest
               | _ ->
                   loop next_line rows
                     [ I18n.t "users_import_invalid_row"
@@ -499,26 +528,16 @@ let parse_import_users_csv (csv_text : string) :
         in
         loop 2 [] [] data_lines
 
-(* [TODO] this function can be simplified with save_new_user or vice-versa *)
-let create_user_from_import_row (row : import_user_row) :
-    (bool * string option) Lwt.t =
-  let req =
-    Api.Openapi.UserCreateRequest.create ~username:row.username
-      ~password:row.password
-      ~role:(admin_role_of_string row.role)
-      ()
-  in
-  Api.Helpers.post_admin_user
-    (Api.Openapi.UserCreateRequest.to_yojson req |> Yojson.Safe.to_basic)
-  >>= fun (_json, code) ->
-  if code = 200 || code = 201 then Lwt.return (true, None)
-  else
-    Lwt.return
-      ( false
-      , Some
-          ( row.username ^ " (line "
-          ^ string_of_int row.line_number
-          ^ ", HTTP " ^ string_of_int code ^ ")" ) )
+let create_user_from_import_row row =
+  create_admin_user ~username:row.username ~password:row.password
+    ~role:row.role ~groups:row.groups ()
+  >>= function
+  | Ok () -> Lwt.return (true, "")
+  | Error (error, code) ->
+      let error_message =
+        Printf.sprintf "Line %d: %s (HTTP %d)" row.line_number error code
+      in
+      Lwt.return (false, error_message)
 
 let take_first n items =
   let rec loop i acc = function
@@ -546,16 +565,17 @@ let import_users_from_file (file : File.file Js.t) : unit Lwt.t =
     Lwt_list.fold_left_s
       (fun (ok_count, fail_messages) row ->
         create_user_from_import_row row
-        >>= fun (ok, maybe_error) ->
+        >>= fun (ok, error) ->
         if ok then Lwt.return (ok_count + 1, fail_messages)
-        else Lwt.return (ok_count, maybe_error :: fail_messages) )
+        else Lwt.return (ok_count, error :: fail_messages) )
       (0, []) rows
-    >>= fun (ok_count, _api_fail_messages_rev) ->
-    (*let api_fail_messages = List.rev api_fail_messages_rev in*)
-    let all_errors =
-      parse_errors
-      (*@ api_fail_messages*)
-    in
+    >>= fun (ok_count, api_fail_messages_rev) ->
+    let api_fail_messages = List.rev api_fail_messages_rev in
+    Console.console##log
+      (Js.string
+         (Printf.sprintf "Users import completed: %d OK, %d failed" ok_count
+            (List.length api_fail_messages) ) ) ;
+    let all_errors = parse_errors @ api_fail_messages in
     let error_count = List.length all_errors in
     user_action_busy := false ;
     if ok_count > 0 then
@@ -570,6 +590,7 @@ let import_users_from_file (file : File.file Js.t) : unit Lwt.t =
         let shown = take_first 5 all_errors in
         let suffix = if List.length all_errors > 5 then " ..." else "" in
         users_error := Some (String.concat "; " shown ^ suffix) ) ;
+    Helpers.trigger_render () ;
     if ok_count > 0 then load_users () else Lwt.return ()
 
 (** Handle changes to the users import file input *)
@@ -732,6 +753,7 @@ let render_users_tab () =
       ; user_role_cell editing user
       ; user_groups_cell editing user
       ; user_created_at_cell user
+      ; user_last_seen_at_cell user
       ; user_actions_cell editing user ]
   in
   let body () =
@@ -789,6 +811,7 @@ let render_users_tab () =
                     ; th [txt (I18n.t "users_col_role")]
                     ; th [txt (I18n.t "users_col_groups")]
                     ; th [txt (I18n.t "users_col_created_at")]
+                    ; th [txt (I18n.t "users_col_last_seen_at")]
                     ; th
                         ~a:[a_class ["text-end"]]
                         [txt (I18n.t "users_col_actions")] ]
