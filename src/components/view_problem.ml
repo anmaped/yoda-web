@@ -21,7 +21,7 @@ let problem_view (problem : Api.Openapi.problem) =
     ; p [txt problem.output_spec] ]
 
 let content ~contest_id ~problem_id () =
-  let subcontainer = div ~a:[a_class ["card-header"; "bg-white"]] [] in
+  let subcontainer = div ~a:[a_class ["card-header"]] [] in
   let container =
     section
       ~a:[a_class ["panel-section"; "container"; "py-3"]]

@@ -100,6 +100,8 @@ type translations = {
   sidebar_codeboard : string;
   sidebar_submissions : string;
   sidebar_switch_contest : string;
+  sidebar_settings : string;
+  sidebar_sign_out : string;
   login_sign_out : string;
   users_manage_title : string;
   users_manage_subtitle : string;
@@ -262,6 +264,8 @@ let en = {
   sidebar_codeboard = "Codeboard";
   sidebar_submissions = "Submissions";
   sidebar_switch_contest = "Switch Contest";
+  sidebar_settings = "Settings";
+  sidebar_sign_out = "Sign out";
   login_sign_out = "Sign out";
   users_manage_title = "User management";
   users_manage_subtitle = "Create accounts and update roles directly from this table.";
@@ -424,6 +428,8 @@ let fr = {
   sidebar_codeboard = "Codeboard";
   sidebar_submissions = "Soumissions";
   sidebar_switch_contest = "Changer de concours";
+  sidebar_settings = "Parametres";
+  sidebar_sign_out = "Se deconnecter";
   login_sign_out = "Se déconnecter";
   users_manage_title = "Gestion des utilisateurs";
   users_manage_subtitle = "Créez des comptes et modifiez les rôles directement depuis ce tableau.";
@@ -586,6 +592,8 @@ let es = {
   sidebar_codeboard = "Codeboard";
   sidebar_submissions = "Envíos";
   sidebar_switch_contest = "Cambiar concurso";
+  sidebar_settings = "Configuracion";
+  sidebar_sign_out = "Cerrar sesion";
   login_sign_out = "Cerrar sesión";
   users_manage_title = "Gestión de usuarios";
   users_manage_subtitle = "Crea cuentas y actualiza roles directamente desde esta tabla.";
@@ -748,6 +756,8 @@ let pt = {
   sidebar_codeboard = "Codeboard";
   sidebar_submissions = "Envios";
   sidebar_switch_contest = "Trocar concurso";
+  sidebar_settings = "Configuracoes";
+  sidebar_sign_out = "Sair";
   login_sign_out = "Sair";
   users_manage_title = "Gestão de utilizadores";
   users_manage_subtitle = "Crie contas e atualize funções diretamente nesta tabela.";
@@ -910,6 +920,8 @@ let ar = {
   sidebar_codeboard = "لوحة الكود";
   sidebar_submissions = "الإرسالات";
   sidebar_switch_contest = "تبديل المسابقة";
+  sidebar_settings = "الإعدادات";
+  sidebar_sign_out = "تسجيل الخروج";
   login_sign_out = "تسجيل الخروج";
   users_manage_title = "إدارة المستخدمين";
   users_manage_subtitle = "أنشئ الحسابات وعدل الأدوار مباشرة من هذا الجدول.";
@@ -1074,6 +1086,8 @@ let map : translations -> (string, string) Hashtbl.t = fun tr ->
   add "sidebar_codeboard" tr.sidebar_codeboard;
   add "sidebar_submissions" tr.sidebar_submissions;
   add "sidebar_switch_contest" tr.sidebar_switch_contest;
+  add "sidebar_settings" tr.sidebar_settings;
+  add "sidebar_sign_out" tr.sidebar_sign_out;
   add "login_sign_out" tr.login_sign_out;
   add "users_manage_title" tr.users_manage_title;
   add "users_manage_subtitle" tr.users_manage_subtitle;

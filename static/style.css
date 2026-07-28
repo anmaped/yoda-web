@@ -75,29 +75,1334 @@ body {
 
 /* Theme styles */
 
-.theme-dark {
-  --bs-body-bg: #1a1d21;
-  --bs-body-color: #e4e6eb;
-  --bs-card-bg: #2d3035;
-  --bs-border-color: #495057;
-}
+/* ==========================================================
+ * Bootstrap 5.3+ - Monokai Theme
+ * Inspired by the classic Monokai palette
+ * ========================================================== */
 
 .theme-monokai {
+  color-scheme: dark;
+
+  /* Base */
   --bs-body-bg: #272822;
   --bs-body-color: #f8f8f2;
+  --bs-emphasis-color: #ffffff;
+  --bs-secondary-color: #cfcfc2;
+  --bs-tertiary-color: #9b9b8f;
+
+  /* Backgrounds */
+  --bs-secondary-bg: #3e3d32;
+  --bs-tertiary-bg: #49483e;
   --bs-card-bg: #3e3d32;
+
+  /* Borders */
   --bs-border-color: #49483e;
-  --bs-link-color: #a6e22e;
+
+  /* Links */
+  --bs-link-color: #66d9ef;
+  --bs-link-hover-color: #8be9fd;
+
+  /* Semantic colors */
   --bs-primary: #a6e22e;
+  --bs-primary-rgb: 166,226,46;
+
+  --bs-secondary: #75715e;
+  --bs-secondary-rgb: 117,113,94;
+
+  --bs-success: #a6e22e;
+  --bs-success-rgb: 166,226,46;
+
+  --bs-danger: #f92672;
+  --bs-danger-rgb: 249,38,114;
+
+  --bs-warning: #fd971f;
+  --bs-warning-rgb: 253,151,31;
+
+  --bs-info: #66d9ef;
+  --bs-info-rgb: 102,217,239;
+
+  /* Cards */
+  --bs-card-border-color: #49483e;
+
+  /* Forms */
+  --bs-input-bg: #272822;
+  --bs-input-color: #f8f8f2;
+  --bs-input-border-color: #49483e;
+  --bs-form-control-bg: #272822;
+  --bs-form-control-color: #f8f8f2;
+
+  /* Tables */
+  --bs-table-bg: #272822;
+  --bs-table-color: #f8f8f2;
+  --bs-table-striped-bg: #31322c;
+  --bs-table-hover-bg: #3e3d32;
+  --bs-table-border-color: #49483e;
 }
 
-.theme-eclipse {
-  --bs-body-bg: #1e1f1f;
-  --bs-body-color: #ecedef;
-  --bs-card-bg: #2b303b;
-  --bs-border-color: #4c505a;
-  --bs-primary: #5c677d;
+/* ==========================================================
+ * Cards
+ * ========================================================== */
+
+.theme-monokai .card {
+  background-color: #3e3d32;
+  border-color: #49483e;
 }
+
+/* ==========================================================
+ * Tables
+ * ========================================================== */
+
+.theme-monokai .table-light {
+  --bs-table-bg: #3e3d32;
+  --bs-table-color: #f8f8f2;
+}
+
+/* ==========================================================
+ * Primary Buttons
+ * ========================================================== */
+
+.theme-monokai .btn-primary {
+  --bs-btn-color: #272822;
+  --bs-btn-bg: #a6e22e;
+  --bs-btn-border-color: #a6e22e;
+
+  --bs-btn-hover-color: #272822;
+  --bs-btn-hover-bg: #b8ee4b;
+  --bs-btn-hover-border-color: #b8ee4b;
+
+  --bs-btn-active-color: #272822;
+  --bs-btn-active-bg: #94c91f;
+  --bs-btn-active-border-color: #94c91f;
+
+  --bs-btn-disabled-color: #272822;
+  --bs-btn-disabled-bg: #a6e22e;
+  --bs-btn-disabled-border-color: #a6e22e;
+}
+
+/* ==========================================================
+ * Outline Primary
+ * ========================================================== */
+
+.theme-monokai .btn-outline-primary {
+  --bs-btn-color: #a6e22e;
+  --bs-btn-border-color: #a6e22e;
+
+  --bs-btn-hover-color: #272822;
+  --bs-btn-hover-bg: #a6e22e;
+  --bs-btn-hover-border-color: #a6e22e;
+
+  --bs-btn-active-color: #272822;
+  --bs-btn-active-bg: #94c91f;
+  --bs-btn-active-border-color: #94c91f;
+}
+
+/* ==========================================================
+ * Outline Secondary
+ * ========================================================== */
+
+.theme-monokai .btn-outline-secondary {
+  --bs-btn-color: #f8f8f2;
+  --bs-btn-border-color: #75715e;
+
+  --bs-btn-hover-color: #f8f8f2;
+  --bs-btn-hover-bg: #75715e;
+  --bs-btn-hover-border-color: #75715e;
+
+  --bs-btn-active-color: #f8f8f2;
+  --bs-btn-active-bg: #5f5b4c;
+  --bs-btn-active-border-color: #5f5b4c;
+}
+
+/* ==========================================================
+ * Form Controls
+ * ========================================================== */
+
+.theme-monokai .form-control,
+.theme-monokai .form-select,
+.theme-monokai textarea {
+  background-color: #272822;
+  color: #f8f8f2;
+  border-color: #49483e;
+}
+
+.theme-monokai .form-control:focus,
+.theme-monokai .form-select:focus,
+.theme-monokai textarea:focus {
+  background-color: #272822;
+  color: #ffffff;
+  border-color: #66d9ef;
+  box-shadow: 0 0 0 .25rem rgba(102,217,239,.25);
+}
+
+/* ==========================================================
+ * Checkboxes & Radios
+ * ========================================================== */
+
+.theme-monokai .form-check-input {
+  background-color: #272822;
+  border-color: #75715e;
+}
+
+.theme-monokai .form-check-input:checked {
+  background-color: #a6e22e;
+  border-color: #a6e22e;
+}
+
+.theme-monokai .form-check-input:focus {
+  box-shadow: 0 0 0 .25rem rgba(166,226,46,.25);
+}
+
+/* ==========================================================
+ * Alerts
+ * ========================================================== */
+
+.theme-monokai .alert-success {
+  --bs-alert-bg: #31401c;
+  --bs-alert-color: #a6e22e;
+  --bs-alert-border-color: #5b7a1f;
+}
+
+.theme-monokai .alert-danger {
+  --bs-alert-bg: #47212d;
+  --bs-alert-color: #f92672;
+  --bs-alert-border-color: #8d365b;
+}
+
+.theme-monokai .alert-warning {
+  --bs-alert-bg: #4b3619;
+  --bs-alert-color: #fd971f;
+  --bs-alert-border-color: #8a5c1a;
+}
+
+.theme-monokai .alert-info {
+  --bs-alert-bg: #223e43;
+  --bs-alert-color: #66d9ef;
+  --bs-alert-border-color: #3d6f79;
+}
+
+/* ==========================================================
+ * Badges
+ * ========================================================== */
+
+.theme-monokai .bg-success,
+.theme-monokai .bg-warning,
+.theme-monokai .bg-info {
+  color: #272822 !important;
+}
+
+.theme-monokai .badge.bg-secondary {
+  background-color: #75715e !important;
+  color: #f8f8f2 !important;
+}
+
+/* ==========================================================
+ * Dropdowns
+ * ========================================================== */
+
+.theme-monokai .dropdown-menu {
+  background-color: #3e3d32;
+  border-color: #49483e;
+}
+
+.theme-monokai .dropdown-item {
+  color: #f8f8f2;
+}
+
+.theme-monokai .dropdown-item:hover,
+.theme-monokai .dropdown-item:focus {
+  background-color: #49483e;
+  color: #ffffff;
+}
+
+/* ==========================================================
+ * List Groups
+ * ========================================================== */
+
+.theme-monokai .list-group-item {
+  background-color: #3e3d32;
+  color: #f8f8f2;
+  border-color: #49483e;
+}
+
+/* ==========================================================
+ * Modals
+ * ========================================================== */
+
+.theme-monokai .modal-content {
+  background-color: #3e3d32;
+  border-color: #49483e;
+}
+
+/* ==========================================================
+ * Navbar
+ * ========================================================== */
+
+.theme-monokai .navbar {
+  background-color: #3e3d32 !important;
+}
+
+.theme-monokai .navbar-brand,
+.theme-monokai .nav-link {
+  color: #f8f8f2 !important;
+}
+
+.theme-monokai .nav-link:hover {
+  color: #a6e22e !important;
+}
+
+/* ==========================================================
+ * Pagination
+ * ========================================================== */
+
+.theme-monokai .page-link {
+  background-color: #3e3d32;
+  border-color: #49483e;
+  color: #66d9ef;
+}
+
+.theme-monokai .page-link:hover {
+  background-color: #49483e;
+  color: #ffffff;
+}
+
+.theme-monokai .page-item.active .page-link {
+  background-color: #a6e22e;
+  border-color: #a6e22e;
+  color: #272822;
+}
+
+/* ==========================================================
+ * Progress
+ * ========================================================== */
+
+.theme-monokai .progress {
+  background-color: #49483e;
+}
+
+.theme-monokai .progress-bar {
+  background-color: #a6e22e;
+  color: #272822;
+}
+
+/* ==========================================================
+ * Code
+ * ========================================================== */
+
+.theme-monokai code,
+.theme-monokai pre {
+  background-color: #212121;
+  color: #f8f8f2;
+}
+
+.theme-monokai pre {
+  border: 1px solid #49483e;
+}
+
+/* ==========================================================
+ * Monokai Range Slider
+ * ========================================================== */
+
+.theme-monokai .form-range {
+  accent-color: #a6e22e;
+}
+
+.theme-monokai .form-range::-webkit-slider-thumb {
+  background-color: #a6e22e;
+  border: 0;
+}
+
+.theme-monokai .form-range::-webkit-slider-thumb:active {
+  background-color: #c4f52b;
+}
+
+.theme-monokai .form-range::-webkit-slider-runnable-track {
+  background-color: #49483e;
+}
+
+.theme-monokai .form-range::-moz-range-thumb {
+  background-color: #a6e22e;
+  border: 0;
+}
+
+.theme-monokai .form-range::-moz-range-track {
+  background-color: #49483e;
+}
+
+.theme-monokai .form-range:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 .25rem rgba(166, 226, 46, .25);
+}
+
+.theme-monokai .form-range:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 .25rem rgba(166, 226, 46, .25);
+}
+
+
+
+/* ==========================================================
+ * Bootstrap 5.3+ - Eclipse Theme
+ * Inspired by the classic Eclipse IDE Light theme
+ * ========================================================== */
+
+.theme-eclipse {
+  color-scheme: light;
+
+  /* Base */
+  --bs-body-bg: #f5f5f5;
+  --bs-body-color: #222222;
+  --bs-emphasis-color: #000000;
+  --bs-secondary-color: #555555;
+  --bs-tertiary-color: #777777;
+
+  /* Backgrounds */
+  --bs-secondary-bg: #ffffff;
+  --bs-tertiary-bg: #eeeeee;
+  --bs-card-bg: #ffffff;
+
+  /* Borders */
+  --bs-border-color: #c8c8c8;
+
+  /* Links */
+  --bs-link-color: #0066cc;
+  --bs-link-hover-color: #004c99;
+
+  /* Semantic colors */
+  --bs-primary: #1672b8;
+  --bs-primary-rgb: 22,114,184;
+
+  --bs-secondary: #6c757d;
+  --bs-secondary-rgb: 108,117,125;
+
+  --bs-success: #2e7d32;
+  --bs-success-rgb: 46,125,50;
+
+  --bs-danger: #c62828;
+  --bs-danger-rgb: 198,40,40;
+
+  --bs-warning: #f9a825;
+  --bs-warning-rgb: 249,168,37;
+
+  --bs-info: #0277bd;
+  --bs-info-rgb: 2,119,189;
+
+  /* Cards */
+  --bs-card-border-color: #c8c8c8;
+
+  /* Forms */
+  --bs-input-bg: #ffffff;
+  --bs-input-color: #222222;
+  --bs-input-border-color: #b5b5b5;
+  --bs-form-control-bg: #ffffff;
+  --bs-form-control-color: #222222;
+
+  /* Tables */
+  --bs-table-bg: #ffffff;
+  --bs-table-color: #222222;
+  --bs-table-striped-bg: #f3f3f3;
+  --bs-table-hover-bg: #e9f2fb;
+  --bs-table-border-color: #d0d0d0;
+}
+
+/* ==========================================================
+ * Cards
+ * ========================================================== */
+
+.theme-eclipse .card {
+  background-color: #ffffff;
+  border-color: #c8c8c8;
+}
+
+/* ==========================================================
+ * Tables
+ * ========================================================== */
+
+.theme-eclipse .table-light {
+  --bs-table-bg: #eeeeee;
+  --bs-table-color: #222222;
+}
+
+/* ==========================================================
+ * Primary Buttons
+ * ========================================================== */
+
+.theme-eclipse .btn-primary {
+  --bs-btn-color: #ffffff;
+  --bs-btn-bg: #1672b8;
+  --bs-btn-border-color: #1672b8;
+
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: #125a91;
+  --bs-btn-hover-border-color: #125a91;
+
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: #0f4b79;
+  --bs-btn-active-border-color: #0f4b79;
+
+  --bs-btn-disabled-color: #ffffff;
+  --bs-btn-disabled-bg: #1672b8;
+  --bs-btn-disabled-border-color: #1672b8;
+}
+
+/* ==========================================================
+ * Outline Primary
+ * ========================================================== */
+
+.theme-eclipse .btn-outline-primary {
+  --bs-btn-color: #1672b8;
+  --bs-btn-border-color: #1672b8;
+
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: #1672b8;
+  --bs-btn-hover-border-color: #1672b8;
+
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: #125a91;
+  --bs-btn-active-border-color: #125a91;
+}
+
+/* ==========================================================
+ * Outline Secondary
+ * ========================================================== */
+
+.theme-eclipse .btn-outline-secondary {
+  --bs-btn-color: #555555;
+  --bs-btn-border-color: #b5b5b5;
+
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: #6c757d;
+  --bs-btn-hover-border-color: #6c757d;
+
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: #5a6268;
+  --bs-btn-active-border-color: #5a6268;
+}
+
+/* ==========================================================
+ * Form Controls
+ * ========================================================== */
+
+.theme-eclipse .form-control,
+.theme-eclipse .form-select,
+.theme-eclipse textarea {
+  background-color: #ffffff;
+  color: #222222;
+  border-color: #b5b5b5;
+}
+
+.theme-eclipse .form-control:focus,
+.theme-eclipse .form-select:focus,
+.theme-eclipse textarea:focus {
+  background-color: #ffffff;
+  color: #222222;
+  border-color: #1672b8;
+  box-shadow: 0 0 0 .25rem rgba(22,114,184,.25);
+}
+
+/* ==========================================================
+ * Checkboxes & Radios
+ * ========================================================== */
+
+.theme-eclipse .form-check-input {
+  background-color: #ffffff;
+  border-color: #999999;
+}
+
+.theme-eclipse .form-check-input:checked {
+  background-color: #1672b8;
+  border-color: #1672b8;
+}
+
+.theme-eclipse .form-check-input:focus {
+  box-shadow: 0 0 0 .25rem rgba(22,114,184,.25);
+}
+
+/* ==========================================================
+ * Alerts
+ * ========================================================== */
+
+.theme-eclipse .alert-success {
+  --bs-alert-bg: #edf7ed;
+  --bs-alert-color: #2e7d32;
+  --bs-alert-border-color: #b9d8ba;
+}
+
+.theme-eclipse .alert-danger {
+  --bs-alert-bg: #fdeeee;
+  --bs-alert-color: #c62828;
+  --bs-alert-border-color: #e8b4b4;
+}
+
+.theme-eclipse .alert-warning {
+  --bs-alert-bg: #fff8e6;
+  --bs-alert-color: #b26a00;
+  --bs-alert-border-color: #f2dda4;
+}
+
+.theme-eclipse .alert-info {
+  --bs-alert-bg: #eef7fc;
+  --bs-alert-color: #0277bd;
+  --bs-alert-border-color: #b7d9ec;
+}
+
+/* ==========================================================
+ * Badges
+ * ========================================================== */
+
+.theme-eclipse .bg-success,
+.theme-eclipse .bg-warning,
+.theme-eclipse .bg-info {
+  color: #ffffff !important;
+}
+
+.theme-eclipse .badge.bg-secondary {
+  color: #ffffff !important;
+}
+
+/* ==========================================================
+ * Dropdowns
+ * ========================================================== */
+
+.theme-eclipse .dropdown-menu {
+  background-color: #ffffff;
+  border-color: #c8c8c8;
+}
+
+.theme-eclipse .dropdown-item {
+  color: #222222;
+}
+
+.theme-eclipse .dropdown-item:hover,
+.theme-eclipse .dropdown-item:focus {
+  background-color: #e9f2fb;
+  color: #000000;
+}
+
+/* ==========================================================
+ * List Groups
+ * ========================================================== */
+
+.theme-eclipse .list-group-item {
+  background-color: #ffffff;
+  color: #222222;
+  border-color: #d0d0d0;
+}
+
+/* ==========================================================
+ * Modals
+ * ========================================================== */
+
+.theme-eclipse .modal-content {
+  background-color: #ffffff;
+  border-color: #c8c8c8;
+}
+
+/* ==========================================================
+ * Navbar
+ * ========================================================== */
+
+.theme-eclipse .navbar {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #c8c8c8;
+}
+
+.theme-eclipse .navbar-brand,
+.theme-eclipse .nav-link {
+  color: #222222 !important;
+}
+
+.theme-eclipse .nav-link:hover {
+  color: #1672b8 !important;
+}
+
+/* ==========================================================
+ * Pagination
+ * ========================================================== */
+
+.theme-eclipse .page-link {
+  background-color: #ffffff;
+  border-color: #c8c8c8;
+  color: #1672b8;
+}
+
+.theme-eclipse .page-link:hover {
+  background-color: #e9f2fb;
+  color: #125a91;
+}
+
+.theme-eclipse .page-item.active .page-link {
+  background-color: #1672b8;
+  border-color: #1672b8;
+  color: #ffffff;
+}
+
+/* ==========================================================
+ * Progress
+ * ========================================================== */
+
+.theme-eclipse .progress {
+  background-color: #e5e5e5;
+}
+
+.theme-eclipse .progress-bar {
+  background-color: #1672b8;
+}
+
+/* ==========================================================
+ * Code
+ * ========================================================== */
+
+.theme-eclipse code,
+.theme-eclipse pre {
+  background-color: #f3f3f3;
+  color: #7f0055;
+}
+
+.theme-eclipse pre {
+  border: 1px solid #d0d0d0;
+}
+
+
+.theme-eclipse .form-range::-webkit-slider-thumb {
+  background: #1672b8;
+}
+
+.theme-eclipse .form-range::-moz-range-thumb {
+  background: #1672b8;
+  border: none;
+}
+
+.theme-eclipse .form-range::-webkit-slider-runnable-track {
+  background: #d6d6d6;
+}
+
+.theme-eclipse .form-range::-moz-range-track {
+  background: #d6d6d6;
+}
+
+.theme-eclipse .form-range:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 .25rem rgba(22, 114, 184, .25);
+}
+
+
+/* ==========================================================
+ * Bootstrap 5.3+ - Nord Theme
+ * Inspired by the official Nord palette
+ * ========================================================== */
+
+.theme-nord {
+  color-scheme: dark;
+
+  /* Base */
+  --bs-body-bg: #2e3440;
+  --bs-body-color: #eceff4;
+  --bs-emphasis-color: #ffffff;
+  --bs-secondary-color: #d8dee9;
+  --bs-tertiary-color: #81a1c1;
+
+  /* Backgrounds */
+  --bs-secondary-bg: #3b4252;
+  --bs-tertiary-bg: #434c5e;
+  --bs-card-bg: #3b4252;
+
+  /* Borders */
+  --bs-border-color: #4c566a;
+
+  /* Links */
+  --bs-link-color: #88c0d0;
+  --bs-link-hover-color: #8fbcbb;
+
+  /* Colors */
+  --bs-primary: #88c0d0;
+  --bs-primary-rgb: 136,192,208;
+
+  --bs-secondary: #4c566a;
+  --bs-secondary-rgb: 76,86,106;
+
+  --bs-success: #a3be8c;
+  --bs-success-rgb: 163,190,140;
+
+  --bs-danger: #bf616a;
+  --bs-danger-rgb: 191,97,106;
+
+  --bs-warning: #ebcb8b;
+  --bs-warning-rgb: 235,203,139;
+
+  --bs-info: #81a1c1;
+  --bs-info-rgb: 129,161,193;
+
+  /* Cards */
+  --bs-card-border-color: #4c566a;
+
+  /* Forms */
+  --bs-input-bg: #3b4252;
+  --bs-input-color: #eceff4;
+  --bs-input-border-color: #4c566a;
+  --bs-form-control-bg: #3b4252;
+  --bs-form-control-color: #eceff4;
+
+  /* Tables */
+  --bs-table-bg: #2e3440;
+  --bs-table-color: #eceff4;
+  --bs-table-striped-bg: #353c4a;
+  --bs-table-hover-bg: #434c5e;
+  --bs-table-border-color: #4c566a;
+}
+
+/* ==========================================================
+ * Cards
+ * ========================================================== */
+
+.theme-nord .card {
+  background-color: #3b4252;
+  border-color: #4c566a;
+}
+
+/* ==========================================================
+ * Tables
+ * ========================================================== */
+
+.theme-nord .table-light {
+  --bs-table-bg: #434c5e;
+  --bs-table-color: #eceff4;
+}
+
+/* ==========================================================
+ * Primary Buttons
+ * ========================================================== */
+
+.theme-nord .btn-primary {
+  --bs-btn-color: #2e3440;
+  --bs-btn-bg: #88c0d0;
+  --bs-btn-border-color: #88c0d0;
+
+  --bs-btn-hover-color: #2e3440;
+  --bs-btn-hover-bg: #8fbcbb;
+  --bs-btn-hover-border-color: #8fbcbb;
+
+  --bs-btn-active-color: #2e3440;
+  --bs-btn-active-bg: #81a1c1;
+  --bs-btn-active-border-color: #81a1c1;
+
+  --bs-btn-disabled-color: #2e3440;
+  --bs-btn-disabled-bg: #88c0d0;
+  --bs-btn-disabled-border-color: #88c0d0;
+}
+
+/* ==========================================================
+ * Outline Primary
+ * ========================================================== */
+
+.theme-nord .btn-outline-primary {
+  --bs-btn-color: #88c0d0;
+  --bs-btn-border-color: #88c0d0;
+
+  --bs-btn-hover-color: #2e3440;
+  --bs-btn-hover-bg: #88c0d0;
+  --bs-btn-hover-border-color: #88c0d0;
+
+  --bs-btn-active-color: #2e3440;
+  --bs-btn-active-bg: #81a1c1;
+  --bs-btn-active-border-color: #81a1c1;
+}
+
+/* ==========================================================
+ * Outline Secondary
+ * ========================================================== */
+
+.theme-nord .btn-outline-secondary {
+  --bs-btn-color: #d8dee9;
+  --bs-btn-border-color: #4c566a;
+
+  --bs-btn-hover-color: #eceff4;
+  --bs-btn-hover-bg: #4c566a;
+  --bs-btn-hover-border-color: #4c566a;
+
+  --bs-btn-active-color: #eceff4;
+  --bs-btn-active-bg: #434c5e;
+  --bs-btn-active-border-color: #434c5e;
+}
+
+/* ==========================================================
+ * Form Controls
+ * ========================================================== */
+
+.theme-nord .form-control,
+.theme-nord .form-select {
+  background-color: #3b4252;
+  color: #eceff4;
+  border-color: #4c566a;
+}
+
+.theme-nord .form-control:focus,
+.theme-nord .form-select:focus {
+  background-color: #3b4252;
+  color: #eceff4;
+  border-color: #88c0d0;
+  box-shadow: 0 0 0 .25rem rgba(136,192,208,.25);
+}
+
+/* ==========================================================
+ * Alerts
+ * ========================================================== */
+
+.theme-nord .alert-success {
+  --bs-alert-bg: #3f4c3a;
+  --bs-alert-color: #a3be8c;
+  --bs-alert-border-color: #5e7155;
+}
+
+.theme-nord .alert-danger {
+  --bs-alert-bg: #4b363b;
+  --bs-alert-color: #bf616a;
+  --bs-alert-border-color: #7b5057;
+}
+
+.theme-nord .alert-warning {
+  --bs-alert-bg: #4d4635;
+  --bs-alert-color: #ebcb8b;
+  --bs-alert-border-color: #7b7152;
+}
+
+.theme-nord .alert-info {
+  --bs-alert-bg: #36434d;
+  --bs-alert-color: #81a1c1;
+  --bs-alert-border-color: #5b7287;
+}
+
+/* ==========================================================
+ * Badges
+ * ========================================================== */
+
+.theme-nord .bg-success,
+.theme-nord .bg-warning,
+.theme-nord .bg-info {
+  color: #2e3440 !important;
+}
+
+/* ==========================================================
+ * Dropdowns
+ * ========================================================== */
+
+.theme-nord .dropdown-menu {
+  background-color: #3b4252;
+  border-color: #4c566a;
+}
+
+.theme-nord .dropdown-item {
+  color: #eceff4;
+}
+
+.theme-nord .dropdown-item:hover,
+.theme-nord .dropdown-item:focus {
+  background-color: #434c5e;
+  color: #ffffff;
+}
+
+/* ==========================================================
+ * List Groups
+ * ========================================================== */
+
+.theme-nord .list-group-item {
+  background-color: #3b4252;
+  color: #eceff4;
+  border-color: #4c566a;
+}
+
+/* ==========================================================
+ * Modals
+ * ========================================================== */
+
+.theme-nord .modal-content {
+  background-color: #3b4252;
+  border-color: #4c566a;
+}
+
+/* ==========================================================
+ * Navbar
+ * ========================================================== */
+
+.theme-nord .navbar {
+  background-color: #3b4252 !important;
+}
+
+.theme-nord .navbar-brand,
+.theme-nord .nav-link {
+  color: #eceff4 !important;
+}
+
+.theme-nord .nav-link:hover {
+  color: #88c0d0 !important;
+}
+
+/* ==========================================================
+ * Pagination
+ * ========================================================== */
+
+.theme-nord .page-link {
+  background-color: #3b4252;
+  border-color: #4c566a;
+  color: #88c0d0;
+}
+
+.theme-nord .page-link:hover {
+  background-color: #434c5e;
+  color: #ffffff;
+}
+
+.theme-nord .page-item.active .page-link {
+  background-color: #88c0d0;
+  border-color: #88c0d0;
+  color: #2e3440;
+}
+
+/* ==========================================================
+ * Nord Range Slider
+ * ========================================================== */
+
+.theme-nord .form-range {
+  accent-color: #88c0d0;
+}
+
+.theme-nord .form-range::-webkit-slider-thumb {
+  background-color: #88c0d0;
+  border: 0;
+}
+
+.theme-nord .form-range::-webkit-slider-thumb:active {
+  background-color: #8fbcbb;
+}
+
+.theme-nord .form-range::-webkit-slider-runnable-track {
+  background-color: #4c566a;
+}
+
+.theme-nord .form-range::-moz-range-thumb {
+  background-color: #88c0d0;
+  border: 0;
+}
+
+.theme-nord .form-range::-moz-range-track {
+  background-color: #4c566a;
+}
+
+.theme-nord .form-range:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 .25rem rgba(136, 192, 208, .25);
+}
+
+.theme-nord .form-range:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 .25rem rgba(136, 192, 208, .25);
+}
+
+
+
+/* ==========================================================
+ * Bootstrap 5.3+ - One Dark (VS Code)
+ * Inspired by Atom One Dark / VS Code One Dark
+ * ========================================================== */
+
+.theme-onedark {
+  color-scheme: dark;
+
+  /* Base */
+  --bs-body-bg: #282c34;
+  --bs-body-color: #abb2bf;
+  --bs-emphasis-color: #ffffff;
+  --bs-secondary-color: #9da5b4;
+  --bs-tertiary-color: #7f848e;
+
+  /* Backgrounds */
+  --bs-secondary-bg: #21252b;
+  --bs-tertiary-bg: #2c313a;
+  --bs-card-bg: #21252b;
+
+  /* Borders */
+  --bs-border-color: #3e4451;
+
+  /* Links */
+  --bs-link-color: #61afef;
+  --bs-link-hover-color: #7fc1f3;
+
+  /* Semantic colors */
+  --bs-primary: #61afef;
+  --bs-primary-rgb: 97,175,239;
+
+  --bs-secondary: #5c6370;
+  --bs-secondary-rgb: 92,99,112;
+
+  --bs-success: #98c379;
+  --bs-success-rgb: 152,195,121;
+
+  --bs-danger: #e06c75;
+  --bs-danger-rgb: 224,108,117;
+
+  --bs-warning: #e5c07b;
+  --bs-warning-rgb: 229,192,123;
+
+  --bs-info: #56b6c2;
+  --bs-info-rgb: 86,182,194;
+
+  /* Cards */
+  --bs-card-border-color: #3e4451;
+
+  /* Forms */
+  --bs-input-bg: #21252b;
+  --bs-input-color: #abb2bf;
+  --bs-input-border-color: #3e4451;
+  --bs-form-control-bg: #21252b;
+  --bs-form-control-color: #abb2bf;
+
+  /* Tables */
+  --bs-table-bg: #282c34;
+  --bs-table-color: #abb2bf;
+  --bs-table-striped-bg: #2c313a;
+  --bs-table-hover-bg: #323842;
+  --bs-table-border-color: #3e4451;
+}
+
+/* ==========================================================
+ * Cards
+ * ========================================================== */
+
+.theme-onedark .card {
+  background-color: #21252b;
+  border-color: #3e4451;
+}
+
+/* ==========================================================
+ * Tables
+ * ========================================================== */
+
+.theme-onedark .table-light {
+  --bs-table-bg: #2c313a;
+  --bs-table-color: #abb2bf;
+}
+
+/* ==========================================================
+ * Primary Buttons
+ * ========================================================== */
+
+.theme-onedark .btn-primary {
+  --bs-btn-color: #282c34;
+  --bs-btn-bg: #61afef;
+  --bs-btn-border-color: #61afef;
+
+  --bs-btn-hover-color: #282c34;
+  --bs-btn-hover-bg: #7fc1f3;
+  --bs-btn-hover-border-color: #7fc1f3;
+
+  --bs-btn-active-color: #282c34;
+  --bs-btn-active-bg: #4da3e6;
+  --bs-btn-active-border-color: #4da3e6;
+
+  --bs-btn-disabled-color: #282c34;
+  --bs-btn-disabled-bg: #61afef;
+  --bs-btn-disabled-border-color: #61afef;
+}
+
+/* ==========================================================
+ * Outline Primary
+ * ========================================================== */
+
+.theme-onedark .btn-outline-primary {
+  --bs-btn-color: #61afef;
+  --bs-btn-border-color: #61afef;
+
+  --bs-btn-hover-color: #282c34;
+  --bs-btn-hover-bg: #61afef;
+  --bs-btn-hover-border-color: #61afef;
+
+  --bs-btn-active-color: #282c34;
+  --bs-btn-active-bg: #4da3e6;
+  --bs-btn-active-border-color: #4da3e6;
+}
+
+/* ==========================================================
+ * Outline Secondary
+ * ========================================================== */
+
+.theme-onedark .btn-outline-secondary {
+  --bs-btn-color: #abb2bf;
+  --bs-btn-border-color: #5c6370;
+
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: #5c6370;
+  --bs-btn-hover-border-color: #5c6370;
+
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: #4b5260;
+  --bs-btn-active-border-color: #4b5260;
+}
+
+/* ==========================================================
+ * Form Controls
+ * ========================================================== */
+
+.theme-onedark .form-control,
+.theme-onedark .form-select {
+  background-color: #21252b;
+  color: #abb2bf;
+  border-color: #3e4451;
+}
+
+.theme-onedark .form-control:focus,
+.theme-onedark .form-select:focus {
+  background-color: #21252b;
+  color: #ffffff;
+  border-color: #61afef;
+  box-shadow: 0 0 0 .25rem rgba(97,175,239,.25);
+}
+
+/* ==========================================================
+ * Alerts
+ * ========================================================== */
+
+.theme-onedark .alert-success {
+  --bs-alert-bg: #2f3e2f;
+  --bs-alert-color: #98c379;
+  --bs-alert-border-color: #4d6b46;
+}
+
+.theme-onedark .alert-danger {
+  --bs-alert-bg: #442f33;
+  --bs-alert-color: #e06c75;
+  --bs-alert-border-color: #7d4b54;
+}
+
+.theme-onedark .alert-warning {
+  --bs-alert-bg: #4b4232;
+  --bs-alert-color: #e5c07b;
+  --bs-alert-border-color: #7d6a46;
+}
+
+.theme-onedark .alert-info {
+  --bs-alert-bg: #243b3e;
+  --bs-alert-color: #56b6c2;
+  --bs-alert-border-color: #41717a;
+}
+
+/* ==========================================================
+ * Badges
+ * ========================================================== */
+
+.theme-onedark .bg-success,
+.theme-onedark .bg-warning,
+.theme-onedark .bg-info {
+  color: #282c34 !important;
+}
+
+/* ==========================================================
+ * Dropdowns
+ * ========================================================== */
+
+.theme-onedark .dropdown-menu {
+  background-color: #21252b;
+  border-color: #3e4451;
+}
+
+.theme-onedark .dropdown-item {
+  color: #abb2bf;
+}
+
+.theme-onedark .dropdown-item:hover,
+.theme-onedark .dropdown-item:focus {
+  background-color: #2c313a;
+  color: #ffffff;
+}
+
+/* ==========================================================
+ * List Groups
+ * ========================================================== */
+
+.theme-onedark .list-group-item {
+  background-color: #21252b;
+  color: #abb2bf;
+  border-color: #3e4451;
+}
+
+/* ==========================================================
+ * Modals
+ * ========================================================== */
+
+.theme-onedark .modal-content {
+  background-color: #21252b;
+  border-color: #3e4451;
+}
+
+/* ==========================================================
+ * Navbar
+ * ========================================================== */
+
+.theme-onedark .navbar {
+  background-color: #21252b !important;
+}
+
+.theme-onedark .navbar-brand,
+.theme-onedark .nav-link {
+  color: #abb2bf !important;
+}
+
+.theme-onedark .nav-link:hover {
+  color: #61afef !important;
+}
+
+/* ==========================================================
+ * Pagination
+ * ========================================================== */
+
+.theme-onedark .page-link {
+  background-color: #21252b;
+  border-color: #3e4451;
+  color: #61afef;
+}
+
+.theme-onedark .page-link:hover {
+  background-color: #2c313a;
+  color: #ffffff;
+}
+
+.theme-onedark .page-item.active .page-link {
+  background-color: #61afef;
+  border-color: #61afef;
+  color: #282c34;
+}
+
+/* ==========================================================
+ * One Dark Range Slider
+ * ========================================================== */
+
+.theme-onedark .form-range {
+  accent-color: #61afef;
+}
+
+.theme-onedark .form-range::-webkit-slider-thumb {
+  background-color: #61afef;
+  border: 0;
+}
+
+.theme-onedark .form-range::-webkit-slider-thumb:active {
+  background-color: #7fc1f3;
+}
+
+.theme-onedark .form-range::-webkit-slider-runnable-track {
+  background-color: #3e4451;
+}
+
+.theme-onedark .form-range::-moz-range-thumb {
+  background-color: #61afef;
+  border: 0;
+}
+
+.theme-onedark .form-range::-moz-range-track {
+  background-color: #3e4451;
+}
+
+.theme-onedark .form-range:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 .25rem rgba(97, 175, 239, .25);
+}
+
+.theme-onedark .form-range:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 .25rem rgba(97, 175, 239, .25);
+}
+
 
 /* End of Theme styles */
 

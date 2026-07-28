@@ -804,7 +804,7 @@ let render_users_tab () =
                       ; "align-middle"
                       ; "mb-0" ] ]
                 ( tr
-                    ~a:[a_class ["table-light"]]
+                    ~a:[a_class ["table"]]
                     [ user_select_all_cell ()
                     ; th [txt (I18n.t "users_col_id")]
                     ; th [txt (I18n.t "users_col_username")]

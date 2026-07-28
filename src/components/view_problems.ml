@@ -10,7 +10,7 @@ let problem_row id name =
         [ a
             ~a:
               [ a_href ("#show-problem-" ^ id)
-              ; a_class ["d-block"; "p-0"; "m-0"] ]
+              ; a_class ["p-0"; "m-0"] ]
             [txt name] ] ]
 
 (* Main content function generating the table *)
@@ -35,6 +35,6 @@ let content () =
     [ div
         ~a:[a_class ["card"; "shadow-sm"]]
         [ div
-            ~a:[a_class ["card-header"; "bg-white"]]
+            ~a:[a_class ["card-header"]]
             [h2 ~a:[a_class ["h5"; "mb-0"]] [txt (I18n.t "problems_title")]]
         ; div ~a:[a_class ["table-responsive"]] [tbl] ] ]

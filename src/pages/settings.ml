@@ -89,7 +89,7 @@ let apply_theme t =
   let body = Dom_html.document##.body in
   (* Bootstrap base theme *)
   let bs_theme =
-    match t with "dark" | "monokai" | "eclipse" -> "dark" | _ -> "light"
+    match t with "dark" | "monokai" | "nord" | "onedark" -> "dark" | _ -> "light"
   in
   body##setAttribute (Js.string "data-bs-theme") (Js.string bs_theme) ;
   (* Remove any previous custom theme classes *)
@@ -101,6 +101,8 @@ let apply_theme t =
   | "dark" -> ignore (body##.classList##add (Js.string "theme-dark"))
   | "monokai" -> ignore (body##.classList##add (Js.string "theme-monokai"))
   | "eclipse" -> ignore (body##.classList##add (Js.string "theme-eclipse"))
+  | "nord" -> ignore (body##.classList##add (Js.string "theme-nord"))
+  | "onedark" -> ignore (body##.classList##add (Js.string "theme-onedark"))
   | _ -> ()
   end ;
   (* Persist theme *)
@@ -132,7 +134,7 @@ let render_settings_tab () =
   and tab_size = get_tab_size ()
   and line_wrap = get_line_wrapping ()
   and auto_save = get_auto_save () in
-  let themes = ["default"; "dark"; "monokai"; "eclipse"] in
+  let themes = ["default"; "dark"; "monokai"; "eclipse"; "nord"; "onedark"] in
   let lang = get_lang () in
   let languages =
     List.map
@@ -273,7 +275,7 @@ let render_settings_tab () =
               [ a_class ["btn"; "btn-secondary"]
               ; a_onclick (fun _ ->
                     set_lang "en" ;
-                    set_theme "default" ;
+                    set_theme "eclipse" ;
                     set_font_size 14 ;
                     set_tab_size 2 ;
                     set_line_wrapping true ;
@@ -400,7 +402,7 @@ let render ?(tab = "general") () =
               | "yodac" ->
                   active_tab := Config ;
                   Settings_yodac.render_config_tab ()
-                | "stats" ->
+              | "stats" ->
                   active_tab := Stats ;
                   Settings_stats.render_stats_tab ()
               | "users" ->
