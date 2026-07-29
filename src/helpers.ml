@@ -1,12 +1,57 @@
 open Js_of_ocaml
 open Js_of_ocaml_tyxml
 
+(* escape and unescape JSON strings for safe transmission *)
+
 (* Strip surrounding double quotes from JSON string *)
 let cleanup_json_string json_str =
   let len = String.length json_str in
   if len >= 2 && json_str.[0] = '"' && json_str.[len - 1] = '"' then
     String.sub json_str 1 (len - 2)
   else json_str
+
+let escape_json_string s =
+  let b = Buffer.create (String.length s + 16) in
+  String.iter
+    (function
+      | '"' -> Buffer.add_string b "\\\""
+      | '\\' -> Buffer.add_string b "\\\\"
+      | '\n' -> Buffer.add_string b "\\n"
+      | '\r' -> Buffer.add_string b "\\r"
+      | '\t' -> Buffer.add_string b "\\t"
+      | c -> Buffer.add_char b c )
+    s ;
+  Buffer.contents b
+
+let unscape_json_string s =
+  let b = Buffer.create (String.length s) in
+  let rec aux i =
+    if i >= String.length s then ()
+    else if s.[i] = '\\' && i + 1 < String.length s then (
+      match s.[i + 1] with
+      | '"' ->
+          Buffer.add_char b '"' ;
+          aux (i + 2)
+      | '\\' ->
+          Buffer.add_char b '\\' ;
+          aux (i + 2)
+      | 'n' ->
+          Buffer.add_char b '\n' ;
+          aux (i + 2)
+      | 'r' ->
+          Buffer.add_char b '\r' ;
+          aux (i + 2)
+      | 't' ->
+          Buffer.add_char b '\t' ;
+          aux (i + 2)
+      | _ ->
+          Buffer.add_char b s.[i] ;
+          aux (i + 1) )
+    else (
+      Buffer.add_char b s.[i] ;
+      aux (i + 1) )
+  in
+  aux 0 ; Buffer.contents b
 
 let remove_first_element_from_app element =
   let doc = Dom_html.document in
@@ -95,8 +140,9 @@ let is_admin () : bool =
           |> Yojson.Basic.Util.member "role"
           |> Yojson.Basic.to_string
         in
-        Astring.String.is_suffix ~affix:"admin" (String.lowercase_ascii (cleanup_json_string raw))
-      with _ -> false)
+        Astring.String.is_suffix ~affix:"admin"
+          (String.lowercase_ascii (cleanup_json_string raw))
+      with _ -> false )
   | None -> false
 
 let is_valid_json s =

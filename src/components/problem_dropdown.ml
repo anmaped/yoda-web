@@ -44,7 +44,9 @@ let content () =
           (* Add problem options *)
           List.iter
             (fun (p : Api.Openapi.problem) ->
-              add_option p.code (p.code ^ ": " ^ p.title) )
+              add_option
+                (string_of_int (Option.value ~default:(-1) p.id))
+                (p.code ^ ": " ^ p.title) )
             problems ;
           (* Set last problem as selected if none is selected or invalid *)
           let select_problem code =

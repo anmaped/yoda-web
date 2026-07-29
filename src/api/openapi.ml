@@ -930,15 +930,69 @@ module Submission = struct
   let to_json = json_of_submission
 end
 
-type solution = {
-  user_id: int;
-  problem_id: int;
-  language: string;
-  source_code: string;
+type solutionSource_artifacts = {
+  filename: string;  (** The name of the source file *)
+  content: string;  (** The content of the source file *)
 }
 
-let create_solution ~user_id ~problem_id ~language ~source_code () : solution =
-  { user_id; problem_id; language; source_code }
+let create_solutionSource_artifacts ~filename ~content () : solutionSource_artifacts =
+  { filename; content }
+
+let solutionSource_artifacts_of_yojson (x : Yojson.Safe.t) : solutionSource_artifacts =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let filename =
+      match assoc "filename" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "solutionSource_artifacts" "filename"
+    in
+    let content =
+      match assoc "content" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "solutionSource_artifacts" "content"
+    in
+    { filename; content }
+  | _ -> Atdml_runtime.Yojson.bad_type "solutionSource_artifacts" x
+
+let yojson_of_solutionSource_artifacts (x : solutionSource_artifacts) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("filename", Atdml_runtime.Yojson.yojson_of_string x.filename)];
+    [("content", Atdml_runtime.Yojson.yojson_of_string x.content)];
+  ])
+
+let solutionSource_artifacts_of_json s =
+  solutionSource_artifacts_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_solutionSource_artifacts x =
+  Yojson.Safe.to_string (yojson_of_solutionSource_artifacts x)
+
+module SolutionSource_artifacts = struct
+  type nonrec t = solutionSource_artifacts
+  let create = create_solutionSource_artifacts
+  let of_yojson = solutionSource_artifacts_of_yojson
+  let to_yojson = yojson_of_solutionSource_artifacts
+  let of_json = solutionSource_artifacts_of_json
+  let to_json = json_of_solutionSource_artifacts
+end
+
+type solution = {
+  problem_id: int;
+  language: string;
+  source_artifacts: solutionSource_artifacts list;
+}
+
+let create_solution ~problem_id ~language ~source_artifacts () : solution =
+  { problem_id; language; source_artifacts }
 
 let solution_of_yojson (x : Yojson.Safe.t) : solution =
   match x with
@@ -953,11 +1007,6 @@ let solution_of_yojson (x : Yojson.Safe.t) : solution =
         (fun key -> Hashtbl.find_opt tbl key)
       else (fun key -> List.assoc_opt key fields)
     in
-    let user_id =
-      match assoc "user_id" with
-      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "solution" "user_id"
-    in
     let problem_id =
       match assoc "problem_id" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
@@ -968,20 +1017,19 @@ let solution_of_yojson (x : Yojson.Safe.t) : solution =
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "solution" "language"
     in
-    let source_code =
-      match assoc "source_code" with
-      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "solution" "source_code"
+    let source_artifacts =
+      match assoc "source_artifacts" with
+      | Some v -> (Atdml_runtime.Yojson.list_of_yojson solutionSource_artifacts_of_yojson) v
+      | None -> Atdml_runtime.Yojson.missing_field "solution" "source_artifacts"
     in
-    { user_id; problem_id; language; source_code }
+    { problem_id; language; source_artifacts }
   | _ -> Atdml_runtime.Yojson.bad_type "solution" x
 
 let yojson_of_solution (x : solution) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("user_id", Atdml_runtime.Yojson.yojson_of_int x.user_id)];
     [("problem_id", Atdml_runtime.Yojson.yojson_of_int x.problem_id)];
     [("language", Atdml_runtime.Yojson.yojson_of_string x.language)];
-    [("source_code", Atdml_runtime.Yojson.yojson_of_string x.source_code)];
+    [("source_artifacts", (Atdml_runtime.Yojson.yojson_of_list yojson_of_solutionSource_artifacts) x.source_artifacts)];
   ])
 
 let solution_of_json s =
@@ -1091,6 +1139,7 @@ module ProblemsIdTestcasesGetResponse2 = struct
 end
 
 type problem = {
+  id: int option;
   code: string;
   title: string;
   time_limit_ms: int;
@@ -1100,8 +1149,8 @@ type problem = {
   output_spec: string;
 }
 
-let create_problem ~code ~title ~time_limit_ms ~memory_limit_mb ~description ~input_spec ~output_spec () : problem =
-  { code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec }
+let create_problem ?id ~code ~title ~time_limit_ms ~memory_limit_mb ~description ~input_spec ~output_spec () : problem =
+  { id; code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec }
 
 let problem_of_yojson (x : Yojson.Safe.t) : problem =
   match x with
@@ -1115,6 +1164,11 @@ let problem_of_yojson (x : Yojson.Safe.t) : problem =
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
         (fun key -> Hashtbl.find_opt tbl key)
       else (fun key -> List.assoc_opt key fields)
+    in
+    let id =
+      match assoc "id" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
     in
     let code =
       match assoc "code" with
@@ -1151,11 +1205,12 @@ let problem_of_yojson (x : Yojson.Safe.t) : problem =
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "problem" "output_spec"
     in
-    { code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec }
+    { id; code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec }
   | _ -> Atdml_runtime.Yojson.bad_type "problem" x
 
 let yojson_of_problem (x : problem) : Yojson.Safe.t =
   `Assoc (List.concat [
+    (match x.id with None -> [] | Some v -> [("id", Atdml_runtime.Yojson.yojson_of_int v)]);
     [("code", Atdml_runtime.Yojson.yojson_of_string x.code)];
     [("title", Atdml_runtime.Yojson.yojson_of_string x.title)];
     [("time_limit_ms", Atdml_runtime.Yojson.yojson_of_int x.time_limit_ms)];

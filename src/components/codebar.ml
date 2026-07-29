@@ -160,7 +160,7 @@ let toolbar ~mobile () =
                               |> Js_of_ocaml.Js.to_string ] ) ]
                      (fun _ ->
                        hide spinner ;
-                       Helpers.add_element_to_app (Spinner_modal.make ()) ;
+                       Spinner_modal_update.start () ;
                        false )
                      () ) ;
                 false )

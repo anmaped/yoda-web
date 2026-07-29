@@ -56,13 +56,8 @@ let get_users () = fetch_json (base_url ^ "/users")
 
 let get_contests () = fetch_json (base_url ^ "/contests")
 
-let submit_solution contest_id problem_id language source_code =
-  let body =
-    Printf.sprintf
-      {|{"contest_id":%d,"problem_id":%d,"language":"%s","source_code":"%s"}|}
-      contest_id problem_id language source_code
-  in
-  post_json (base_url ^ "/submissions") body
+let submit_solution json_obj =
+  post_json (base_url ^ "/submissions") (Yojson.Safe.to_string json_obj)
 
 let get_scoreboard contest_id =
   fetch_json (Printf.sprintf "%s/contests/%d/scoreboard" base_url contest_id)
@@ -82,9 +77,9 @@ let put_json url body =
   >>= fun resp -> Lwt.return (Yojson.Safe.from_string resp.content, resp.code)
 
 let delete_json url =
-  XmlHttpRequest.perform_raw_url ~override_method:`DELETE ~headers:(headers ())
-    url
-  >>= fun resp -> Lwt.return (resp.code)
+  XmlHttpRequest.perform_raw_url ~override_method:`DELETE
+    ~headers:(headers ()) url
+  >>= fun resp -> Lwt.return resp.code
 
 let post_admin_user json_obj =
   post_json (base_url ^ "/admin/users") (Yojson.Basic.to_string json_obj)

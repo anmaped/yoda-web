@@ -8,11 +8,11 @@
   problem_dropdown
   problem_list
   scoreboard
-  submission_form
   submissions_list
   user_list
   sidebar
   spinner_modal
+  spinner_modal_update
   view_summary
   view_submissions
   view_problem
@@ -33,4 +33,6 @@
   js_of_ocaml-lwt
   lwt)
  (preprocess
-  (pps js_of_ocaml-ppx)))
+  (pps js_of_ocaml-ppx ppx_blob))
+ (preprocessor_deps
+  (file ../../static/yoda-cameling-loop.gif)))
