@@ -20,8 +20,14 @@ let yoda_cameling_gif_url =
 
 let spinner = div []
 
-(** Mutable reference capturing the text paragraph DOM node once at creation time. *)
-let _text_node_ref = ref None
+let status_p_tyxml = p [txt (I18n.t "spinner_modal_ready")]
+
+let status_p_dom = Tyxml_js.To_dom.of_p status_p_tyxml
+
+let status_h5_tyxml =
+  h5 ~a:[a_class ["modal-title"]] [txt (I18n.t "spinner_modal_processing")]
+
+let status_h5_dom = Tyxml_js.To_dom.of_h5 status_h5_tyxml
 
 let remove () =
   let spinner_dom = Tyxml_js.To_dom.of_element spinner in
@@ -29,10 +35,6 @@ let remove () =
       ignore (parent##removeChild (spinner_dom :> Dom.node Js.t)) )
 
 let make () =
-  (* Build the status <p> from Tyxml first, capture its raw DOM pointer. *)
-  let status_p_tyxml = p [txt (I18n.t "spinner_modal_ready")] in
-  let status_p_dom = Tyxml_js.To_dom.of_p status_p_tyxml in
-  _text_node_ref := Some status_p_dom ;
   let modal_backdrop =
     [ (* backdrop *)
       div ~a:[a_class ["modal-backdrop"; "fade"; "show"]] []
@@ -46,9 +48,7 @@ let make () =
                 [ (* header *)
                   div
                     ~a:[a_class ["modal-header"]]
-                    [ h5
-                        ~a:[a_class ["modal-title"]]
-                        [txt (I18n.t "spinner_modal_processing")]
+                    [ status_h5_tyxml
                     ; button
                         ~a:
                           [ a_class ["btn-close"]
@@ -65,7 +65,7 @@ let make () =
                                   ["img-fluid"; "d-block"; "mx-auto"; "mb-3"]
                               ; a_style "max-width: 240px;" ]
                             ()
-                        ; status_p_tyxml (* re-use Tyxml-p directly *)
+                        ; status_p_tyxml
                         ; br ()
                         ; button
                             ~a:
@@ -84,7 +84,6 @@ let make () =
 
 (** [update_text msg] mutates the modal text node.
     Returns unit silently if the node has not been captured yet. *)
-let update_text msg =
-  match !_text_node_ref with
-  | None -> ()
-  | Some el -> el##.textContent := Js.some (Js.string msg)
+let update_text msg = status_p_dom##.textContent := Js.some (Js.string msg)
+
+let update_title msg = status_h5_dom##.textContent := Js.some (Js.string msg)

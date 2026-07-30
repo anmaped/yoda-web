@@ -138,6 +138,7 @@ let submit_and_poll () =
                submission_id ) ;
           poll_until_terminal ctx submission_id
           >>= fun final_status ->
+          Spinner_modal.update_title ("Done: " ^ final_status) ;
           Spinner_modal.update_text ("Final verdict: " ^ final_status) ;
           Lwt.return_unit )
 
