@@ -602,8 +602,10 @@ let import_users_file_input_change (ev : Dom_html.event Js.t) : bool =
       (fun () -> assert false)
   in
   let first_file =
-    let files = target##.files in
-    if files##.length = 0 then None else Js.Opt.to_option (files##item 0)
+    match Js.Opt.to_option target##.files with
+    | None -> None
+    | Some files ->
+        if files##.length = 0 then None else Js.Opt.to_option (files##item 0)
   in
   ( match first_file with
   | None -> ()
