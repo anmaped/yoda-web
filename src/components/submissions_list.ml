@@ -66,8 +66,8 @@ let compare_submission (a : Api.Openapi.submission)
   let result =
     match !sort_column with
     | Col_id -> Int.compare a.id b.id
-    | Col_problem -> (*String.compare a.problem b.problem*) 0
-    | Col_language -> (*String.compare a.language b.language*) 0
+    | Col_problem -> Int.compare a.problem_id b.problem_id (* [TODO] *)
+    | Col_language -> Int.compare a.problem_id b.problem_id (* [TODO] *)
     | Col_result -> String.compare a.status b.status
     | Col_time -> Int.compare a.time_ms b.time_ms
   in

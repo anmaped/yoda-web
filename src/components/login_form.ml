@@ -37,7 +37,8 @@ let render ~on_login () =
   in
   let form_div =
     form
-      ~a:[a_method `Post; a_onsubmit (fun _ -> false)]
+      ~a:
+        [a_method `Post; a_onsubmit (fun ev -> Dom.preventDefault ev ; false)]
       [ h1
           ~a:[a_class ["h3"; "mb-3"; "fw-normal"]]
           [txt (I18n.t "login_title")]
