@@ -15,10 +15,12 @@
   settings_yodac
   settings_stats
   settings_stats_graphs
-  settings_helpers)
+  settings_helpers
+  settings_problems)
  (libraries
   components
   api
+  blobs
   i18n
   js_of_ocaml
   js_of_ocaml-tyxml

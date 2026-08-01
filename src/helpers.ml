@@ -130,7 +130,7 @@ let get_username () =
       with _ -> "Guest" )
   | None -> "Guest"
 
-let is_admin () : bool =
+let is_user_role role =
   match get_session_variable "user" with
   | Some t -> (
       let json_str = Js.to_string t in
@@ -140,10 +140,14 @@ let is_admin () : bool =
           |> Yojson.Basic.Util.member "role"
           |> Yojson.Basic.to_string
         in
-        Astring.String.is_suffix ~affix:"admin"
+        Astring.String.is_suffix ~affix:role
           (String.lowercase_ascii (cleanup_json_string raw))
       with _ -> false )
   | None -> false
+
+let is_admin () : bool = is_user_role "admin"
+
+let is_judge () : bool = is_user_role "judge"
 
 let is_valid_json s =
   try

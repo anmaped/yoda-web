@@ -1,48 +1,6 @@
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 
-let plus_square_icon () =
-  let open Tyxml_js.Svg in
-  Tyxml_js.Html.svg
-    ~a:
-      [ a_class ["bi"; "bi-plus-square"]
-      ; a_width (32., Some `Px)
-      ; a_height (32., Some `Px)
-      ; a_fill (`Color ("currentColor", None))
-      ; a_viewBox (-0., -0., 16., 16.) ]
-    [ path
-        ~a:
-          [ a_d
-              "M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 \
-               0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 \
-               2-2V2a2 2 0 0 0-2-2z" ]
-        []
-    ; path
-        ~a:
-          [ a_d
-              "M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 \
-               0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" ]
-        [] ]
-
-let x_square_fill () =
-  let open Tyxml_js.Svg in
-  Tyxml_js.Html.svg
-    ~a:
-      [ a_class ["bi"; "bi-x-square-fill"]
-      ; a_width (24., Some `Px)
-      ; a_height (24., Some `Px)
-      ; a_fill (`Color ("currentColor", None))
-      ; a_viewBox (-0., -0., 16., 16.) ]
-    [ path
-        ~a:
-          [ a_d
-              "M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 \
-               0 0-2-2zm3.354 4.646L8 7.293l2.646-2.647a.5.5 0 0 1 \
-               .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 \
-               8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 \
-               5.354a.5.5 0 1 1 .708-.708" ]
-        [] ]
-
 let accordion (t : Model.Tests.test) =
   let id_suffix = string_of_int t.id in
   let parent_id = "unittest-" ^ id_suffix in
@@ -62,7 +20,7 @@ let accordion (t : Model.Tests.test) =
                         Model.Tests.remove_test t.id ;
                         Helpers.remove_element_by_id parent_id ;
                         false (* prevent default *) ) ]
-                [x_square_fill ()]
+                [Icons.x_square_fill ()]
             ; button
                 ~a:
                   [ a_class ["accordion-button"; "collapsed"; "flex-grow-1"]
@@ -110,7 +68,9 @@ let accordion (t : Model.Tests.test) =
                     (txt t.input)
                 ; ( match t.kind with
                   | `Json when not (Helpers.is_valid_json t.input) ->
-                      div ~a:[a_class ["text-danger"]] [txt (I18n.t "test_invalid_json")]
+                      div
+                        ~a:[a_class ["text-danger"]]
+                        [txt (I18n.t "test_invalid_json")]
                   | _ -> txt "" ) ] ] ] ]
 
 let load_state () = Model.Tests.load_tests ()
@@ -130,7 +90,7 @@ let content ?(sidebyside = true) () =
               let test = Model.Tests.add_test () in
               Helpers.append_child_by_id "testbar" (accordion test) ;
               false ) ]
-      [plus_square_icon ()]
+      [Icons.plus_square_icon ()]
   in
   section
     ~a:[a_class ["panel-section"; "container-fluid"; "py-1"]]

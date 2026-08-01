@@ -1,7 +1,7 @@
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 
-let content ~contest_id ?(last = 50) () =
+let content ~contest_id ?(last = 100) () =
   section
     ~a:[a_class ["panel-section"; "container"; "py-3"]]
     [ div

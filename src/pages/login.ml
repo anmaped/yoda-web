@@ -13,13 +13,13 @@ let render ~on_success () =
           if is_valid then on_success ()
           else Helpers.remove_session_variable "token" ;
           if Helpers.exists_cookie_variable "dream.session" then
-          Helpers.remove_cookies_variable "dream.session" ;
+            Helpers.remove_cookies_variable "dream.session" ;
           Lwt.return_unit ) ;
       div []
   | None ->
       div
         ~a:[a_class ["form-signin"; "w-100"; "m-auto"]]
-        [ img ~src:"yoda.png" ~alt:"Yoda Logo"
+        [ img ~src:Blobs.yoda_logo_url ~alt:"Yoda Logo"
             ~a:[a_class ["yoda-logo"; "d-block"; "mx-auto"]; a_width 300]
             ()
         ; Components.Login_form.render ~on_login:on_success ()

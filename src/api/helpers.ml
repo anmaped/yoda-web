@@ -105,3 +105,37 @@ let get_config_history () =
   fetch_json (base_url ^ "/admin/yodac/config/history")
 
 let get_admin_stats () = fetch_json (base_url ^ "/admin/stats")
+
+(* --- Problem CRUD helpers --- *)
+
+let post_problem contest_id body =
+  post_json
+    (Printf.sprintf "%s/contests/%d/problems" base_url contest_id)
+    body
+
+let put_problem contest_id problem_id body =
+  put_json
+    (Printf.sprintf "%s/contests/%d/problems/%d" base_url contest_id problem_id)
+    body
+
+let delete_problem contest_id problem_id =
+  delete_json
+    (Printf.sprintf "%s/contests/%d/problems/%d" base_url contest_id problem_id)
+
+(* --- Testcase helpers --- *)
+
+let get_testcases contest_id problem_id =
+  fetch_json
+    (Printf.sprintf "%s/contests/%d/problems/%d/testcases" base_url
+       contest_id problem_id)
+
+let post_testcase contest_id problem_id body =
+  post_json
+    (Printf.sprintf "%s/contests/%d/problems/%d/testcases" base_url
+       contest_id problem_id)
+    body
+
+let delete_testcase contest_id problem_id testcase_id =
+  delete_json
+    (Printf.sprintf "%s/contests/%d/problems/%d/testcases/%d" base_url
+       contest_id problem_id testcase_id)

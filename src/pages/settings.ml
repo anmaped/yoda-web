@@ -18,13 +18,14 @@ let key_settings_referrer = "yoda-settings-referrer"
 let key_language = "yoda-language"
 
 (* Tab state *)
-type tab = Settings | Config | Stats | Users
+type tab = Settings | Config | Stats | Users | Problems
 
 let tab_label = function
   | Settings -> I18n.t "settings_tab_general"
   | Config -> I18n.t "settings_tab_yodac"
   | Stats -> I18n.t "settings_tab_stats"
   | Users -> I18n.t "settings_tab_users"
+  | Problems -> I18n.t "settings_tab_problems"
 
 let active_tab : tab ref = ref Settings
 
@@ -89,7 +90,9 @@ let apply_theme t =
   let body = Dom_html.document##.body in
   (* Bootstrap base theme *)
   let bs_theme =
-    match t with "dark" | "monokai" | "nord" | "onedark" -> "dark" | _ -> "light"
+    match t with
+    | "dark" | "monokai" | "nord" | "onedark" -> "dark"
+    | _ -> "light"
   in
   body##setAttribute (Js.string "data-bs-theme") (Js.string bs_theme) ;
   (* Remove any previous custom theme classes *)
@@ -134,7 +137,9 @@ let render_settings_tab () =
   and tab_size = get_tab_size ()
   and line_wrap = get_line_wrapping ()
   and auto_save = get_auto_save () in
-  let themes = ["default"; "dark"; "monokai"; "eclipse"; "nord"; "onedark"] in
+  let themes =
+    ["default"; "dark"; "monokai"; "eclipse"; "nord"; "onedark"]
+  in
   let lang = get_lang () in
   let languages =
     List.map
@@ -317,11 +322,7 @@ let render_tabs () =
                             Helpers.navigate_to "#settings-stats" ;
                             false ) ]
                     [txt (tab_label Stats)] ]
-            else
-              li
-                ~a:[a_class ["nav-item"; "disabled"]]
-                [a ~a:[a_class ["nav-link disabled"]] [txt (tab_label Stats)]]
-          )
+            else li [] )
         ; ( if Helpers.is_admin () then
               li
                 ~a:[a_class ["nav-item"]]
@@ -336,12 +337,7 @@ let render_tabs () =
                             Helpers.navigate_to "#settings-yodac" ;
                             false ) ]
                     [txt (tab_label Config)] ]
-            else
-              li
-                ~a:[a_class ["nav-item"; "disabled"]]
-                [ a
-                    ~a:[a_class ["nav-link disabled"]]
-                    [txt (tab_label Config)] ] )
+            else li [] )
         ; ( if Helpers.is_admin () then
               li
                 ~a:[a_class ["nav-item"]]
@@ -356,11 +352,23 @@ let render_tabs () =
                             Helpers.navigate_to "#settings-users" ;
                             false ) ]
                     [txt (tab_label Users)] ]
-            else
+            else li [] )
+        ; ( if Helpers.is_admin () || Helpers.is_judge () then
               li
-                ~a:[a_class ["nav-item"; "disabled"]]
-                [a ~a:[a_class ["nav-link disabled"]] [txt (tab_label Users)]]
-          ) ] ]
+                ~a:[a_class ["nav-item"]]
+                [ a
+                    ~a:
+                      [ a_class
+                          ( "nav-link"
+                          ::
+                          (if !active_tab = Problems then ["active"] else [])
+                          )
+                      ; a_href "#settings-problems"
+                      ; a_onclick (fun _ ->
+                            Helpers.navigate_to "#settings-problems" ;
+                            false ) ]
+                    [txt (tab_label Problems)] ]
+            else li [] ) ] ]
 
 (* render *)
 let render ?(tab = "general") () =
@@ -368,8 +376,13 @@ let render ?(tab = "general") () =
     if Helpers.is_admin () then
       span
         ~a:[a_class ["badge"; "bg-success"; "ms-2"; "align-self-center"]]
-        [ i ~a:[a_class ["bi"; "bi-shield-lock"]] []
+        [ Components.Icons.shield_lock_icon ()
         ; txt (I18n.t "settings_admin_badge") ]
+    else if Helpers.is_judge () then
+      span
+        ~a:[a_class ["badge"; "bg-warning"; "ms-2"; "align-self-center"]]
+        [ Components.Icons.shield_lock_icon ()
+        ; txt (I18n.t "settings_judge_badge") ]
     else
       (* no badge *)
       span []
@@ -393,7 +406,7 @@ let render ?(tab = "general") () =
                     ~a:
                       [ a_class ["btn"; "btn-outline-secondary"]
                       ; a_onclick (fun _ -> close_settings () ; false) ]
-                    [i ~a:[a_class ["bi"; "bi-x-lg"]] []] ]
+                    [Components.Icons.x_close_icon ()] ]
             ; render_tabs ()
             ; ( match tab with
               | "general" ->
@@ -408,4 +421,7 @@ let render ?(tab = "general") () =
               | "users" ->
                   active_tab := Users ;
                   Settings_user.render_users_tab ()
+              | "problems" ->
+                  active_tab := Problems ;
+                  Settings_problems.render_problems_tab ()
               | _ -> failwith "Invalid tab" ) ] ] ]

@@ -21,11 +21,13 @@
   editor
   codebar
   tabbar
-  testbar)
+  testbar
+  icons)
  (libraries
   api
   model
   helpers
+  blobs
   i18n
   js_of_ocaml
   js_of_ocaml-tyxml
@@ -33,6 +35,4 @@
   js_of_ocaml-lwt
   lwt)
  (preprocess
-  (pps js_of_ocaml-ppx ppx_blob))
- (preprocessor_deps
-  (file ../../static/yoda-cameling-loop.gif)))
+  (pps js_of_ocaml-ppx)))

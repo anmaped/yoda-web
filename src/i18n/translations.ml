@@ -76,9 +76,12 @@ type translations =
   ; settings_tab_general: string
   ; settings_tab_yodac: string
   ; settings_tab_users: string
+  ; settings_tab_stats: string
+  ; settings_tab_problems: string
   ; settings_line_wrap_label: string
   ; settings_auto_save_label: string
   ; settings_admin_badge: string
+  ; settings_judge_badge: string
   ; config_meta_version: string
   ; config_meta_updated: string
   ; config_meta_by: string
@@ -139,7 +142,6 @@ type translations =
   ; users_import_input_missing: string
   ; users_import_empty_file: string
   ; users_import_btn: string
-  ; settings_tab_stats: string
   ; stats_loading: string
   ; stats_empty: string
   ; stats_refresh_btn: string
@@ -159,7 +161,45 @@ type translations =
   ; stats_queued_jobs_per_minute: string
   ; stats_processed_jobs_total: string
   ; stats_processed_jobs_per_minute: string
-  ; spinner_model_close: string }
+  ; spinner_model_close: string
+  ; problems_manage_title: string
+  ; problems_manage_subtitle: string
+  ; problems_loading: string
+  ; problems_search_placeholder: string
+  ; problems_select_contest: string
+  ; problems_no_contest: string
+  ; problems_add_btn: string
+  ; problems_add_title: string
+  ; problems_edit_title: string
+  ; problems_code_label: string
+  ; problems_title_label: string
+  ; problems_difficulty_label: string
+  ; problems_time_limit_label: string
+  ; problems_memory_limit_label: string
+  ; problems_description_label: string
+  ; problems_input_spec_label: string
+  ; problems_output_spec_label: string
+  ; problems_cancel_btn: string
+  ; problems_submit_btn: string
+  ; problems_save_changes: string
+  ; problems_delete_confirm: string
+  ; problems_testcases_title: string
+  ; problems_add_testcase: string
+  ; problems_test_input_label: string
+  ; problems_test_output_label: string
+  ; problems_is_sample_label: string
+  ; problems_edit_testcase: string
+  ; problems_delete_testcase: string
+  ; problems_easy: string
+  ; problems_medium: string
+  ; problems_hard: string
+  ; problems_error_load: string
+  ; problems_error_save: string
+  ; problems_error_delete: string
+  ; problems_success_created: string
+  ; problems_success_updated: string
+  ; problems_success_deleted: string
+  ; problems_confirm_delete: string }
 
 let en =
   { login_placeholder_email= "name@example.com"
@@ -244,9 +284,12 @@ let en =
   ; settings_tab_general= "General"
   ; settings_tab_yodac= "YodaC"
   ; settings_tab_users= "Users"
+  ; settings_tab_stats= "Stats"
   ; settings_line_wrap_label= "Line Wrapping"
   ; settings_auto_save_label= "Auto-save"
   ; settings_admin_badge= "Admin Access"
+  ; settings_judge_badge= "Judge Access"
+  ; settings_tab_problems= "Problems"
   ; config_meta_version= "Version: %s"
   ; config_meta_updated= "Updated: %s"
   ; config_meta_by= "By: %s"
@@ -311,7 +354,6 @@ let en =
       "Import file input is unavailable on this page."
   ; users_import_empty_file= "The selected CSV file is empty."
   ; users_import_btn= "Import users"
-  ; settings_tab_stats= "Stats"
   ; stats_loading= "Loading stats..."
   ; stats_empty= "No stats available."
   ; stats_refresh_btn= "Refresh"
@@ -331,7 +373,45 @@ let en =
   ; stats_queued_jobs_per_minute= "Queued Jobs per Minute"
   ; stats_processed_jobs_total= "Processed Jobs Total"
   ; stats_processed_jobs_per_minute= "Processed Jobs per Minute"
-  ; spinner_model_close= "Start" }
+  ; spinner_model_close= "Start"
+  ; problems_manage_title= "Problem Management"
+  ; problems_manage_subtitle= "Add, edit, or remove problems and test cases."
+  ; problems_loading= "Loading problems..."
+  ; problems_search_placeholder= "Search problems..."
+  ; problems_select_contest= "Select Contest"
+  ; problems_no_contest= "No contest selected"
+  ; problems_add_btn= "Add Problem"
+  ; problems_add_title= "Add New Problem"
+  ; problems_edit_title= "Edit Problem"
+  ; problems_code_label= "Code (slug: id-problem-name)"
+  ; problems_title_label= "Title"
+  ; problems_difficulty_label= "Difficulty"
+  ; problems_time_limit_label= "Time Limit (ms)"
+  ; problems_memory_limit_label= "Memory Limit (MB)"
+  ; problems_description_label= "Description"
+  ; problems_input_spec_label= "Input Specification"
+  ; problems_output_spec_label= "Output Specification"
+  ; problems_cancel_btn= "Cancel"
+  ; problems_submit_btn= "Submit"
+  ; problems_save_changes= "Save Changes"
+  ; problems_delete_confirm= "Delete this problem?"
+  ; problems_testcases_title= "Test Cases"
+  ; problems_add_testcase= "Add Test Case"
+  ; problems_test_input_label= "Input"
+  ; problems_test_output_label= "Output"
+  ; problems_is_sample_label= "Sample"
+  ; problems_edit_testcase= "Edit Test Case"
+  ; problems_delete_testcase= "Delete Test Case?"
+  ; problems_easy= "Easy"
+  ; problems_medium= "Medium"
+  ; problems_hard= "Hard"
+  ; problems_error_load= "Failed to load problems: %s"
+  ; problems_error_save= "Failed to save problem: %s"
+  ; problems_error_delete= "Failed to delete problem."
+  ; problems_success_created= "Problem created."
+  ; problems_success_updated= "Problem updated."
+  ; problems_success_deleted= "Problem deleted."
+  ; problems_confirm_delete= "Confirm Delete" }
 
 let fr =
   { login_placeholder_email= "nom@exemple.com"
@@ -417,9 +497,11 @@ let fr =
   ; settings_tab_general= "Général"
   ; settings_tab_yodac= "YodaC"
   ; settings_tab_users= "Utilisateurs"
+  ; settings_tab_problems= "Problèmes"
   ; settings_line_wrap_label= "Retour à la ligne"
   ; settings_auto_save_label= "Sauvegarde auto."
   ; settings_admin_badge= "Accès Administrateur"
+  ; settings_judge_badge= "Accès Juge"
   ; config_meta_version= "Version : %s"
   ; config_meta_updated= "Mis à jour : %s"
   ; config_meta_by= "Par : %s"
@@ -509,7 +591,46 @@ let fr =
   ; stats_queued_jobs_per_minute= "Taches en file par minute"
   ; stats_processed_jobs_total= "Total des taches traitees"
   ; stats_processed_jobs_per_minute= "Taches traitees par minute"
-  ; spinner_model_close= "Fermer" }
+  ; spinner_model_close= "Fermer"
+  ; problems_manage_title= "Gestion des problèmes"
+  ; problems_manage_subtitle=
+      "Ajouter, modifier ou supprimer des problèmes et des cas de test."
+  ; problems_loading= "Chargement des problèmes..."
+  ; problems_search_placeholder= "Rechercher des problèmes..."
+  ; problems_select_contest= "Sélectionner un concours"
+  ; problems_no_contest= "Aucun concours sélectionné"
+  ; problems_add_btn= "Ajouter un problème"
+  ; problems_add_title= "Ajouter un nouveau problème"
+  ; problems_edit_title= "Modifier le problème"
+  ; problems_code_label= "Code (slug: id-problem-name)"
+  ; problems_title_label= "Titre"
+  ; problems_difficulty_label= "Difficulté"
+  ; problems_time_limit_label= "Limite de temps (ms)"
+  ; problems_memory_limit_label= "Limite de mémoire (MB)"
+  ; problems_description_label= "Description"
+  ; problems_input_spec_label= "Spécification d'entrée"
+  ; problems_output_spec_label= "Spécification de sortie"
+  ; problems_cancel_btn= "Annuler"
+  ; problems_submit_btn= "Soumettre"
+  ; problems_save_changes= "Enregistrer les modifications"
+  ; problems_delete_confirm= "Supprimer ce problème ?"
+  ; problems_testcases_title= "Cas de test"
+  ; problems_add_testcase= "Ajouter un cas de test"
+  ; problems_test_input_label= "Entrée"
+  ; problems_test_output_label= "Sortie"
+  ; problems_is_sample_label= "Exemple"
+  ; problems_edit_testcase= "Modifier le cas de test"
+  ; problems_delete_testcase= "Supprimer le cas de test ?"
+  ; problems_easy= "Facile"
+  ; problems_medium= "Moyen"
+  ; problems_hard= "Difficile"
+  ; problems_error_load= "Impossible de charger les problèmes : %s"
+  ; problems_error_save= "Impossible d'enregistrer le problème : %s"
+  ; problems_error_delete= "Impossible de supprimer le problème."
+  ; problems_success_created= "Problème créé."
+  ; problems_success_updated= "Problème mis à jour."
+  ; problems_success_deleted= "Problème supprimé."
+  ; problems_confirm_delete= "Confirmer la suppression" }
 
 let es =
   { login_placeholder_email= "nombre@ejemplo.com"
@@ -595,9 +716,11 @@ let es =
   ; settings_tab_general= "General"
   ; settings_tab_yodac= "YodaC"
   ; settings_tab_users= "Usuarios"
+  ; settings_tab_problems= "Problemas"
   ; settings_line_wrap_label= "Envolver líneas"
   ; settings_auto_save_label= "Guardado automático"
   ; settings_admin_badge= "Acceso de Administrador"
+  ; settings_judge_badge= "Acceso de Juez"
   ; config_meta_version= "Versión: %s"
   ; config_meta_updated= "Actualizado: %s"
   ; config_meta_by= "Por: %s"
@@ -618,7 +741,7 @@ let es =
   ; sidebar_codeboard= "Codeboard"
   ; sidebar_submissions= "Envíos"
   ; sidebar_switch_contest= "Cambiar concurso"
-  ; sidebar_settings= "Configuracion"
+  ; sidebar_settings= "Configuración"
   ; sidebar_sign_out= "Cerrar sesion"
   ; login_sign_out= "Cerrar sesión"
   ; users_manage_title= "Gestión de usuarios"
@@ -684,7 +807,46 @@ let es =
   ; stats_queued_jobs_per_minute= "Trabajos en cola por minuto"
   ; stats_processed_jobs_total= "Trabajos procesados totales"
   ; stats_processed_jobs_per_minute= "Trabajos procesados por minuto"
-  ; spinner_model_close= "Cerrar" }
+  ; spinner_model_close= "Cerrar"
+  ; problems_manage_title= "Gestión de problemas"
+  ; problems_manage_subtitle=
+      "Agrega, edita o elimina problemas y casos de prueba."
+  ; problems_loading= "Cargando problemas..."
+  ; problems_search_placeholder= "Buscar problemas..."
+  ; problems_select_contest= "Seleccionar concurso"
+  ; problems_no_contest= "Ningún concurso seleccionado"
+  ; problems_add_btn= "Agregar problema"
+  ; problems_add_title= "Agregar nuevo problema"
+  ; problems_edit_title= "Editar problema"
+  ; problems_code_label= "Código (slug: id-problem-name)"
+  ; problems_title_label= "Título"
+  ; problems_difficulty_label= "Dificultad"
+  ; problems_time_limit_label= "Límite de tiempo (ms)"
+  ; problems_memory_limit_label= "Límite de memoria (MB)"
+  ; problems_description_label= "Descripción"
+  ; problems_input_spec_label= "Especificación de entrada"
+  ; problems_output_spec_label= "Especificación de salida"
+  ; problems_cancel_btn= "Cancelar"
+  ; problems_submit_btn= "Enviar"
+  ; problems_save_changes= "Guardar cambios"
+  ; problems_delete_confirm= "¿Eliminar este problema?"
+  ; problems_testcases_title= "Casos de prueba"
+  ; problems_add_testcase= "Agregar caso de prueba"
+  ; problems_test_input_label= "Entrada"
+  ; problems_test_output_label= "Salida"
+  ; problems_is_sample_label= "Ejemplo"
+  ; problems_edit_testcase= "Editar caso de prueba"
+  ; problems_delete_testcase= "¿Eliminar caso de prueba?"
+  ; problems_easy= "Fácil"
+  ; problems_medium= "Medio"
+  ; problems_hard= "Difícil"
+  ; problems_error_load= "No se pudieron cargar los problemas: %s"
+  ; problems_error_save= "No se pudo guardar el problema: %s"
+  ; problems_error_delete= "No se pudo eliminar el problema."
+  ; problems_success_created= "Problema creado."
+  ; problems_success_updated= "Problema actualizado."
+  ; problems_success_deleted= "Problema eliminado."
+  ; problems_confirm_delete= "Confirmar eliminación" }
 
 let pt =
   { login_placeholder_email= "nome@exemplo.com"
@@ -770,9 +932,11 @@ let pt =
   ; settings_tab_general= "Geral"
   ; settings_tab_yodac= "YodaC"
   ; settings_tab_users= "Utilizadores"
+  ; settings_tab_problems= "Problemas"
   ; settings_line_wrap_label= "Quebrar linhas"
   ; settings_auto_save_label= "Guarda de forma automática"
   ; settings_admin_badge= "Acesso de Administrador"
+  ; settings_judge_badge= "Acesso de Juiz"
   ; config_meta_version= "Versão: %s"
   ; config_meta_updated= "Atualizado: %s"
   ; config_meta_by= "Por: %s"
@@ -793,7 +957,7 @@ let pt =
   ; sidebar_codeboard= "Codeboard"
   ; sidebar_submissions= "Envios"
   ; sidebar_switch_contest= "Trocar concurso"
-  ; sidebar_settings= "Configuracoes"
+  ; sidebar_settings= "Configurações"
   ; sidebar_sign_out= "Sair"
   ; login_sign_out= "Sair"
   ; users_manage_title= "Gestão de utilizadores"
@@ -858,7 +1022,46 @@ let pt =
   ; stats_queued_jobs_per_minute= "Tarefas na fila por minuto"
   ; stats_processed_jobs_total= "Total de tarefas processadas"
   ; stats_processed_jobs_per_minute= "Tarefas processadas por minuto"
-  ; spinner_model_close= "Fechar" }
+  ; spinner_model_close= "Fechar"
+  ; problems_manage_title= "Gestão de problemas"
+  ; problems_manage_subtitle=
+      "Adicione, edite ou remova problemas e casos de teste."
+  ; problems_loading= "Carregando problemas..."
+  ; problems_search_placeholder= "Procurar problemas..."
+  ; problems_select_contest= "Selecionar concurso"
+  ; problems_no_contest= "Nenhum concurso selecionado"
+  ; problems_add_btn= "Adicionar problema"
+  ; problems_add_title= "Adicionar novo problema"
+  ; problems_edit_title= "Editar problema"
+  ; problems_code_label= "Código (slug: id-problem-name)"
+  ; problems_title_label= "Título"
+  ; problems_difficulty_label= "Dificuldade"
+  ; problems_time_limit_label= "Limite de tempo (ms)"
+  ; problems_memory_limit_label= "Limite de memória (MB)"
+  ; problems_description_label= "Descrição"
+  ; problems_input_spec_label= "Especificação de entrada"
+  ; problems_output_spec_label= "Especificação de saída"
+  ; problems_cancel_btn= "Cancelar"
+  ; problems_submit_btn= "Enviar"
+  ; problems_save_changes= "Guardar alterações"
+  ; problems_delete_confirm= "Eliminar este problema?"
+  ; problems_testcases_title= "Casos de teste"
+  ; problems_add_testcase= "Adicionar caso de teste"
+  ; problems_test_input_label= "Entrada"
+  ; problems_test_output_label= "Saída"
+  ; problems_is_sample_label= "Exemplo"
+  ; problems_edit_testcase= "Editar caso de teste"
+  ; problems_delete_testcase= "Eliminar caso de teste?"
+  ; problems_easy= "Fácil"
+  ; problems_medium= "Médio"
+  ; problems_hard= "Difícil"
+  ; problems_error_load= "Falha ao carregar problemas: %s"
+  ; problems_error_save= "Falha ao guardar problema: %s"
+  ; problems_error_delete= "Falha ao eliminar problema."
+  ; problems_success_created= "Problema criado."
+  ; problems_success_updated= "Problema atualizado."
+  ; problems_success_deleted= "Problema eliminado."
+  ; problems_confirm_delete= "Confirmar eliminação" }
 
 let ar =
   { login_placeholder_email= "name@example.com"
@@ -940,9 +1143,11 @@ let ar =
   ; settings_tab_general= "عام"
   ; settings_tab_yodac= "يوداك"
   ; settings_tab_users= "المستخدمون"
+  ; settings_tab_problems= "المشاكل"
   ; settings_line_wrap_label= "تغليف الأسطر"
   ; settings_auto_save_label= "حفظ تلقائي"
   ; settings_admin_badge= "وصول المسؤول"
+  ; settings_judge_badge= "وصول القاضي"
   ; config_meta_version= "الإصدار: %s"
   ; config_meta_updated= "المحدّث: %s"
   ; config_meta_by= "بواسطة: %s"
@@ -1025,7 +1230,45 @@ let ar =
   ; stats_queued_jobs_per_minute= "المهام في الطابور لكل دقيقة"
   ; stats_processed_jobs_total= "إجمالي المهام المعالجة"
   ; stats_processed_jobs_per_minute= "المهام المعالجة لكل دقيقة"
-  ; spinner_model_close= "ابدأ" }
+  ; spinner_model_close= "ابدأ"
+  ; problems_manage_title= "إدارة المشاكل"
+  ; problems_manage_subtitle= "أضف أو حرر أو احذف المشاكل وحالات الاختبار."
+  ; problems_loading= "جارٍ تحميل المشاكل..."
+  ; problems_search_placeholder= "البحث عن المشاكل..."
+  ; problems_select_contest= "تحديد المسابقة"
+  ; problems_no_contest= "لم يتم تحديد أي مسابقة"
+  ; problems_add_btn= "إضافة مشكلة"
+  ; problems_add_title= "إضافة مشكلة جديدة"
+  ; problems_edit_title= "تحرير المشكلة"
+  ; problems_code_label= "الرمز (slug: id-problem-name)"
+  ; problems_title_label= "العنوان"
+  ; problems_difficulty_label= "الصعوبة"
+  ; problems_time_limit_label= "الحد الزمني (مللي ثانية)"
+  ; problems_memory_limit_label= "حد الذاكرة (ميغابايت)"
+  ; problems_description_label= "الوصف"
+  ; problems_input_spec_label= "مواصفات الإدخال"
+  ; problems_output_spec_label= "مواصفات الإخراج"
+  ; problems_cancel_btn= "إلغاء"
+  ; problems_submit_btn= "إرسال"
+  ; problems_save_changes= "حفظ التغييرات"
+  ; problems_delete_confirm= "هل تريد حذف هذه المشكلة؟"
+  ; problems_testcases_title= "حالات الاختبار"
+  ; problems_add_testcase= "إضافة حالة اختبار"
+  ; problems_test_input_label= "الإدخال"
+  ; problems_test_output_label= "الإخراج"
+  ; problems_is_sample_label= "عينة"
+  ; problems_edit_testcase= "تحرير حالة الاختبار"
+  ; problems_delete_testcase= "هل تريد حذف حالة الاختبار؟"
+  ; problems_easy= "سهل"
+  ; problems_medium= "متوسط"
+  ; problems_hard= "صعب"
+  ; problems_error_load= "تعذر تحميل المشاكل: %s"
+  ; problems_error_save= "تعذر حفظ المشكلة: %s"
+  ; problems_error_delete= "تعذر حذف المشكلة."
+  ; problems_success_created= "تم إنشاء المشكلة."
+  ; problems_success_updated= "تم تحديث المشكلة."
+  ; problems_success_deleted= "تم حذف المشكلة."
+  ; problems_confirm_delete= "تأكيد الحذف" }
 
 let map : translations -> (string, string) Hashtbl.t =
  fun tr ->
@@ -1108,9 +1351,11 @@ let map : translations -> (string, string) Hashtbl.t =
   add "settings_tab_general" tr.settings_tab_general ;
   add "settings_tab_yodac" tr.settings_tab_yodac ;
   add "settings_tab_users" tr.settings_tab_users ;
+  add "settings_tab_problems" tr.settings_tab_problems ;
   add "settings_line_wrap_label" tr.settings_line_wrap_label ;
   add "settings_auto_save_label" tr.settings_auto_save_label ;
   add "settings_admin_badge" tr.settings_admin_badge ;
+  add "settings_judge_badge" tr.settings_judge_badge ;
   add "config_meta_version" tr.config_meta_version ;
   add "config_meta_updated" tr.config_meta_updated ;
   add "config_meta_by" tr.config_meta_by ;
@@ -1194,4 +1439,35 @@ let map : translations -> (string, string) Hashtbl.t =
   add "stats_processed_jobs_total" tr.stats_processed_jobs_total ;
   add "stats_processed_jobs_per_minute" tr.stats_processed_jobs_per_minute ;
   add "spinner_model_close" tr.spinner_model_close ;
+  add "problems_manage_title" tr.problems_manage_title ;
+  add "problems_manage_subtitle" tr.problems_manage_subtitle ;
+  add "problems_loading" tr.problems_loading ;
+  add "problems_search_placeholder" tr.problems_search_placeholder ;
+  add "problems_select_contest" tr.problems_select_contest ;
+  add "problems_no_contest" tr.problems_no_contest ;
+  add "problems_add_btn" tr.problems_add_btn ;
+  add "problems_add_title" tr.problems_add_title ;
+  add "problems_edit_title" tr.problems_edit_title ;
+  add "problems_code_label" tr.problems_code_label ;
+  add "problems_title_label" tr.problems_title_label ;
+  add "problems_difficulty_label" tr.problems_difficulty_label ;
+  add "problems_time_limit_label" tr.problems_time_limit_label ;
+  add "problems_memory_limit_label" tr.problems_memory_limit_label ;
+  add "problems_description_label" tr.problems_description_label ;
+  add "problems_input_spec_label" tr.problems_input_spec_label ;
+  add "problems_output_spec_label" tr.problems_output_spec_label ;
+  add "problems_cancel_btn" tr.problems_cancel_btn ;
+  add "problems_submit_btn" tr.problems_submit_btn ;
+  add "problems_save_changes" tr.problems_save_changes ;
+  add "problems_delete_confirm" tr.problems_delete_confirm ;
+  add "problems_testcases_title" tr.problems_testcases_title ;
+  add "problems_add_testcase" tr.problems_add_testcase ;
+  add "problems_test_input_label" tr.problems_test_input_label ;
+  add "problems_test_output_label" tr.problems_test_output_label ;
+  add "problems_is_sample_label" tr.problems_is_sample_label ;
+  add "problems_edit_testcase" tr.problems_edit_testcase ;
+  add "problems_delete_testcase" tr.problems_delete_testcase ;
+  add "problems_easy" tr.problems_easy ;
+  add "problems_medium" tr.problems_medium ;
+  add "problems_hard" tr.problems_hard ;
   h

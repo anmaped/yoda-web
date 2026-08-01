@@ -22,7 +22,4 @@ depends: [
 ]
 homepage: "https://github.com/anmaped/yoda-web"
 bug-reports: ""
-extra-files: [ "dune-project" ]
-provided: []
-pin-depends: []
 flags: []

@@ -1,28 +1,17 @@
 open Js_of_ocaml
 open Js_of_ocaml_tyxml
 
-(* Inject CSS from string *)
-let inject_css css_str =
-  let style = Dom_html.createStyle Dom_html.document in
-  style##.textContent := Js.some (Js.string css_str) ;
-  Dom.appendChild Dom_html.document##.head style
-
 let () =
+  Blobs.init () ;
   I18n.init () ;
-  (* Read CSS from file at compile-time *)
-  let bootstrap_css = [%blob "bootstrap.css"] in
-  inject_css bootstrap_css ;
-  let codemirror_css = [%blob "codemirror.css"] in
-  inject_css codemirror_css ;
-  let style_css = [%blob "../static/style.css"] in
-  inject_css style_css ;
   (* Get the app div where the content will be rendered *)
   let app_div = Dom_html.getElementById "app" in
   (* Function to render the page based on the URL hash *)
   let render_page () =
     let hash = Js.to_string Dom_html.window##.location##.hash in
     (* update title with current hash *)
-    Dom_html.document##.title := Js.string (hash ^ " - "^I18n.t "sidebar_app_name") ;
+    Dom_html.document##.title :=
+      Js.string (hash ^ " - " ^ I18n.t "sidebar_app_name") ;
     (* Clear the app div for rendering new content *)
     app_div##.innerHTML := Js.string "" ;
     app_div##.style##.height := Js.string "100%" ;
@@ -76,7 +65,7 @@ let () =
           [ Pages.Login.render
               ~on_success:(fun () -> Helpers.navigate_to "#contests")
               () ]
-        (* save last 10 previous hash *)
+      (* save last 10 previous hash *)
     in
     (* Append the divs that need to be rendered *)
     List.iter

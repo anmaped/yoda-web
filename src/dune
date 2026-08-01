@@ -12,15 +12,12 @@
   astring
   pages
   components
+  blobs
   i18n)
  (js_of_ocaml
   (javascript_files bootstrap.js codemirror.js))
  (preprocess
-  (pps js_of_ocaml-ppx ppx_blob))
- (preprocessor_deps
-  (file codemirror.css)
-  (file bootstrap.css)
-  (file ../static/style.css)))
+  (pps js_of_ocaml-ppx)))
 
 (library
  (name helpers)
@@ -29,6 +26,20 @@
  (libraries js_of_ocaml js_of_ocaml-tyxml js_of_ocaml-lwt lwt yojson astring)
  (preprocess
   (pps js_of_ocaml-ppx)))
+
+(library
+ (name blobs)
+ (modules blobs)
+ (wrapped true)
+ (libraries js_of_ocaml)
+ (preprocess
+  (pps js_of_ocaml-ppx ppx_blob))
+ (preprocessor_deps
+  (file codemirror.css)
+  (file bootstrap.css)
+  (file ../static/style.css)
+  (file ../static/yoda-cameling-loop.gif)
+  (file ../static/yoda.png)))
 
 ;; Rule to download Bootstrap JS
 

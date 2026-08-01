@@ -5,7 +5,8 @@ ARG VERSION=dev
 ARG API_ROUTING_URL=http://localhost:8001/api/
 
 COPY default.conf /etc/nginx/conf.d/default.conf
-COPY static/ /usr/share/nginx/html/
+COPY static/index.html /usr/share/nginx/html/
+COPY static/main.bc.js /usr/share/nginx/html/
 COPY entrypoint.sh /docker-entrypoint.d/01-encrypt-url.sh
 
 RUN chmod +x /docker-entrypoint.d/01-encrypt-url.sh \
