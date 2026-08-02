@@ -28,39 +28,6 @@ let sort_indicator col =
   else if !sort_reverse then txt " ▼"
   else txt " ▲"
 
-let sortable_th col =
-  th
-    ~a:
-      [ a_style "cursor:pointer"
-      ; a_onclick (fun _ ->
-            Console.console##log
-              (Js.string
-                 (Printf.sprintf "Sorting by column: %s"
-                    ( match col with
-                    | Col_id -> "ID"
-                    | Col_problem -> "Problem"
-                    | Col_language -> "Language"
-                    | Col_result -> "Result"
-                    | Col_time -> "Time" ) ) ) ;
-            if !sort_column = col then sort_reverse := not !sort_reverse
-            else begin
-              sort_column := col ;
-              sort_reverse := false
-            end ;
-            Helpers.trigger_render () ;
-            false ) ]
-    [txt (column_title col); sort_indicator col]
-
-let submission_header () =
-  thead
-    ~a:[a_class ["table-light"]]
-    [ tr
-        [ sortable_th Col_id
-        ; sortable_th Col_problem
-        ; sortable_th Col_language
-        ; sortable_th Col_result
-        ; sortable_th Col_time ] ]
-
 let compare_submission (a : Api.Openapi.submission)
     (b : Api.Openapi.submission) =
   let result =
@@ -168,16 +135,76 @@ let load_submissions table contest_id last =
           submissions
         >>= fun rows ->
         (* Insert rows in the same order as submissions *)
+        let table_dom = Tyxml_js.To_dom.of_table table in
+        (* Remove existing rows *)
+        let tbody_dom =
+          table_dom##getElementsByTagName (Js.string "tbody")
+        in
+        ( if tbody_dom##.length > 0 then
+            match Js.Opt.to_option (tbody_dom##item 0) with
+            | Some node -> Dom.removeChild table_dom node
+            | None -> () ) ;
+        (* Create new tbody *)
+        let new_tbody = Dom_html.createTbody Dom_html.document in
+        Dom.appendChild table_dom new_tbody ;
+        (* Append rows to tbody *)
         List.iter
           (fun row ->
             match row with
             | Some row ->
-                Dom.appendChild
-                  (Tyxml_js.To_dom.of_table table)
-                  (Tyxml_js.To_dom.of_tr row)
+                Dom.appendChild new_tbody (Tyxml_js.To_dom.of_tr row)
             | None -> () )
           rows ;
         Lwt.return_unit )
+
+let rec sortable_th ((table, contest_id, last) as x) col =
+  th
+    ~a:
+      [ a_style "cursor:pointer"
+      ; a_onclick (fun _ ->
+            Console.console##log
+              (Js.string
+                 (Printf.sprintf "Sorting by column: %s"
+                    ( match col with
+                    | Col_id -> "ID"
+                    | Col_problem -> "Problem"
+                    | Col_language -> "Language"
+                    | Col_result -> "Result"
+                    | Col_time -> "Time" ) ) ) ;
+            if !sort_column = col then sort_reverse := not !sort_reverse
+            else begin
+              sort_column := col ;
+              sort_reverse := false
+            end ;
+            (*Helpers.trigger_render () ;*)
+            (* get table *)
+            let table_dom = Tyxml_js.To_dom.of_table table in
+            (* update table header *)
+            let thead_dom =
+              table_dom##getElementsByTagName (Js.string "thead")
+            in
+            ( if thead_dom##.length > 0 then
+                match Js.Opt.to_option (thead_dom##item 0) with
+                | Some node ->
+                    let new_thead = submission_header x () in
+                    Dom.replaceChild table_dom
+                      (Tyxml_js.To_dom.of_thead new_thead)
+                      node
+                | None -> () ) ;
+            (* reload submissions *)
+            load_submissions table contest_id last ;
+            false ) ]
+    [txt (column_title col); sort_indicator col]
+
+and submission_header x () =
+  thead
+    ~a:[a_class ["table-light"]]
+    [ tr
+        [ sortable_th x Col_id
+        ; sortable_th x Col_problem
+        ; sortable_th x Col_language
+        ; sortable_th x Col_result
+        ; sortable_th x Col_time ] ]
 
 let content ~contest_id ~last () =
   let table =
@@ -186,7 +213,12 @@ let content ~contest_id ~last () =
         [ a_class
             ["table"; "table-striped"; "table-hover"; "mb-0"; "align-middle"]
         ]
-      ~thead:(submission_header ()) []
+      []
   in
+  (* add thead *)
+  Dom.appendChild
+    (Tyxml_js.To_dom.of_table table)
+    (Tyxml_js.To_dom.of_thead
+       (submission_header (table, contest_id, last) ()) ) ;
   load_submissions table contest_id last ;
   div ~a:[a_class ["table-responsive"]] [table]

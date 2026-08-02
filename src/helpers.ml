@@ -71,7 +71,7 @@ let add_element_to_app element =
 
 let is_mobile () =
   let width = Dom_html.window##.innerWidth in
-  width < 560
+  width < 768
 
 let is_wide_desktop () =
   let width = Dom_html.window##.innerWidth in

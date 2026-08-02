@@ -8,9 +8,7 @@ let problem_row id name =
     ; td
         ~a:[a_class ["p-0"]]
         [ a
-            ~a:
-              [ a_href ("#show-problem-" ^ id)
-              ; a_class ["p-0"; "m-0"] ]
+            ~a:[a_href ("#show-problem-" ^ id); a_class ["p-0"; "m-0"]]
             [txt name] ] ]
 
 (* Main content function generating the table *)
@@ -25,11 +23,17 @@ let content () =
       ~thead:
         (thead
            ~a:[a_class ["table-light"]]
-           [tr [th [txt (I18n.t "problems_col_id")]; th [txt (I18n.t "problems_col_name")]]] )
+           [ tr
+               [ th [txt (I18n.t "problems_col_id")]
+               ; th [txt (I18n.t "problems_col_name")] ] ] )
       []
   in
-  Problem_list.content ~contest_id:current_selected_contest ~problem_row ~tbl
-    () ;
+  let tbody =
+    Js_of_ocaml.Dom_html.createTbody Js_of_ocaml.Dom_html.document
+  in
+  Js_of_ocaml.Dom.appendChild (Tyxml_js.To_dom.of_table tbl) tbody ;
+  Problem_list.content ~contest_id:current_selected_contest ~problem_row
+    ~tbody () ;
   section
     ~a:[a_class ["panel-section"; "container"; "py-3"]]
     [ div

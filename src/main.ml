@@ -84,31 +84,17 @@ let () =
         Console.console##log (Js.string "Page loaded") ;
         render_page () ;
         Js._false ) ;
-  (* state for window resize *)
-  let last_width = ref Dom_html.window##.innerWidth in
-  let resize_timer = ref None in
-  let debounce_trigger_render () =
-    (* cancel previous timer *)
-    ( match !resize_timer with
-    | Some timer -> Dom_html.clearTimeout timer
-    | None -> () ) ;
-    resize_timer :=
-      Some
-        (Dom_html.setTimeout
-           (fun () ->
-             resize_timer := None ;
-             Helpers.trigger_render () )
-           300. )
+  let queries =
+    [ Dom_html.window##matchMedia (Js.string "(max-width: 767px)")
+    ; Dom_html.window##matchMedia
+        (Js.string "(min-width: 768px) and (max-width: 1199px)")
+    ; Dom_html.window##matchMedia (Js.string "(min-width: 1200px)") ]
   in
-  Dom_html.window##.onresize
-  := Dom_html.handler (fun _ ->
-      Console.console##log (Js.string "Window resized") ;
-      let width = Dom_html.window##.innerWidth in
-      (let width_changed = width <> !last_width in
-       last_width := width ;
-       (* Ignore keyboard opening/closing *)
-       if width_changed then debounce_trigger_render () ) ;
-      Js._false ) ;
+  List.iter
+    (fun media ->
+      media##.onchange :=
+        Dom_html.handler (fun _ -> Helpers.trigger_render () ; Js._false) )
+    queries ;
   let _ =
     (* Listen for the "render" event *)
     Dom_html.addEventListener Dom_html.window (Dom.Event.make "render")
