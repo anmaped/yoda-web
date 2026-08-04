@@ -73,6 +73,7 @@ jobs:
           cp default.conf image-context/default.conf
           mkdir -p _build/default/src
           cp dist/static/main.bc.js _build/default/src/main.bc.js
+          mkdir -p image-context/static
           cp dist/static/index.html image-context/static/index.html
 
       - name: Set up Docker Buildx
