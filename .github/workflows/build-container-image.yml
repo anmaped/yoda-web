@@ -71,7 +71,9 @@ jobs:
           cp entrypoint.sh image-context/entrypoint.sh
           mkdir -p image-context/nginx
           cp default.conf image-context/default.conf
-          cp -a dist/static image-context/static
+          mkdir -p _build/default/src
+          cp dist/static/main.bc.js _build/default/src/main.bc.js
+          cp dist/static/index.html image-context/static/index.html
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
