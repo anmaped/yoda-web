@@ -34,12 +34,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          cp -a static dist/static
-          rm -rf dist/static/_old
-          cp _build/default/src/main.bc.js dist/static/main.bc.js
+          cp static/index.html dist/index.html
+          cp _build/default/src/main.bc.js dist/main.bc.js
 
       - name: Upload static directory
         uses: actions/upload-artifact@v7
         with:
           name: yoda-web-static
-          path: dist/static
+          path: dist

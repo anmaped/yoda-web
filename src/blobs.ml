@@ -2,7 +2,7 @@ open Js_of_ocaml
 
 let bootstrap_css = [%blob "bootstrap.css"]
 
-let codemirror_css = [%blob "codemirror.css"]
+let codemirror_css = [%blob "../static/editor.css"]
 
 let style_css = [%blob "../static/style.css"]
 
