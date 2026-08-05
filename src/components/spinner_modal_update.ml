@@ -79,7 +79,7 @@ let find_submission_by_id submissions submission_id =
 let submit_solution (ctx : submit_context) =
   let safe_source = Helpers.escape_json_string ctx.source_code in
   let artifact =
-    Api.Openapi.SolutionSource_artifacts.create ~filename:"source_code"
+    Api.Openapi.SourceArtifact.create ~filename:"source_code"
       ~content:safe_source ()
   in
   let solution =

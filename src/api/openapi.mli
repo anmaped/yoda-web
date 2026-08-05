@@ -256,13 +256,51 @@ module TestCase : sig
   val to_json : t -> string
 end
 
-type submissionDetails = {
+type submissionDetailOutput = {
+  stdout: string;
+  stderr: string;
+  return_code: int;
+}
+
+val create_submissionDetailOutput : stdout:string -> stderr:string -> return_code:int -> unit -> submissionDetailOutput
+val submissionDetailOutput_of_yojson : Yojson.Safe.t -> submissionDetailOutput
+val yojson_of_submissionDetailOutput : submissionDetailOutput -> Yojson.Safe.t
+val submissionDetailOutput_of_json : string -> submissionDetailOutput
+val json_of_submissionDetailOutput : submissionDetailOutput -> string
+
+module SubmissionDetailOutput : sig
+  type nonrec t = submissionDetailOutput
+  val create : stdout:string -> stderr:string -> return_code:int -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type submissionDetail = {
   testcase_id: int;
   status: string;
   time_ms: int;
+  output: submissionDetailOutput option;
 }
 
-val create_submissionDetails : testcase_id:int -> status:string -> time_ms:int -> unit -> submissionDetails
+val create_submissionDetail : testcase_id:int -> status:string -> time_ms:int -> ?output:submissionDetailOutput -> unit -> submissionDetail
+val submissionDetail_of_yojson : Yojson.Safe.t -> submissionDetail
+val yojson_of_submissionDetail : submissionDetail -> Yojson.Safe.t
+val submissionDetail_of_json : string -> submissionDetail
+val json_of_submissionDetail : submissionDetail -> string
+
+module SubmissionDetail : sig
+  type nonrec t = submissionDetail
+  val create : testcase_id:int -> status:string -> time_ms:int -> ?output:submissionDetailOutput -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type submissionDetails = submissionDetail list
+
 val submissionDetails_of_yojson : Yojson.Safe.t -> submissionDetails
 val yojson_of_submissionDetails : submissionDetails -> Yojson.Safe.t
 val submissionDetails_of_json : string -> submissionDetails
@@ -270,7 +308,6 @@ val json_of_submissionDetails : submissionDetails -> string
 
 module SubmissionDetails : sig
   type nonrec t = submissionDetails
-  val create : testcase_id:int -> status:string -> time_ms:int -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -285,10 +322,10 @@ type submission = {
   score: int;
   time_ms: int;
   memory_kb: int;
-  details: submissionDetails list;
+  details: submissionDetails;
 }
 
-val create_submission : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails list -> unit -> submission
+val create_submission : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails -> unit -> submission
 val submission_of_yojson : Yojson.Safe.t -> submission
 val yojson_of_submission : submission -> Yojson.Safe.t
 val submission_of_json : string -> submission
@@ -296,26 +333,41 @@ val json_of_submission : submission -> string
 
 module Submission : sig
   type nonrec t = submission
-  val create : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails list -> unit -> t
+  val create : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
 end
 
-type solutionSource_artifacts = {
+type submissions = submission list
+
+val submissions_of_yojson : Yojson.Safe.t -> submissions
+val yojson_of_submissions : submissions -> Yojson.Safe.t
+val submissions_of_json : string -> submissions
+val json_of_submissions : submissions -> string
+
+module Submissions : sig
+  type nonrec t = submissions
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type sourceArtifact = {
   filename: string;  (** The name of the source file *)
   content: string;  (** The content of the source file *)
 }
 
-val create_solutionSource_artifacts : filename:string -> content:string -> unit -> solutionSource_artifacts
-val solutionSource_artifacts_of_yojson : Yojson.Safe.t -> solutionSource_artifacts
-val yojson_of_solutionSource_artifacts : solutionSource_artifacts -> Yojson.Safe.t
-val solutionSource_artifacts_of_json : string -> solutionSource_artifacts
-val json_of_solutionSource_artifacts : solutionSource_artifacts -> string
+val create_sourceArtifact : filename:string -> content:string -> unit -> sourceArtifact
+val sourceArtifact_of_yojson : Yojson.Safe.t -> sourceArtifact
+val yojson_of_sourceArtifact : sourceArtifact -> Yojson.Safe.t
+val sourceArtifact_of_json : string -> sourceArtifact
+val json_of_sourceArtifact : sourceArtifact -> string
 
-module SolutionSource_artifacts : sig
-  type nonrec t = solutionSource_artifacts
+module SourceArtifact : sig
+  type nonrec t = sourceArtifact
   val create : filename:string -> content:string -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
@@ -326,10 +378,10 @@ end
 type solution = {
   problem_id: int;
   language: string;
-  source_artifacts: solutionSource_artifacts list;
+  source_artifacts: sourceArtifact list;
 }
 
-val create_solution : problem_id:int -> language:string -> source_artifacts:solutionSource_artifacts list -> unit -> solution
+val create_solution : problem_id:int -> language:string -> source_artifacts:sourceArtifact list -> unit -> solution
 val solution_of_yojson : Yojson.Safe.t -> solution
 val yojson_of_solution : solution -> Yojson.Safe.t
 val solution_of_json : string -> solution
@@ -337,7 +389,7 @@ val json_of_solution : solution -> string
 
 module Solution : sig
   type nonrec t = solution
-  val create : problem_id:int -> language:string -> source_artifacts:solutionSource_artifacts list -> unit -> t
+  val create : problem_id:int -> language:string -> source_artifacts:sourceArtifact list -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -375,6 +427,58 @@ val json_of_problemsIdTestcasesGetResponse2 : problemsIdTestcasesGetResponse2 ->
 
 module ProblemsIdTestcasesGetResponse2 : sig
   type nonrec t = problemsIdTestcasesGetResponse2
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type problemUpdateRequest = {
+  code: string option;
+  title: string option;
+  description: string option;
+  input_spec: string option;
+  output_spec: string option;
+  time_limit_ms: int option;
+  memory_limit_mb: int option;
+  source_artifacts: sourceArtifact list option;
+}
+
+val create_problemUpdateRequest : ?code:string -> ?title:string -> ?description:string -> ?input_spec:string -> ?output_spec:string -> ?time_limit_ms:int -> ?memory_limit_mb:int -> ?source_artifacts:sourceArtifact list -> unit -> problemUpdateRequest
+val problemUpdateRequest_of_yojson : Yojson.Safe.t -> problemUpdateRequest
+val yojson_of_problemUpdateRequest : problemUpdateRequest -> Yojson.Safe.t
+val problemUpdateRequest_of_json : string -> problemUpdateRequest
+val json_of_problemUpdateRequest : problemUpdateRequest -> string
+
+module ProblemUpdateRequest : sig
+  type nonrec t = problemUpdateRequest
+  val create : ?code:string -> ?title:string -> ?description:string -> ?input_spec:string -> ?output_spec:string -> ?time_limit_ms:int -> ?memory_limit_mb:int -> ?source_artifacts:sourceArtifact list -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type problemCreateRequest = {
+  code: string;
+  title: string;
+  description: string;
+  input_spec: string;
+  output_spec: string;
+  time_limit_ms: int;
+  memory_limit_mb: int;
+  source_artifacts: sourceArtifact list option;
+}
+
+val create_problemCreateRequest : code:string -> title:string -> description:string -> input_spec:string -> output_spec:string -> time_limit_ms:int -> memory_limit_mb:int -> ?source_artifacts:sourceArtifact list -> unit -> problemCreateRequest
+val problemCreateRequest_of_yojson : Yojson.Safe.t -> problemCreateRequest
+val yojson_of_problemCreateRequest : problemCreateRequest -> Yojson.Safe.t
+val problemCreateRequest_of_json : string -> problemCreateRequest
+val json_of_problemCreateRequest : problemCreateRequest -> string
+
+module ProblemCreateRequest : sig
+  type nonrec t = problemCreateRequest
+  val create : code:string -> title:string -> description:string -> input_spec:string -> output_spec:string -> time_limit_ms:int -> memory_limit_mb:int -> ?source_artifacts:sourceArtifact list -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -587,21 +691,6 @@ val json_of_contestsContestsidProblemsGetResponse2 : contestsContestsidProblemsG
 
 module ContestsContestsidProblemsGetResponse2 : sig
   type nonrec t = contestsContestsidProblemsGetResponse2
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
-type contestsContestidSubmissionsGetResponse2 = submission list
-
-val contestsContestidSubmissionsGetResponse2_of_yojson : Yojson.Safe.t -> contestsContestidSubmissionsGetResponse2
-val yojson_of_contestsContestidSubmissionsGetResponse2 : contestsContestidSubmissionsGetResponse2 -> Yojson.Safe.t
-val contestsContestidSubmissionsGetResponse2_of_json : string -> contestsContestidSubmissionsGetResponse2
-val json_of_contestsContestidSubmissionsGetResponse2 : contestsContestidSubmissionsGetResponse2 -> string
-
-module ContestsContestidSubmissionsGetResponse2 : sig
-  type nonrec t = contestsContestidSubmissionsGetResponse2
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

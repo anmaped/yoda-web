@@ -101,7 +101,7 @@ let load_submissions table contest_id last =
         Lwt.return_unit )
       else
         let submissions : Api.Openapi.submission list =
-          Api.Openapi.ContestsContestidSubmissionsGetResponse2.of_yojson resp
+          Api.Openapi.Submissions.of_yojson resp
         in
         let submissions =
           submissions |> List.rev
