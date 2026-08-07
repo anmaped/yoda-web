@@ -80,11 +80,32 @@ let format_time_ms ms =
 
 let submission_row id problem lang result time =
   tr
-    [ td ~a:[a_class ["ps-3"]] [txt (string_of_int id)]
-    ; td [txt problem]
-    ; td [txt lang]
-    ; td [span ~a:[a_class (badge_class result)] [txt (status_label result)]]
-    ; td [txt time] ]
+    ( [ td ~a:[a_class ["ps-3"]] [txt (string_of_int id)]
+      ; td [txt problem]
+      ; td [txt lang]
+      ; td
+          [span ~a:[a_class (badge_class result)] [txt (status_label result)]]
+      ; td [txt time] ]
+    @
+    if Helpers.is_judge_or_admin () then
+      [ td
+          ~a:[a_style "text-align:center; vertical-align: middle"]
+          [ button
+              ~a:
+                [ a_class ["btn"; "btn-sm"; "btn-outline-warning"]
+                ; a_title (I18n.t "submissions_reevaluate")
+                ; a_id ("reeval-btn-" ^ string_of_int id)
+                ; a_onclick (fun _ ->
+                      Lwt.async (fun () ->
+                          Api.Helpers.re_evaluate_submission id
+                          >>= fun (_, status) ->
+                          Console.console##log
+                            (Js.string
+                               ("Re-eval status: " ^ string_of_int status) ) ;
+                          Lwt.return_unit ) ;
+                      false ) ]
+              [Icons.reeval_icon ()] ] ]
+    else [] )
 
 let load_submissions table contest_id last =
   Lwt.async (fun () ->
@@ -200,11 +221,17 @@ and submission_header x () =
   thead
     ~a:[a_class ["table-light"]]
     [ tr
-        [ sortable_th x Col_id
-        ; sortable_th x Col_problem
-        ; sortable_th x Col_language
-        ; sortable_th x Col_result
-        ; sortable_th x Col_time ] ]
+        ( [ sortable_th x Col_id
+          ; sortable_th x Col_problem
+          ; sortable_th x Col_language
+          ; sortable_th x Col_result
+          ; sortable_th x Col_time ]
+        @
+        if Helpers.is_judge_or_admin () then
+          [ th
+              ~a:[a_style "cursor:pointer"]
+              [txt (I18n.t "submissions_col_action")] ]
+        else [] ) ]
 
 let content ~contest_id ~last () =
   let table =

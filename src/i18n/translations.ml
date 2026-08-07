@@ -45,7 +45,12 @@ type translations =
   ; submissions_col_language: string
   ; submissions_col_result: string
   ; submissions_col_time: string
+  ; submissions_col_action: string
+  ; submissions_reevaluate: string
   ; submissions_recent_title: string
+  ; settings_import_zip_description: string
+  ; settings_import_zip_button: string
+  ; settings_import_zip_card_title: string
   ; contests_title: string
   ; problems_col_id: string
   ; problems_col_name: string
@@ -253,6 +258,8 @@ let en =
   ; submissions_col_language= "Language"
   ; submissions_col_result= "Result"
   ; submissions_col_time= "Time"
+  ; submissions_col_action= "Action"
+  ; submissions_reevaluate= "Re-evaluate"
   ; submissions_recent_title= "Recent Submissions"
   ; contests_title= "Contests"
   ; problems_col_id= "ID"
@@ -270,6 +277,9 @@ let en =
   ; settings_save_btn= "Save"
   ; settings_reset_btn= "Reset"
   ; settings_language_label= "Language"
+  ; settings_import_zip_description= "Select ZIP file to import problems. This will create new problems from the contents of the ZIP file."
+  ; settings_import_zip_button= "Import Problems"
+  ; settings_import_zip_card_title= "Import Problems"
   ; config_editor_title= "Config Editor"
   ; config_history_title= "Configuration History"
   ; config_col_version= "Version"
@@ -465,6 +475,8 @@ let fr =
   ; submissions_col_language= "Langage"
   ; submissions_col_result= "Résultat"
   ; submissions_col_time= "Temps"
+  ; submissions_col_action= "Action"
+  ; submissions_reevaluate= "Réévaluer"
   ; submissions_recent_title= "Soumissions récentes"
   ; contests_title= "Concours"
   ; problems_col_id= "ID"
@@ -483,6 +495,9 @@ let fr =
   ; settings_save_btn= "Enregistrer"
   ; settings_reset_btn= "Réinitialiser"
   ; settings_language_label= "Langue"
+  ; settings_import_zip_description= "Sélectionnez le fichier ZIP à importer. Cela créera de nouveaux problèmes à partir du contenu du fichier ZIP."
+  ; settings_import_zip_button= "Importer les problèmes"
+  ; settings_import_zip_card_title= "Importer les problèmes"
   ; config_editor_title= "Éditeur de configuration"
   ; config_history_title= "Historique des configurations"
   ; config_col_version= "Version"
@@ -684,6 +699,8 @@ let es =
   ; submissions_col_language= "Lenguaje"
   ; submissions_col_result= "Resultado"
   ; submissions_col_time= "Tiempo"
+  ; submissions_col_action= "Acción"
+  ; submissions_reevaluate= "Re-evaluar"
   ; submissions_recent_title= "Envíos recientes"
   ; contests_title= "Concursos"
   ; problems_col_id= "ID"
@@ -697,11 +714,13 @@ let es =
   ; settings_tab_size_label= "Tamaño de tabulación"
   ; settings_tab_size_desc= "Número de espacios por indentación."
   ; settings_wrap_lines= "Envolver líneas largas en el editor."
-  ; settings_auto_save=
-      "Guardar automáticamente tu código mientras escribes."
+  ; settings_auto_save= "Guardar automáticamente tu código mientras escribes."
   ; settings_save_btn= "Guardar"
   ; settings_reset_btn= "Restablecer"
   ; settings_language_label= "Idioma"
+  ; settings_import_zip_description= "Seleccione el archivo ZIP para importar problemas. Esto creará nuevos problemas a partir del contenido del archivo ZIP."
+  ; settings_import_zip_button= "Importar Problemas"
+  ; settings_import_zip_card_title= "Importar Problemas"
   ; config_editor_title= "Editor de configuración"
   ; config_history_title= "Historial de configuración"
   ; config_col_version= "Versión"
@@ -901,6 +920,8 @@ let pt =
   ; submissions_col_language= "Linguagem"
   ; submissions_col_result= "Resultado"
   ; submissions_col_time= "Tempo"
+  ; submissions_col_action= "Ação"
+  ; submissions_reevaluate= "Reavaliar"
   ; submissions_recent_title= "Envios recentes"
   ; contests_title= "Contests"
   ; problems_col_id= "ID"
@@ -918,6 +939,9 @@ let pt =
   ; settings_save_btn= "Guardar"
   ; settings_reset_btn= "Redefinir"
   ; settings_language_label= "Idioma"
+  ; settings_import_zip_description= "Selecione o arquivo ZIP para importar problemas. Isso criará novos problemas a partir do conteúdo do arquivo ZIP."
+  ; settings_import_zip_button= "Importar Problemas"
+  ; settings_import_zip_card_title= "Importar Problemas"
   ; config_editor_title= "Editor de configuração"
   ; config_history_title= "Histórico de configurações"
   ; config_col_version= "Versão"
@@ -1112,6 +1136,8 @@ let ar =
   ; submissions_col_language= "اللغة"
   ; submissions_col_result= "النتيجة"
   ; submissions_col_time= "الوقت"
+  ; submissions_col_action= "الإجراء"
+  ; submissions_reevaluate= "إعادة تقييم"
   ; submissions_recent_title= "الإرسالات الأخيرة"
   ; contests_title= "المسابقات"
   ; problems_col_id= "المعرّف"
@@ -1129,6 +1155,9 @@ let ar =
   ; settings_save_btn= "حفظ"
   ; settings_reset_btn= "إعادة تعيين"
   ; settings_language_label= "اللغة"
+  ; settings_import_zip_description= "حدد ملف ZIP لاستيراد المشاكل. سيتم إنشاء مشاكل جديدة من محتوى ملف ZIP."
+  ; settings_import_zip_button= "استيراد المشاكل"
+  ; settings_import_zip_card_title= "استيراد المشاكل"
   ; config_editor_title= "محرر التكوين"
   ; config_history_title= "سجل التكوين"
   ; config_col_version= "الإصدار"
@@ -1320,6 +1349,8 @@ let map : translations -> (string, string) Hashtbl.t =
   add "submissions_col_language" tr.submissions_col_language ;
   add "submissions_col_result" tr.submissions_col_result ;
   add "submissions_col_time" tr.submissions_col_time ;
+  add "submissions_col_action" tr.submissions_col_action ;
+  add "submissions_reevaluate" tr.submissions_reevaluate ;
   add "submissions_recent_title" tr.submissions_recent_title ;
   add "contests_title" tr.contests_title ;
   add "problems_col_id" tr.problems_col_id ;
@@ -1337,6 +1368,9 @@ let map : translations -> (string, string) Hashtbl.t =
   add "settings_save_btn" tr.settings_save_btn ;
   add "settings_reset_btn" tr.settings_reset_btn ;
   add "settings_language_label" tr.settings_language_label ;
+  add "settings_import_zip_description" tr.settings_import_zip_description ;
+  add "settings_import_zip_button" tr.settings_import_zip_button ;
+  add "settings_import_zip_card_title" tr.settings_import_zip_card_title ;
   add "config_editor_title" tr.config_editor_title ;
   add "config_history_title" tr.config_history_title ;
   add "config_col_version" tr.config_col_version ;

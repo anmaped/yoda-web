@@ -149,6 +149,8 @@ let is_admin () : bool = is_user_role "admin"
 
 let is_judge () : bool = is_user_role "judge"
 
+let is_judge_or_admin () : bool = is_judge () || is_admin ()
+
 let is_valid_json s =
   try
     ignore (Yojson.Basic.from_string s) ;

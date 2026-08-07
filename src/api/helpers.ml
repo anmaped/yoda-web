@@ -115,27 +115,67 @@ let post_problem contest_id body =
 
 let put_problem contest_id problem_id body =
   put_json
-    (Printf.sprintf "%s/contests/%d/problems/%d" base_url contest_id problem_id)
+    (Printf.sprintf "%s/contests/%d/problems/%d" base_url contest_id
+       problem_id )
     body
 
-let delete_problem contest_id problem_id =
-  delete_json
-    (Printf.sprintf "%s/contests/%d/problems/%d" base_url contest_id problem_id)
+let delete_problem problem_id =
+  delete_json (Printf.sprintf "%s/admin/problems/%d" base_url problem_id)
+
+(* --- Submission re-evaluate helpers --- *)
+
+let re_evaluate_submission submission_id =
+  post_json
+    (Printf.sprintf "%s/admin/submissions/%d/reevaluate" base_url
+       submission_id )
+    "{}"
 
 (* --- Testcase helpers --- *)
 
 let get_testcases contest_id problem_id =
   fetch_json
     (Printf.sprintf "%s/contests/%d/problems/%d/testcases" base_url
-       contest_id problem_id)
+       contest_id problem_id )
 
 let post_testcase contest_id problem_id body =
   post_json
     (Printf.sprintf "%s/contests/%d/problems/%d/testcases" base_url
-       contest_id problem_id)
+       contest_id problem_id )
     body
 
 let delete_testcase contest_id problem_id testcase_id =
   delete_json
     (Printf.sprintf "%s/contests/%d/problems/%d/testcases/%d" base_url
-       contest_id problem_id testcase_id)
+       contest_id problem_id testcase_id )
+
+(* --- Import helpers --- *)
+
+let create_problem_with_source contest_id ~code ~title ~time_limit_ms
+    ~memory_limit_mb ~description ~input_spec ~output_spec ~languages
+    ~source_artifacts =
+  let body =
+    match source_artifacts with
+    | Some arts ->
+        Openapi.ProblemCreateRequest.create ~code ~title ~description
+          ~input_spec ~output_spec ~time_limit_ms ~memory_limit_mb ~languages
+          ~source_artifacts:arts ()
+        |> Openapi.ProblemCreateRequest.to_json
+    | None ->
+        Openapi.ProblemCreateRequest.create ~code ~title ~description
+          ~input_spec ~output_spec ~languages ~time_limit_ms ~memory_limit_mb
+          ()
+        |> Openapi.ProblemCreateRequest.to_json
+  in
+  post_json
+    (Printf.sprintf "%s/contests/%d/problems" base_url contest_id)
+    body
+
+let update_problem_source contest_id problem_id source_artifacts =
+  let body =
+    Openapi.ProblemUpdateRequest.create ~source_artifacts ()
+    |> Openapi.ProblemUpdateRequest.to_json
+  in
+  put_json
+    (Printf.sprintf "%s/contests/%d/problems/%d" base_url contest_id
+       problem_id )
+    body

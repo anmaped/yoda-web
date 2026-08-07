@@ -425,25 +425,29 @@ let problem_card (problem : Api.Openapi.problem) =
                       (Js.string
                          (Printf.sprintf "Delete problem code: %s"
                             problem.code ) ) ;
-                    (* [TODO] modal view dos not go anywhere *)
                     let _ =
                       match !state.contest_id with
                       | Some _cid ->
                           Components.Modal_view.make "confirm-delete-problem"
                             problem.code
-                            [ p ~a:[a_class ["h6"]] [txt "Delete Problem?"]
-                            ; p
+                            [ p
                                 [ txt
                                     (Printf.sprintf
-                                       "Are you sure you want to delete \
-                                        \"%s\"?"
+                                       "Are you sure you want to delete  \
+                                        \"%s\" problem?"
                                        problem.title ) ] ]
                             (fun () ->
-                              (* Api.Helpers.delete_problem cid (Option.value
-                                 ~default:0 problem.id) >>= fun status -> if
-                                 status = 200 then load_problems cid else
-                                 Lwt.return_unit *)
-                              true )
+                              Lwt.async (fun () ->
+                                  Api.Helpers.delete_problem
+                                    (Option.value ~default:0 problem.id)
+                                  >>= fun status ->
+                                  if status = 204 then (
+                                    Settings_problems_import.RerenderFlag
+                                    .set_rerender () ;
+                                    Helpers.trigger_render () ;
+                                    Lwt.return_unit )
+                                  else Lwt.return_unit ) ;
+                              false )
                             ()
                           |> Helpers.add_element_to_app
                       | None -> ()
@@ -591,7 +595,11 @@ let render_problems_tab () =
             (Some cid)
         in
         Lwt.return_unit ) ;
-  if !last_loaded <> Some cid then begin
+  if
+    !last_loaded <> Some cid
+    || Settings_problems_import.RerenderFlag.need_rerender ()
+  then begin
+    Settings_problems_import.RerenderFlag.unset_rerender () ;
     last_loaded := Some cid ;
     Lwt.async (fun () -> load_problems cid)
   end ;
@@ -665,8 +673,8 @@ let render_problems_tab () =
                       ; output_spec= "" } ;
                   Helpers.trigger_render () ;
                   false ) ]
-          [Components.Icons.plus_lg_icon ~a:["me-2"] (); txt (I18n.t "problems_add_btn")]
-      ]
+          [ Components.Icons.plus_lg_icon ~a:["me-2"] ()
+          ; txt (I18n.t "problems_add_btn") ] ]
   in
   (* Main content *)
   section_card (I18n.t "problems_title")
@@ -682,6 +690,8 @@ let render_problems_tab () =
                 ( match cid with
                 | 0 -> "No contest selected"
                 | cid -> Printf.sprintf "(Contest ID: %d)" cid ) ] ]
+    ; (* Import card *)
+      Settings_problems_import.render_import_card cid ()
     ; search_bar ()
     ; ( match !error_msg with
       | Some e -> div ~a:[a_class ["alert"; "alert-danger"]] [txt e]

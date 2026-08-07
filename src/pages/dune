@@ -16,7 +16,8 @@
   settings_stats
   settings_stats_graphs
   settings_helpers
-  settings_problems)
+  settings_problems
+  settings_problems_import)
  (libraries
   components
   api
