@@ -124,15 +124,111 @@ let get_test_case_files (files : (string * string) list) :
       is_test_folder (Filename.dirname filename) && is_test_file filename )
     files
 
+(* Map file extensions to supported languages *)
+let get_supported_languages (files : (string * string) list) : string list =
+  (* Define the mapping from extensions to languages based on current
+     configuration *)
+  let extension_map =
+    match !Settings_yodac.current_config with
+    | None ->
+        (* Fallback to default mappings if no config available *)
+        [ (".ml", "ocaml")
+        ; (".js", "javascript")
+        ; (".py", "python")
+        ; (".java", "java")
+        ; (".cpp", "cpp")
+        ; (".c", "c")
+        ; (".rs", "rust")
+        ; (".go", "go")
+        ; (".ts", "typescript")
+        ; (".php", "php")
+        ; (".rb", "ruby")
+        ; (".swift", "swift")
+        ; (".kt", "kotlin")
+        ; (".hs", "haskell")
+        ; (".pl", "perl")
+        ; (".sh", "shell")
+        ; (".sql", "sql") ]
+    | Some config ->
+        let languages = config.config in
+        List.map
+          (fun (lang : Api.Openapi.YodacLanguageConfig.t) ->
+            (lang.ext, lang.language) )
+          languages
+  in
+  Console.console##log
+    (Js.string
+       (Printf.sprintf "Extension map: %s"
+          (String.concat ", "
+             (List.map (fun (ext, lang) -> ext ^ "->" ^ lang) extension_map) ) ) ) ;
+  let rec find_languages acc filenames =
+    match filenames with
+    | [] -> acc
+    | filename :: rest ->
+        let ext = Filename.extension filename in
+        Console.console##log
+          (Js.string
+             (Printf.sprintf "Checking file: %s, extension: %s" filename ext) ) ;
+        let language =
+          try
+            (* Look for exact extension match *)
+            List.assoc ext extension_map
+          with Not_found -> (
+            (* Try to find a match ignoring the leading dot *)
+            try
+              List.assoc
+                (String.sub ext 1 (String.length ext - 1))
+                extension_map
+            with Not_found -> "" )
+        in
+        if language = "" then find_languages acc rest
+        else find_languages (language :: acc) rest
+  in
+  let languages = find_languages [] (List.map fst files) in
+  List.sort_uniq String.compare languages
+
+(* Remove folders from files list - keeps only actual files *)
+let remove_folders_from_files (files : (string * string) list) :
+    (string * string) list =
+  List.filter
+    (fun (filename, _) ->
+      (* Check if it's a folder by checking if filename ends with '/' or is
+         just a directory name *)
+      let normalized_filename =
+        if
+          String.length filename > 0
+          && filename.[String.length filename - 1] = '/'
+        then
+          (* Remove trailing slash if present *)
+          String.sub filename 0 (String.length filename - 1)
+        else filename
+      in
+      (* A file has an extension (contains a dot that is not at the start) *)
+      let has_extension filename =
+        match String.rindex_opt filename '.' with
+        | Some pos when pos > 0 -> true
+        | _ -> false
+      in
+      has_extension normalized_filename )
+    files
+
+(* Convert (uri * uri) list to Api.Openapi.sourceArtifact list *)
+let convert_to_source_artifacts (files : (string * string) list) :
+    Api.Openapi.sourceArtifact list =
+  List.map
+    (fun (filename, content) ->
+      Api.Openapi.create_sourceArtifact ~filename ~content () )
+    files
+
 (* use openapi to send the problem *)
-let create_problem_from_zip contest_id problem_name _test_case_files =
+let create_problem_from_zip contest_id problem_name files =
   let input_spec = "Input specification placeholder" in
   let output_spec = "Output specification placeholder" in
   let description = "Problem created from ZIP import" in
   let time_limit_ms = 1000 in
   let memory_limit_mb = 256 in
-  let source_artifacts = [] in
-  let languages = [] in
+  let languages = get_supported_languages files in
+  let source_artifacts = convert_to_source_artifacts files in
   let body =
     Api.Openapi.ProblemCreateRequest.create ~code:problem_name
       ~title:problem_name ~description ~input_spec ~output_spec
@@ -183,6 +279,7 @@ let process_zip_file contest_id file_input =
           (Js.string
              (Printf.sprintf "Found %d problems in ZIP"
                 (List.length problem_names) ) ) ;
+        let files = remove_folders_from_files files in
         let test_case_files = get_test_case_files files in
         (* Here you would process the test_case_files and create problems *)
         Console.console##log
