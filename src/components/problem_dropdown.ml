@@ -3,6 +3,27 @@ open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 open Lwt.Infix
 
+let key_problem_id = "yoda-state-current-problem-id"
+
+let key_problem_description = "yoda-state-current-problem-description"
+
+(** Returns the ID of the currently selected problem *)
+let get_current_problem_id () =
+  match Helpers.get_local_variable key_problem_id with
+  | Some id -> int_of_string (Js.to_string id)
+  | None -> -1
+
+let set_current_problem_id id =
+  Helpers.set_local_variable key_problem_id (string_of_int id)
+
+let get_current_problem_description () =
+  match Helpers.get_local_variable key_problem_description with
+  | Some desc -> Js.to_string desc
+  | None -> ""
+
+let set_current_problem_description desc =
+  Helpers.set_local_variable key_problem_description desc
+
 let content () =
   let sel =
     select
@@ -63,46 +84,48 @@ let content () =
             in
             find_and_select 0
           in
-          let _ =
-            match
-              Helpers.get_local_variable "yoda-state-last-problem-id"
-            with
+          let () =
+            match Helpers.get_local_variable key_problem_id with
             | Some code -> select_problem (Js.to_string code)
             | None -> (
               match List.rev problems with
               | last_problem :: _ ->
-                  Helpers.set_local_variable "yoda-state-last-problem-id"
-                    last_problem.code ;
-                  Helpers.set_local_variable
-                    "yoda-state-last-problem-description"
+                  set_current_problem_id
+                    (Option.value ~default:(-1) last_problem.id) ;
+                  set_current_problem_description
                     (last_problem.code ^ ": " ^ last_problem.title) ;
                   select_problem last_problem.code
               | [] -> () )
           in
-          (* Add change handler *)
+          let selected_problem () =
+            let idx = dom_sel##.selectedIndex in
+            if idx <= 0 then None
+            else
+              match Js.Opt.to_option (dom_sel##.options##item idx) with
+              | None -> None
+              | Some opt ->
+                  let id = Js.to_string opt##.value |> int_of_string in
+                  let desc =
+                    Js.Opt.get opt##.textContent (fun () -> Js.string "")
+                    |> Js.to_string
+                  in
+                  Some (id, desc)
+          in
+          let update_current_problem () =
+            match selected_problem () with
+            | None -> ()
+            | Some (id, desc) ->
+                set_current_problem_id id ;
+                set_current_problem_description desc ;
+                Tabbar.update id ()
+          in
+          (* Update tabbar with current pid *)
+          update_current_problem () ;
+          (* Update when selection changes *)
           ignore
             (Dom_html.addEventListener dom_sel Dom_html.Event.change
                (Dom_html.handler (fun _ ->
-                    let idx = dom_sel##.selectedIndex in
-                    if idx <= 0 then Js._false
-                    else
-                      match
-                        Js.Opt.to_option (dom_sel##.options##item idx)
-                      with
-                      | Some opt ->
-                          let id = Js.to_string opt##.value in
-                          let desc =
-                            Js.Opt.get opt##.textContent (fun () ->
-                                Js.string "" )
-                            |> Js.to_string
-                          in
-                          (* Do something with id and desc *)
-                          Helpers.set_local_variable
-                            "yoda-state-last-problem-id" id ;
-                          Helpers.set_local_variable
-                            "yoda-state-last-problem-description" desc ;
-                          Js._true
-                      | None -> Js._true ) )
+                    update_current_problem () ; Js._false ) )
                Js._false ) ;
           Lwt.return_unit )
   in

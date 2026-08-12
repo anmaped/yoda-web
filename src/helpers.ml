@@ -77,6 +77,13 @@ let is_wide_desktop () =
   let width = Dom_html.window##.innerWidth in
   width >= 1200
 
+type layout = Mobile | Normal | Wide
+
+let layout () =
+  if is_wide_desktop () then Wide
+  else if is_mobile () then Mobile
+  else Normal
+
 (* Local Storage and Session Storage Helpers *)
 let set_session_variable key value =
   Js.Optdef.iter Dom_html.window##.sessionStorage (fun storage ->

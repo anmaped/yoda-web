@@ -103,7 +103,8 @@ let toolbar ~mobile () =
                            () ) ;
                       false )
                 ; Unsafe.string_attrib "aria-label" "Run" ]
-              [Icons.terminal_fill_icon (); txt (" " ^ I18n.t "codebar_local_run")]
+              [ Icons.terminal_fill_icon ()
+              ; txt (" " ^ I18n.t "codebar_local_run") ]
           ; (* Submit Button *)
             submit_button ~id:"save-all-btn" ~class_:"btn btn-warning mr-2"
               ~title:(I18n.t "codebar_evaluate_save")

@@ -23,7 +23,8 @@ type problem_state =
   ; contest_id: int option
   ; search: string
   ; selected_code: string option
-  ; difficulty_filter: difficulty option }
+  ; difficulty_filter: difficulty option
+  ; source_artifacts: (int, Api.Openapi.sourceArtifact list) Hashtbl.t }
 
 type edit_mode =
   | Create of Api.Openapi.problem
@@ -39,7 +40,8 @@ let state : problem_state ref =
     ; contest_id= None
     ; search= ""
     ; selected_code= None
-    ; difficulty_filter= None }
+    ; difficulty_filter= None
+    ; source_artifacts= Hashtbl.create 16 }
 
 let edit_mode : edit_mode ref = ref None_
 
@@ -116,13 +118,18 @@ let load_problems contest_id =
     Lwt.return_unit
   end
 
-let load_testcases contest_id problem_id =
+let load_testcases problem_id =
   match Hashtbl.find_opt !state.testcases problem_id with
   | Some _ -> Lwt.return_unit (* already loaded *)
   | None ->
-      Api.Helpers.get_testcases contest_id problem_id
+      Api.Helpers.get_testcases problem_id
       >>= fun (resp, status) ->
-      if status <> 200 then Lwt.return_unit
+      if status <> 200 then (
+        (* this means the problem doesn't exist or has no test cases, so we
+           just add an empty list; this allows to distinguish loading errors
+           from no test cases *)
+        Hashtbl.add !state.testcases problem_id [] ;
+        Lwt.return_unit )
       else
         let cases =
           Api.Openapi.ProblemsIdTestcasesGetResponse2.of_yojson resp
@@ -130,6 +137,30 @@ let load_testcases contest_id problem_id =
         Hashtbl.add !state.testcases problem_id cases ;
         Helpers.trigger_render () ;
         Lwt.return_unit
+
+let load_source_artifacts (problem_id : int) =
+  match Hashtbl.find_opt !state.source_artifacts problem_id with
+  | Some _ -> Lwt.return_unit (* already loaded *)
+  | None ->
+      Api.Helpers.get_problem problem_id
+      >>= fun (resp, status) ->
+      if status <> 200 then (
+        (* this means the problem doesn't exist or has no source artifacts,
+           so we just add an empty list; this allows to distinguish loading
+           errors from no source artifacts *)
+        Hashtbl.add !state.source_artifacts problem_id [] ;
+        Lwt.return_unit )
+      else
+        let artifacts =
+          (Api.Openapi.Problem.of_yojson resp).source_artifacts
+          |> Option.value ~default:[]
+        in
+        Hashtbl.add !state.source_artifacts problem_id artifacts ;
+        Helpers.trigger_render () ;
+        Lwt.return_unit
+
+let get_source_artifacts_for_problem problem_id =
+  try Hashtbl.find !state.source_artifacts problem_id with Not_found -> []
 
 (* --- Format helpers --- *)
 
@@ -353,6 +384,13 @@ let problem_card (problem : Api.Openapi.problem) =
         (Hashtbl.find !state.testcases (Option.value ~default:0 problem.id))
     with Not_found -> None
   in
+  let artifacts =
+    try
+      Some
+        (Hashtbl.find !state.source_artifacts
+           (Option.value ~default:0 problem.id) )
+    with Not_found -> None
+  in
   let a_class_list =
     ["card"; "mb-2"; "border"; "border-secondary-subtle"; "problem-card"]
     @ if is_selected then ["shadow-sm"] else []
@@ -393,9 +431,12 @@ let problem_card (problem : Api.Openapi.problem) =
                         match !state.contest_id with
                         | Some _cid ->
                             Lwt.async (fun () ->
-                                (* [TODO] *)
-                                (*load_testcases cid (Option.value ~default:0
-                                  problem.id) >>= fun () ->*)
+                                load_testcases
+                                  (Option.value ~default:0 problem.id)
+                                >>= fun () ->
+                                load_source_artifacts
+                                  (Option.value ~default:0 problem.id)
+                                >>= fun () ->
                                 Helpers.trigger_render () ; Lwt.return () ) ;
                             false
                         | None -> false ) ]
@@ -407,7 +448,7 @@ let problem_card (problem : Api.Openapi.problem) =
                           (I18n.t "problems_testcases_title")
                           (List.length (Option.get c))
                     | None ->
-                        Printf.sprintf "%s (0)"
+                        Printf.sprintf "%s (...)"
                           (I18n.t "problems_testcases_title") ) ] ]
         ; button
             ~a:
@@ -498,6 +539,10 @@ let problem_card (problem : Api.Openapi.problem) =
                     ~a:[a_class ["form-label"; "fw-bold"]]
                     [txt "Test Cases"]
                 ; ( match cases with
+                  | Some [] ->
+                      p
+                        ~a:[a_class ["text-muted"]]
+                        [txt "No test cases defined"]
                   | Some tcases ->
                       let test_case_rows =
                         List.mapi
@@ -515,7 +560,7 @@ let problem_card (problem : Api.Openapi.problem) =
                                   [ span
                                       [ kbd
                                           [ txt
-                                              (Printf.sprintf "Test %d"
+                                              (Printf.sprintf "Test Case %d"
                                                  (idx + 1) ) ]
                                       ; ( if tc.is_sample then
                                             span
@@ -525,14 +570,59 @@ let problem_card (problem : Api.Openapi.problem) =
                                                     ; "bg-info"
                                                     ; "ms-2" ] ]
                                               [txt "Sample"]
-                                          else span [] ) ] ]
-                              ; button
-                                  ~a:
-                                    [ a_class
-                                        [ "btn"
-                                        ; "btn-sm"
-                                        ; "btn-outline-danger" ] ]
-                                  [Components.Icons.trash_icon ()]
+                                          else span [] ) ]
+                                  ; (* edit button *)
+                                    button
+                                      ~a:
+                                        [ a_class
+                                            [ "btn"
+                                            ; "btn-sm"
+                                            ; "btn-outline-secondary"
+                                            ; "me-1"
+                                            ; "ms-auto" ]
+                                        ; a_onclick (fun _ ->
+                                              Console.console##log
+                                                (Js.string
+                                                   (Printf.sprintf
+                                                      "Edit testcase: %d"
+                                                      tc.id ) ) ;
+                                              Components.Modal_view.make
+                                                "edit-testcase-modal"
+                                                (Printf.sprintf
+                                                   "Edit Test Case %d (id:%d)" (idx + 1) tc.id )
+                                                [ (* modal content here *) ]
+                                                (fun () ->
+                                                  (* save logic here *)
+                                                  false )
+                                                ()
+                                              |> Helpers.add_element_to_app ;
+                                              false ) ]
+                                      [Components.Icons.pencil_icon ()]
+                                  ; button
+                                      ~a:
+                                        [ a_class
+                                            [ "btn"
+                                            ; "btn-sm"
+                                            ; "btn-outline-danger" ]
+                                        ; a_onclick (fun _ ->
+                                              Console.console##log
+                                                (Js.string
+                                                   (Printf.sprintf
+                                                      "Delete testcase: %d"
+                                                      tc.id ) ) ;
+                                              Lwt.async (fun () ->
+                                                  Api.Helpers.delete_testcase
+                                                    tc.id
+                                                  >>= fun status ->
+                                                  if status = 204 then (
+                                                    Settings_problems_import
+                                                    .RerenderFlag
+                                                    .set_rerender () ;
+                                                    Helpers.trigger_render () ;
+                                                    Lwt.return_unit )
+                                                  else Lwt.return_unit ) ;
+                                              false ) ]
+                                      [Components.Icons.trash_icon ()] ]
                               ; label
                                   ~a:[a_class ["form-label"]]
                                   [txt "Input"]
@@ -569,6 +659,78 @@ let problem_card (problem : Api.Openapi.problem) =
                                              else "" ) ] ]
                                    [row] )
                                test_case_rows ) ]
+                  | None -> p ~a:[a_class ["text-muted"]] [txt "Loading..."]
+                  ) ]
+            ; (* Source artifacts *)
+              div
+                [ label
+                    ~a:[a_class ["form-label"; "fw-bold"]]
+                    [txt "Source Artifacts"]
+                ; ( match artifacts with
+                  | Some [] ->
+                      p
+                        ~a:[a_class ["text-muted"]]
+                        [txt "No source artifacts defined"]
+                  | Some arts ->
+                      let artifact_rows =
+                        List.map
+                          (fun (art : Api.Openapi.sourceArtifact) ->
+                            div
+                              ~a:
+                                [ a_class
+                                    [ "d-flex"
+                                    ; "justify-content-between"
+                                    ; "align-items-center"
+                                    ; "mb-2"
+                                    ; "border"
+                                    ; "rounded"
+                                    ; "p-3" ] ]
+                              [ div
+                                  ~a:[a_class ["flex-grow-1"]]
+                                  [ span
+                                      ~a:[a_class ["fw-bold"]]
+                                      [txt art.filename]
+                                  ; br ()
+                                  ; small
+                                      ~a:[a_class ["text-muted"]]
+                                      [ txt
+                                          ( "Size: "
+                                          ^ string_of_int
+                                              (String.length art.content)
+                                          ^ " chars" ) ] ]
+                              ; div
+                                  ~a:[a_class ["d-flex"; "gap-1"]]
+                                  [ button
+                                      ~a:
+                                        [ a_class
+                                            [ "btn"
+                                            ; "btn-sm"
+                                            ; "btn-outline-secondary" ]
+                                        ; a_onclick (fun _ ->
+                                              Console.console##log
+                                                (Js.string
+                                                   (Printf.sprintf
+                                                      "Edit artifact: %s"
+                                                      art.filename ) ) ;
+                                              false ) ]
+                                      [Components.Icons.pencil_icon ()]
+                                  ; button
+                                      ~a:
+                                        [ a_class
+                                            [ "btn"
+                                            ; "btn-sm"
+                                            ; "btn-outline-danger" ]
+                                        ; a_onclick (fun _ ->
+                                              Console.console##log
+                                                (Js.string
+                                                   (Printf.sprintf
+                                                      "Delete artifact: %s"
+                                                      art.filename ) ) ;
+                                              false ) ]
+                                      [Components.Icons.trash_icon ()] ] ] )
+                          arts
+                      in
+                      div artifact_rows
                   | None -> p ~a:[a_class ["text-muted"]] [txt "Loading..."]
                   ) ] ]
         else div [] ) ]
@@ -670,7 +832,9 @@ let render_problems_tab () =
                       ; memory_limit_mb= 256
                       ; description= ""
                       ; input_spec= ""
-                      ; output_spec= "" } ;
+                      ; output_spec= ""
+                      ; languages= []
+                      ; source_artifacts= None } ;
                   Helpers.trigger_render () ;
                   false ) ]
           [ Components.Icons.plus_lg_icon ~a:["me-2"] ()
@@ -683,13 +847,7 @@ let render_problems_tab () =
         [ label
             ~a:[a_class ["form-label"]]
             [txt (I18n.t "problems_select_contest")]
-        ; contest_select
-        ; span
-            ~a:[a_class ["text-muted"; "ms-2"; "fst-italic"]]
-            [ txt
-                ( match cid with
-                | 0 -> "No contest selected"
-                | cid -> Printf.sprintf "(Contest ID: %d)" cid ) ] ]
+        ; contest_select ]
     ; (* Import card *)
       Settings_problems_import.render_import_card cid ()
     ; search_bar ()

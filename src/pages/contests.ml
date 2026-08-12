@@ -17,4 +17,8 @@ let render () =
   let panel =
     div ~a:[a_class ["flex-grow-1"]] [main ~a:[a_class ["panel"]] [section]]
   in
-  [Components.Sidebar.sidebar (); panel]
+  match Helpers.layout () with
+  | Helpers.Mobile ->
+      [div [Components.Sidebar.sidebar ~mobile:true (); panel]]
+  | Helpers.Normal -> [Components.Sidebar.sidebar ~wide:false (); panel]
+  | Helpers.Wide -> [Components.Sidebar.sidebar (); panel]

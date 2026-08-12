@@ -70,6 +70,9 @@ let verify_token () =
 let get_problems contest_id =
   fetch_json (Printf.sprintf "%s/contests/%d/problems" base_url contest_id)
 
+let get_problem problem_id =
+  fetch_json (Printf.sprintf "%s/problems/%d" base_url problem_id)
+
 (* --- admin config helpers --- *)
 let put_json url body =
   XmlHttpRequest.perform_raw_url ~override_method:`PUT ~headers:(headers ())
@@ -132,10 +135,8 @@ let re_evaluate_submission submission_id =
 
 (* --- Testcase helpers --- *)
 
-let get_testcases contest_id problem_id =
-  fetch_json
-    (Printf.sprintf "%s/contests/%d/problems/%d/testcases" base_url
-       contest_id problem_id )
+let get_testcases problem_id =
+  fetch_json (Printf.sprintf "%s/problems/%d/testcases" base_url problem_id)
 
 let post_testcase contest_id problem_id body =
   post_json
@@ -143,10 +144,8 @@ let post_testcase contest_id problem_id body =
        contest_id problem_id )
     body
 
-let delete_testcase contest_id problem_id testcase_id =
-  delete_json
-    (Printf.sprintf "%s/contests/%d/problems/%d/testcases/%d" base_url
-       contest_id problem_id testcase_id )
+let delete_testcase testcase_id =
+  delete_json (Printf.sprintf "%s/testcases/%d" base_url testcase_id)
 
 (* --- Import helpers --- *)
 
@@ -163,7 +162,7 @@ let create_problem_with_source contest_id ~code ~title ~time_limit_ms
     | None ->
         Openapi.ProblemCreateRequest.create ~code ~title ~description
           ~input_spec ~output_spec ~languages ~time_limit_ms ~memory_limit_mb
-          ()
+          ~source_artifacts:[] ()
         |> Openapi.ProblemCreateRequest.to_json
   in
   post_json

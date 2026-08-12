@@ -24,7 +24,7 @@ let initials () =
   |> List.map (fun s -> String.uppercase_ascii (String.sub s 0 1))
   |> fun xs -> match xs with a :: b :: _ -> a ^ b | [a] -> a | [] -> "?"
 
-let sidebar ?(only_icons = false) () =
+let sidebar ?(only_icons = false) ?(horizontal = false) () =
   let current_hash = Js.to_string Dom_html.window##.location##.hash in
   let nav_link href label icon msg =
     let active_class =
@@ -52,9 +52,14 @@ let sidebar ?(only_icons = false) () =
   in
   div
     ~a:
-      [ a_class ["d-flex"; "flex-column"; "flex-shrink-0"; "bg-body-tertiary"]
+      [ a_class
+          [ "d-flex"
+          ; (if horizontal then "flex-row" else "flex-column")
+          ; "flex-shrink-0"
+          ; "bg-body-tertiary" ]
       ; a_style
-          ( if only_icons then "width: 4.5rem; height: inherit;"
+          ( if only_icons then
+              if horizontal then "" else "width: 4.5rem; height: inherit;"
             else "width: 11rem; height: inherit;" ) ]
     [ (* User initials *)
       div
@@ -105,7 +110,7 @@ let sidebar ?(only_icons = false) () =
               [ "nav"
               ; "nav-pills"
               ; "nav-flush"
-              ; "flex-column"
+              ; (if horizontal then "flex-row" else "flex-column")
               ; "mb-auto"
               ; "text-center" ] ]
         [ (* Dashboard *)
@@ -152,7 +157,7 @@ let sidebar ?(only_icons = false) () =
                 (Icons.box_arrow_right_icon ())
                 (if only_icons then "" else I18n.t "sidebar_sign_out") ] ] ]
 
-let sidebar () =
-  if Helpers.is_mobile () then div []
-  else if Helpers.is_wide_desktop () then sidebar ()
+let sidebar ?(mobile = false) ?(wide = true) () =
+  if mobile then sidebar ~only_icons:true ~horizontal:true ()
+  else if wide then sidebar ()
   else sidebar ~only_icons:true ()

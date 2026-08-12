@@ -9,7 +9,8 @@ let () =
   Components.Testbar.load_state () ;
   let rec save_state_loop () =
     Components.Codebar.show Components.Codebar.spinner ;
-    Components.Codebar.update_status_bar ~no_time:true (I18n.t "codebar_saving") ;
+    Components.Codebar.update_status_bar ~no_time:true
+      (I18n.t "codebar_saving") ;
     Components.Editor.save_state () ;
     Lwt.return_unit
     >>= fun () ->
@@ -25,7 +26,7 @@ let () =
   Lwt.async save_state_loop
 
 let render () =
-  let content_short ~mobile () =
+  let content_short ~mobile =
     div
       ~a:[a_class ["flex-grow-1"]; a_style "height: 100%;"]
       [ main
@@ -37,7 +38,7 @@ let render () =
           ; Components.Tabbar.content ()
           ; Components.Editor.content () ] ]
   in
-  let content_wide () =
+  let content_wide =
     div
       ~a:[a_class ["flex-grow-1"]; a_style "height: 100%;"]
       [ main
@@ -62,7 +63,11 @@ let render () =
                          auto;" ]
                   [Components.Testbar.content ~sidebyside:false ()] ] ] ]
   in
-  if Helpers.is_mobile () then [content_short ~mobile:true ()]
-  else if Helpers.is_wide_desktop () then
-    [Components.Sidebar.sidebar (); content_wide ()]
-  else [Components.Sidebar.sidebar (); content_short ~mobile:false ()]
+  match Helpers.layout () with
+  | Helpers.Mobile ->
+      [ div
+          [ Components.Sidebar.sidebar ~mobile:true ()
+          ; content_short ~mobile:true ] ]
+  | Helpers.Normal ->
+      [Components.Sidebar.sidebar ~wide:false (); content_short ~mobile:false]
+  | Helpers.Wide -> [Components.Sidebar.sidebar (); content_wide]
