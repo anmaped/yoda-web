@@ -62,7 +62,6 @@ body {
 
 /* End of Tab bar styles */
 
-
 .accordion-header {
     background-color: var(--bs-accordion-bg);
     transition: background-color 0.2s;
@@ -83,6 +82,63 @@ body {
   to {
     transform: rotate(360deg);
   }
+}
+
+.spinner-modal-status {
+  margin: 0 auto;
+  max-width: 42rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid transparent;
+  font-weight: 600;
+  text-align: center;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.spinner-modal-status-info {
+  background: #e9f2ff;
+  border-color: #b9d3ff;
+  color: #0f3d91;
+}
+
+.spinner-modal-status-warning {
+  background: #fff3cd;
+  border-color: #ffe08a;
+  color: #7a5300;
+}
+
+.spinner-modal-status-success {
+  background: #d1e7dd;
+  border-color: #8fd1b0;
+  color: #0f5132;
+}
+
+.spinner-modal-status-error {
+  background: #f8d7da;
+  border-color: #ef9aa2;
+  color: #842029;
+}
+
+.spinner-modal-history-item {
+  --spinner-modal-history-accent: transparent;
+  box-shadow: inset 4px 0 0 var(--spinner-modal-history-accent);
+}
+
+.spinner-modal-history-item-info {
+  --spinner-modal-history-accent: #6ea8fe;
+}
+
+.spinner-modal-history-item-warning {
+  --spinner-modal-history-accent: #ffc107;
+}
+
+.spinner-modal-history-item-success {
+  --spinner-modal-history-accent: #198754;
+}
+
+.spinner-modal-history-item-error {
+  --spinner-modal-history-accent: #dc3545;
 }
 
 /* Theme styles */

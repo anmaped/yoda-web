@@ -2,7 +2,8 @@ open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 open Lwt.Infix
 
-type file_state = {filename: string; mutable content: string}
+type file_state =
+  {filename: string; mutable content: string; skeleton_content: string}
 
 let key_state_editor_files = "yoda-state-editor-files"
 
@@ -85,6 +86,14 @@ let load_editor_from_active_tab () =
   | None -> set_editor_content ""
   | Some file -> set_editor_content file.content
 
+let reset_active_tab_to_skeleton () =
+  match List.nth_opt !current_files !current_active_tab with
+  | None -> ()
+  | Some file ->
+      file.content <- file.skeleton_content ;
+      set_editor_content file.content ;
+      persist_current_state ()
+
 let select_tab idx =
   if idx >= 0 && idx < List.length !current_files then (
     save_active_editor_content () ;
@@ -144,7 +153,10 @@ let init_files_for_problem pid artifacts =
     persisted ;
   let files =
     match artifacts with
-    | [] -> [{filename= "fallback.ml"; content= "(* Start coding here *)\n"}]
+    | [] ->
+        [ { filename= "fallback.ml"
+          ; content= "(* Start coding here *)\n"
+          ; skeleton_content= "(* Start coding here *)\n" } ]
     | _ ->
         List.map
           (fun (artifact : Api.Openapi.SourceArtifact.t) ->
@@ -153,7 +165,9 @@ let init_files_for_problem pid artifacts =
               | Some saved -> saved
               | None -> artifact.content
             in
-            {filename= artifact.filename; content} )
+            { filename= artifact.filename
+            ; content
+            ; skeleton_content= artifact.content } )
           artifacts
   in
   let active_idx =
@@ -203,6 +217,36 @@ let update pid () =
         init_files_for_problem pid artifacts ;
         Lwt.return_unit )
 
+let copy_text_to_clipboard text =
+  let textarea =
+    Js_of_ocaml.Dom_html.createTextarea Js_of_ocaml.Dom_html.document
+  in
+  textarea##.value := Js_of_ocaml.Js.string text ;
+  textarea##.style##.position := Js_of_ocaml.Js.string "fixed" ;
+  textarea##.style##.top := Js_of_ocaml.Js.string "0" ;
+  textarea##.style##.left := Js_of_ocaml.Js.string "0" ;
+  textarea##.style##.opacity := Js_of_ocaml.Js.string "0" ;
+  let body = Js_of_ocaml.Dom_html.document##.body in
+  ignore
+    (Js_of_ocaml.Dom.appendChild body
+       (Js_of_ocaml.Js.Unsafe.coerce textarea) ) ;
+  textarea##select ;
+  ignore
+    (Js_of_ocaml.Js.Unsafe.meth_call Js_of_ocaml.Dom_html.document
+       "execCommand"
+       [|Js_of_ocaml.Js.Unsafe.inject (Js_of_ocaml.Js.string "copy")|] ) ;
+  ignore
+    (Js_of_ocaml.Js.Unsafe.meth_call
+       (Js_of_ocaml.Js.Unsafe.coerce textarea)
+       "remove" [||] )
+
+let copy_active_file_to_clipboard () =
+  match List.nth_opt !current_files !current_active_tab with
+  | None -> ()
+  | Some file ->
+      save_active_editor_content () ;
+      copy_text_to_clipboard file.content
+
 let actions_bar =
   div
     ~a:[a_class ["d-flex"; "justify-content-between"; "align-items-center"]]
@@ -210,30 +254,35 @@ let actions_bar =
         ~a:
           [ a_class ["btn-group"]
           ; a_role ["group"]
-          ; a_aria "label" ["Code actions"] ]
+          ; a_aria "label" [I18n.t "tabbar_actions_label"] ]
         [ button
             ~a:
               [ a_id "download-zip-btn"
               ; a_class ["btn"; "btn-outline-secondary"; "btn-sm"]
-              ; a_title "Download all files as ZIP" ]
+              ; a_title (I18n.t "tabbar_download_title") ]
             [Icons.download_icon (); txt ""]
         ; button
             ~a:
               [ a_id "copy-all-btn"
               ; a_class ["btn"; "btn-outline-secondary"; "btn-sm"]
-              ; a_title "Copy all code to clipboard" ]
+              ; a_title (I18n.t "tabbar_copy_title")
+              ; a_onclick (fun _ ->
+                    copy_active_file_to_clipboard () ;
+                    false ) ]
             [Icons.clipboard_icon (); txt (I18n.t "tabbar_copy")]
         ; button
             ~a:
               [ a_id "add-file-btn"
               ; a_class ["btn"; "btn-outline-primary"; "btn-sm"]
-              ; a_title "Set Skeleton"
+              ; a_title (I18n.t "tabbar_set_skeleton_title")
               ; a_onclick (fun _ ->
                     Helpers.add_element_to_app
-                      (Modal_view.make "run-modal"
+                      (Modal_view.make "skeleton-reset-modal"
                          (I18n.t "modal_confirm_action")
                          [txt (I18n.t "tabbar_confirm_skeleton")]
-                         (fun _ -> false)
+                         (fun _ ->
+                           reset_active_tab_to_skeleton () ;
+                           false )
                          () ) ;
                     false ) ]
             [Icons.arrow_clockwise_icon (); txt (I18n.t "tabbar_skeleton")]

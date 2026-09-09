@@ -29,6 +29,15 @@ let show_modal () =
 let is_terminal_status status =
   List.exists (fun s -> s = String.lowercase_ascii status) terminal_statuses
 
+let modal_kind_of_submission_status status =
+  match String.lowercase_ascii status with
+  | "accepted" -> "success"
+  | "wrong_answer" | "runtime_error" | "time_limit_exceeded"
+   |"memory_limit_exceeded" | "compilation_error" | "compile_error"
+   |"presentation_error" | "internal_error" ->
+      "error"
+  | _ -> "warning"
+
 let extension_language_map =
   [ (".ml", "ocaml")
   ; (".js", "javascript")
@@ -134,12 +143,12 @@ let rec poll_until_terminal (ctx : submit_context) submission_id =
   fetch_submission submission_id
   >>= function
   | None ->
-      Spinner_modal.update_text "Submission queued..." ;
+      Spinner_modal.update_current_status ~kind:"info" "Submission queued..." ;
       Lwt_js.sleep poll_interval_seconds
       >>= fun () -> poll_until_terminal ctx submission_id
   | Some submission ->
       let live_status = submission.status in
-      Spinner_modal.update_text
+      Spinner_modal.update_current_status ~kind:"info"
         (Printf.sprintf "Status: %s (polling every 1s)" live_status) ;
       if is_terminal_status live_status then (
         (*notify_result ctx live_status ;*)
@@ -154,29 +163,31 @@ let rec poll_until_terminal (ctx : submit_context) submission_id =
 
 let submit_and_poll () =
   show_modal () ;
-  Spinner_modal.update_text "Preparing submission..." ;
+  Spinner_modal.update_text ~kind:"info" "Preparing submission..." ;
   get_submission_context ()
   >>= function
   | Error msg ->
-      Spinner_modal.update_text ("Cannot submit: " ^ msg) ;
+      Spinner_modal.update_text ~kind:"error" ("Cannot submit: " ^ msg) ;
       Lwt.return_unit
   | Ok ctx -> (
-      Spinner_modal.update_text
+      Spinner_modal.update_text ~kind:"info"
         (Printf.sprintf "Sending your %s solution..." ctx.language) ;
       submit_solution ctx
       >>= function
       | Error code ->
-          Spinner_modal.update_text
+          Spinner_modal.update_text ~kind:"error"
             (Printf.sprintf "Submission failed with HTTP status %d" code) ;
           Lwt.return_unit
       | Ok submission_id ->
-          Spinner_modal.update_text
+          Spinner_modal.update_text ~kind:"info"
             (Printf.sprintf "Submission #%d created. Waiting for judge..."
                submission_id ) ;
           poll_until_terminal ctx submission_id
           >>= fun final_status ->
           Spinner_modal.update_title ("Done: " ^ final_status) ;
-          Spinner_modal.update_text ("Final verdict: " ^ final_status) ;
+          Spinner_modal.update_text
+            ~kind:(modal_kind_of_submission_status final_status)
+            ("Final verdict: " ^ final_status) ;
           Lwt.return_unit )
 
 let start () = Lwt.async submit_and_poll

@@ -8,16 +8,40 @@ let status_p_tyxml = p [txt (I18n.t "spinner_modal_ready")]
 
 let status_p_dom = Tyxml_js.To_dom.of_p status_p_tyxml
 
-let history_items_tyxml = ul ~a:[a_class ["list-group"; "list-group-flush"]] []
+let history_items_tyxml =
+  ul ~a:[a_class ["list-group"; "list-group-flush"]] []
 
 let history_items_dom = Tyxml_js.To_dom.of_ul history_items_tyxml
 
-let history_messages : string list ref = ref []
+type status_entry = {message: string; kind: string; show_in_history: bool}
+
+let status_entries : status_entry list ref = ref []
 
 let status_h5_tyxml =
   h5 ~a:[a_class ["modal-title"]] [txt (I18n.t "spinner_modal_processing")]
 
 let status_h5_dom = Tyxml_js.To_dom.of_h5 status_h5_tyxml
+
+let default_status () = I18n.t "spinner_modal_ready"
+
+(* "error" "success" "warning" "info" *)
+let default_status_kind = "info"
+
+let current_status_entry () =
+  match !status_entries with
+  | entry :: _ -> entry
+  | [] ->
+      { message= default_status ()
+      ; kind= default_status_kind
+      ; show_in_history= false }
+
+let render_current_status () =
+  let {message; kind; _} = current_status_entry () in
+  status_p_dom##.textContent := Js.some (Js.string message) ;
+  status_p_dom##.className :=
+    Js.string
+      (String.concat " "
+         ["spinner-modal-status"; "spinner-modal-status-" ^ kind] )
 
 let clear_history_dom () =
   while Js.Opt.test history_items_dom##.firstChild do
@@ -29,27 +53,48 @@ let clear_history_dom () =
 
 let render_history () =
   clear_history_dom () ;
+  let history_entries =
+    match !status_entries with _current :: rest -> rest | [] -> []
+  in
   List.iter
-    (fun message ->
+    (fun entry ->
       let item =
-        li ~a:[a_class ["list-group-item"; "small"]] [txt message]
+        li
+          ~a:
+            [ a_class
+                [ "list-group-item"
+                ; "small"
+                ; "spinner-modal-history-item"
+                ; "spinner-modal-history-item-" ^ entry.kind ] ]
+          [txt entry.message]
       in
       Dom.appendChild history_items_dom (Tyxml_js.To_dom.of_li item) )
-    (List.rev !history_messages)
+    ( history_entries
+    |> List.filter (fun entry -> entry.show_in_history)
+    |> List.rev )
+
+let render_status_views () = render_current_status () ; render_history ()
 
 let reset_status () =
-  history_messages := [] ;
-  status_p_dom##.textContent := Js.some (Js.string (I18n.t "spinner_modal_ready")) ;
-  status_h5_dom##.textContent :=
-    Js.some (Js.string (I18n.t "spinner_modal_processing")) ;
-  render_history ()
+  status_entries := [] ;
+  status_h5_dom##.textContent
+  := Js.some (Js.string (I18n.t "spinner_modal_processing")) ;
+  render_status_views ()
 
-let add_history_message msg =
-  match !history_messages with
-  | last :: _ when last = msg -> ()
+let set_status ?kind ?(history = true) msg =
+  let kind = Option.value kind ~default:default_status_kind in
+  match !status_entries with
+  | {message; kind= current_kind; show_in_history} :: _
+    when message = msg && show_in_history = history && kind = current_kind ->
+      ()
   | _ ->
-      history_messages := msg :: !history_messages ;
-      render_history ()
+      status_entries :=
+        {message= msg; kind; show_in_history= history} :: !status_entries ;
+      render_status_views ()
+
+let update_current_status ?kind msg = set_status ?kind ~history:false msg
+
+let update_history_status ?kind msg = set_status ?kind ~history:true msg
 
 let remove () =
   reset_status () ;
@@ -97,7 +142,8 @@ let make () =
                                 ~a:
                                   [ a_class ["border"; "rounded"; "bg-light"]
                                   ; a_style
-                                      "max-height: 180px; overflow-y: auto;" ]
+                                      "max-height: 180px; overflow-y: auto;"
+                                  ]
                                 [history_items_tyxml] ]
                         ; br ()
                         ; button
@@ -117,8 +163,6 @@ let make () =
 
 (** [update_text msg] mutates the modal text node.
     Returns unit silently if the node has not been captured yet. *)
-let update_text msg =
-  status_p_dom##.textContent := Js.some (Js.string msg) ;
-  add_history_message msg
+let update_text ?kind msg = update_history_status ?kind msg
 
 let update_title msg = status_h5_dom##.textContent := Js.some (Js.string msg)

@@ -8,9 +8,13 @@ type translations =
   ; login_remember_me: string
   ; login_footer: string
   ; sidebar_app_name: string
+  ; tabbar_actions_label: string
+  ; tabbar_download_title: string
   ; tabbar_copy: string
+  ; tabbar_copy_title: string
   ; tabbar_confirm_skeleton: string
   ; tabbar_skeleton: string
+  ; tabbar_set_skeleton_title: string
   ; codebar_all_changes_saved: string
   ; codebar_saving: string
   ; spinner_modal_processing: string
@@ -216,11 +220,15 @@ let en =
   ; login_remember_me= "Remember me"
   ; login_footer= "© The Yoda Team 2026"
   ; sidebar_app_name= "YodaApp"
+  ; tabbar_actions_label= "Code actions"
+  ; tabbar_download_title= "Download all files as ZIP"
   ; tabbar_copy= "Copy"
+  ; tabbar_copy_title= "Copy all code to clipboard"
   ; tabbar_confirm_skeleton=
-      "Do you want to replace the skeleton? All unsaved changes will be \
+      "Do you want to replace the current code with the skeleton? All unsaved changes will be \
        lost."
   ; tabbar_skeleton= "Skeleton"
+  ; tabbar_set_skeleton_title= "Set skeleton"
   ; codebar_all_changes_saved= "All changes saved"
   ; codebar_saving= "Saving..."
   ; spinner_modal_processing= "Processing..."
@@ -277,7 +285,9 @@ let en =
   ; settings_save_btn= "Save"
   ; settings_reset_btn= "Reset"
   ; settings_language_label= "Language"
-  ; settings_import_zip_description= "Select ZIP file to import problems. This will create new problems from the contents of the ZIP file."
+  ; settings_import_zip_description=
+      "Select ZIP file to import problems. This will create new problems \
+       from the contents of the ZIP file."
   ; settings_import_zip_button= "Import Problems"
   ; settings_import_zip_card_title= "Import Problems"
   ; config_editor_title= "Config Editor"
@@ -433,11 +443,15 @@ let fr =
   ; login_remember_me= "Se souvenir de moi"
   ; login_footer= "© L'équipe Yoda 2026"
   ; sidebar_app_name= "YodaApp"
+  ; tabbar_actions_label= "Actions du code"
+  ; tabbar_download_title= "Télécharger tous les fichiers en ZIP"
   ; tabbar_copy= "Copier"
+  ; tabbar_copy_title= "Copier tout le code dans le presse-papiers"
   ; tabbar_confirm_skeleton=
-      "Voulez-vous remplacer le squelette ? Toutes les modifications non \
+      "Voulez-vous remplacer le code actuel par le squelette ? Toutes les modifications non \
        enregistrées seront perdues."
   ; tabbar_skeleton= "Squelette"
+  ; tabbar_set_skeleton_title= "Définir le squelette"
   ; codebar_all_changes_saved= "Toutes les modifications enregistrées"
   ; codebar_saving= "Enregistrement en cours..."
   ; spinner_modal_processing= "Traitement en cours..."
@@ -495,7 +509,9 @@ let fr =
   ; settings_save_btn= "Enregistrer"
   ; settings_reset_btn= "Réinitialiser"
   ; settings_language_label= "Langue"
-  ; settings_import_zip_description= "Sélectionnez le fichier ZIP à importer. Cela créera de nouveaux problèmes à partir du contenu du fichier ZIP."
+  ; settings_import_zip_description=
+      "Sélectionnez le fichier ZIP à importer. Cela créera de nouveaux \
+       problèmes à partir du contenu du fichier ZIP."
   ; settings_import_zip_button= "Importer les problèmes"
   ; settings_import_zip_card_title= "Importer les problèmes"
   ; config_editor_title= "Éditeur de configuration"
@@ -657,11 +673,15 @@ let es =
   ; login_remember_me= "Recordarme"
   ; login_footer= "© El equipo Yoda 2026"
   ; sidebar_app_name= "YodaApp"
+  ; tabbar_actions_label= "Acciones del código"
+  ; tabbar_download_title= "Descargar todos los archivos como ZIP"
   ; tabbar_copy= "Copiar"
+  ; tabbar_copy_title= "Copiar todo el código al portapapeles"
   ; tabbar_confirm_skeleton=
-      "¿Quieres reemplazar el esqueleto? Todas las alteraciones no \
+      "¿Quieres reemplazar el código actual por el esqueleto? Todas las alteraciones no \
        guardadas serán perdidas."
   ; tabbar_skeleton= "Esqueleto"
+  ; tabbar_set_skeleton_title= "Establecer esqueleto"
   ; codebar_all_changes_saved= "Todos los cambios guardados"
   ; codebar_saving= "Guardando..."
   ; spinner_modal_processing= "Procesando..."
@@ -714,11 +734,14 @@ let es =
   ; settings_tab_size_label= "Tamaño de tabulación"
   ; settings_tab_size_desc= "Número de espacios por indentación."
   ; settings_wrap_lines= "Envolver líneas largas en el editor."
-  ; settings_auto_save= "Guardar automáticamente tu código mientras escribes."
+  ; settings_auto_save=
+      "Guardar automáticamente tu código mientras escribes."
   ; settings_save_btn= "Guardar"
   ; settings_reset_btn= "Restablecer"
   ; settings_language_label= "Idioma"
-  ; settings_import_zip_description= "Seleccione el archivo ZIP para importar problemas. Esto creará nuevos problemas a partir del contenido del archivo ZIP."
+  ; settings_import_zip_description=
+      "Seleccione el archivo ZIP para importar problemas. Esto creará \
+       nuevos problemas a partir del contenido del archivo ZIP."
   ; settings_import_zip_button= "Importar Problemas"
   ; settings_import_zip_card_title= "Importar Problemas"
   ; config_editor_title= "Editor de configuración"
@@ -877,11 +900,15 @@ let pt =
   ; login_remember_me= "Lembrar-me"
   ; login_footer= "© A equipe Yoda 2026"
   ; sidebar_app_name= "YodaApp"
+  ; tabbar_actions_label= "Ações de código"
+  ; tabbar_download_title= "Baixar todos os arquivos em ZIP"
   ; tabbar_copy= "Copiar"
+  ; tabbar_copy_title= "Copiar todo o código para a área de transferência"
   ; tabbar_confirm_skeleton=
-      "Deseja substituir o esqueleto? Todas as alterações não guardadas \
-       serão perdidas."
+      "Deseja substituir o código atual pelo esqueleto? Todas as alterações \
+       não guardadas serão perdidas."
   ; tabbar_skeleton= "Esqueleto"
+  ; tabbar_set_skeleton_title= "Definir esqueleto"
   ; codebar_all_changes_saved= "Todas as alterações guardadas"
   ; codebar_saving= "Guardando..."
   ; spinner_modal_processing= "Processando..."
@@ -939,7 +966,9 @@ let pt =
   ; settings_save_btn= "Guardar"
   ; settings_reset_btn= "Redefinir"
   ; settings_language_label= "Idioma"
-  ; settings_import_zip_description= "Selecione o arquivo ZIP para importar problemas. Isso criará novos problemas a partir do conteúdo do arquivo ZIP."
+  ; settings_import_zip_description=
+      "Selecione o arquivo ZIP para importar problemas. Isso criará novos \
+       problemas a partir do conteúdo do arquivo ZIP."
   ; settings_import_zip_button= "Importar Problemas"
   ; settings_import_zip_card_title= "Importar Problemas"
   ; config_editor_title= "Editor de configuração"
@@ -1097,9 +1126,13 @@ let ar =
   ; login_remember_me= "تذكرني"
   ; login_footer= "© فريق يودا 2026"
   ; sidebar_app_name= "YodaApp"
+  ; tabbar_actions_label= "إجراءات الكود"
+  ; tabbar_download_title= "تنزيل كل الملفات بتنسيق ZIP"
   ; tabbar_copy= "نسخ"
-  ; tabbar_confirm_skeleton= "هل تريد استبدال الهيكل العظمي؟"
+  ; tabbar_copy_title= "نسخ كل الكود إلى الحافظة"
+  ; tabbar_confirm_skeleton= "هل تريد استبدال الكود الحالي بالهيكل العظمي؟"
   ; tabbar_skeleton= "الهيكل"
+  ; tabbar_set_skeleton_title= "تعيين الهيكل العظمي"
   ; codebar_all_changes_saved= "تم حفظ جميع التغييرات"
   ; codebar_saving= "جارٍ الحفظ..."
   ; spinner_modal_processing= "جارٍ المعالجة..."
@@ -1155,7 +1188,9 @@ let ar =
   ; settings_save_btn= "حفظ"
   ; settings_reset_btn= "إعادة تعيين"
   ; settings_language_label= "اللغة"
-  ; settings_import_zip_description= "حدد ملف ZIP لاستيراد المشاكل. سيتم إنشاء مشاكل جديدة من محتوى ملف ZIP."
+  ; settings_import_zip_description=
+      "حدد ملف ZIP لاستيراد المشاكل. سيتم إنشاء مشاكل جديدة من محتوى ملف \
+       ZIP."
   ; settings_import_zip_button= "استيراد المشاكل"
   ; settings_import_zip_card_title= "استيراد المشاكل"
   ; config_editor_title= "محرر التكوين"
@@ -1312,9 +1347,13 @@ let map : translations -> (string, string) Hashtbl.t =
   add "login_remember_me" tr.login_remember_me ;
   add "login_footer" tr.login_footer ;
   add "sidebar_app_name" tr.sidebar_app_name ;
+  add "tabbar_actions_label" tr.tabbar_actions_label ;
+  add "tabbar_download_title" tr.tabbar_download_title ;
   add "tabbar_copy" tr.tabbar_copy ;
+  add "tabbar_copy_title" tr.tabbar_copy_title ;
   add "tabbar_confirm_skeleton" tr.tabbar_confirm_skeleton ;
   add "tabbar_skeleton" tr.tabbar_skeleton ;
+  add "tabbar_set_skeleton_title" tr.tabbar_set_skeleton_title ;
   add "codebar_all_changes_saved" tr.codebar_all_changes_saved ;
   add "codebar_saving" tr.codebar_saving ;
   add "spinner_modal_processing" tr.spinner_modal_processing ;
