@@ -20,7 +20,7 @@ type submit_context =
   ; problem_code: string
   ; problem_id: int
   ; language: string
-  ; source_code: string }
+  ; source_artifacts: Api.Openapi.sourceArtifact list }
 
 let show_modal () =
   Spinner_modal.remove () ;
@@ -29,36 +29,77 @@ let show_modal () =
 let is_terminal_status status =
   List.exists (fun s -> s = String.lowercase_ascii status) terminal_statuses
 
-let get_editor_source_code () = Js.to_string Editor.editor##getValue
+let extension_language_map =
+  [ (".ml", "ocaml")
+  ; (".js", "javascript")
+  ; (".py", "python")
+  ; (".java", "java")
+  ; (".cpp", "cpp")
+  ; (".c", "c")
+  ; (".rs", "rust")
+  ; (".go", "go")
+  ; (".ts", "typescript")
+  ; (".php", "php")
+  ; (".rb", "ruby")
+  ; (".swift", "swift")
+  ; (".kt", "kotlin")
+  ; (".hs", "haskell")
+  ; (".pl", "perl")
+  ; (".sh", "shell")
+  ; (".sql", "sql") ]
 
-let parse_problem_id value = try Some (int_of_string value) with _ -> None
+let language_for_filename filename =
+  let lowercase = String.lowercase_ascii filename in
+  List.find_map
+    (fun (ext, language) ->
+      if Astring.String.is_suffix ~affix:ext lowercase then Some language
+      else None )
+    extension_language_map
+
+let select_language ~languages_allowed ~source_artifacts =
+  let allowed_set = List.map String.lowercase_ascii languages_allowed in
+  let from_extensions =
+    List.find_map
+      (fun (artifact : Api.Openapi.sourceArtifact) ->
+        match language_for_filename artifact.filename with
+        | Some language when List.mem language allowed_set -> Some language
+        | _ -> None )
+      source_artifacts
+  in
+  match from_extensions with
+  | Some language -> language
+  | None -> (
+    match languages_allowed with first :: _ -> first | [] -> "none" )
 
 let get_submission_context () =
   let contest_id = Helpers.get_current_contest_id () in
-  match Helpers.get_local_variable "yoda-state-last-problem-id" with
+  match Problem_dropdown.get_selected_problem_id () with
   | None -> Lwt.return (Error "No selected problem found")
-  | Some problem_code_js -> (
-      let problem_code = Js.to_string problem_code_js in
-      match parse_problem_id problem_code with
-      | None ->
+  | Some problem_id ->
+      let languages_allowed = Tabbar.get_current_languages () in
+      let source_artifacts = Tabbar.get_current_source_artifacts () in
+      (* Select the language based on the extension of the artifacts;
+         fallback to the first one if none match *)
+      let language = select_language ~languages_allowed ~source_artifacts in
+      if language = "none" then
+        Lwt.return (Error "No language selected or allowed for this problem")
+      else
+        let has_non_empty_file =
+          List.exists
+            (fun (artifact : Api.Openapi.sourceArtifact) ->
+              String.trim artifact.content <> "" )
+            source_artifacts
+        in
+        if not has_non_empty_file then
+          Lwt.return (Error "Editor is empty, nothing to submit")
+        else
           Lwt.return
-            (Error
-               "Selected problem id is not numeric. Please choose a numeric \
-                problem id in the dropdown." )
-      | Some problem_id ->
-          let language =
-            match Helpers.get_local_variable "yoda-state-last-language" with
-            | Some value -> Js.to_string value
-            | None -> "ocaml"
-          in
-          let source_code = get_editor_source_code () in
-          if String.trim source_code = "" then
-            Lwt.return (Error "Editor is empty, nothing to submit")
-          else
-            Lwt.return
-              (Ok
-                 {contest_id; problem_code; problem_id; language; source_code}
-              ) )
+            (Ok
+               { contest_id
+               ; problem_code= string_of_int problem_id
+               ; problem_id
+               ; language
+               ; source_artifacts } )
 
 let fetch_submission submission_id =
   let url =
@@ -77,14 +118,9 @@ let find_submission_by_id submissions submission_id =
     submissions
 
 let submit_solution (ctx : submit_context) =
-  let safe_source = Helpers.escape_json_string ctx.source_code in
-  let artifact =
-    Api.Openapi.SourceArtifact.create ~filename:"source_code"
-      ~content:safe_source ()
-  in
   let solution =
     Api.Openapi.Solution.create ~problem_id:ctx.problem_id
-      ~language:ctx.language ~source_artifacts:[artifact] ()
+      ~language:ctx.language ~source_artifacts:ctx.source_artifacts ()
   in
   Api.Helpers.submit_solution (Api.Openapi.Solution.to_yojson solution)
   >>= fun (resp, status) ->
@@ -125,7 +161,8 @@ let submit_and_poll () =
       Spinner_modal.update_text ("Cannot submit: " ^ msg) ;
       Lwt.return_unit
   | Ok ctx -> (
-      Spinner_modal.update_text "Sending your solution..." ;
+      Spinner_modal.update_text
+        (Printf.sprintf "Sending your %s solution..." ctx.language) ;
       submit_solution ctx
       >>= function
       | Error code ->

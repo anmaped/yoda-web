@@ -7,11 +7,13 @@ let key_problem_id = "yoda-state-current-problem-id"
 
 let key_problem_description = "yoda-state-current-problem-description"
 
+let parse_problem_id value = try Some (int_of_string value) with _ -> None
+
 (** Returns the ID of the currently selected problem *)
-let get_current_problem_id () =
+let get_selected_problem_id () =
   match Helpers.get_local_variable key_problem_id with
-  | Some id -> int_of_string (Js.to_string id)
-  | None -> -1
+  | Some id -> parse_problem_id (Js.to_string id)
+  | None -> None
 
 let set_current_problem_id id =
   Helpers.set_local_variable key_problem_id (string_of_int id)

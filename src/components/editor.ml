@@ -31,9 +31,7 @@ class type codeMirror = object
 end
 
 let editor =
-  let textarea =
-    textarea_or_create ~textarea_id:"codeboard-editor"
-  in
+  let textarea = textarea_or_create ~textarea_id:"codeboard-editor" in
   (* Ensure CodeMirror is loaded *)
   let code_mirror =
     match
@@ -74,15 +72,9 @@ let editor =
   editor##setValue (Js.string "(* Start coding here *)\n") ;
   editor
 
-let load_state () =
-  match Helpers.get_local_variable "yoda-state-editor-content" with
-  | Some content -> editor##setValue (Js.string (Js.to_string content))
-  | None -> ()
+let load_state () = ()
 
-let save_state () =
-  editor##refresh ;
-  let content = Js.to_string editor##getValue in
-  Helpers.set_local_variable "yoda-state-editor-content" content
+let save_state () = ()
 
 let content () =
   section
