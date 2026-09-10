@@ -259,7 +259,16 @@ let actions_bar =
             ~a:
               [ a_id "download-zip-btn"
               ; a_class ["btn"; "btn-outline-secondary"; "btn-sm"]
-              ; a_title (I18n.t "tabbar_download_title") ]
+              ; a_title (I18n.t "tabbar_download_title")
+              ; a_onclick (fun _ ->
+                    save_active_editor_content () ;
+                    Tabbar_zip.download_all_files_as_zip
+                      ~problem_id:!current_problem_id
+                      (List.map
+                         (fun (file : file_state) ->
+                           (file.filename, file.content) )
+                         !current_files ) ;
+                    false ) ]
             [Icons.download_icon (); txt ""]
         ; button
             ~a:
