@@ -6,6 +6,7 @@ type translations =
   ; login_label_email: string
   ; login_label_password: string
   ; login_remember_me: string
+  ; login_session_expired: string
   ; login_footer: string
   ; sidebar_app_name: string
   ; tabbar_actions_label: string
@@ -218,6 +219,7 @@ let en =
   ; login_label_email= "Email address"
   ; login_label_password= "Password"
   ; login_remember_me= "Remember me"
+  ; login_session_expired= "Your session expired. Please sign in again."
   ; login_footer= "© The Yoda Team 2026"
   ; sidebar_app_name= "YodaApp"
   ; tabbar_actions_label= "Code actions"
@@ -225,8 +227,8 @@ let en =
   ; tabbar_copy= "Copy"
   ; tabbar_copy_title= "Copy all code to clipboard"
   ; tabbar_confirm_skeleton=
-      "Do you want to replace the current code with the skeleton? All unsaved changes will be \
-       lost."
+      "Do you want to replace the current code with the skeleton? All \
+       unsaved changes will be lost."
   ; tabbar_skeleton= "Skeleton"
   ; tabbar_set_skeleton_title= "Set skeleton"
   ; codebar_all_changes_saved= "All changes saved"
@@ -441,6 +443,8 @@ let fr =
   ; login_label_email= "Adresse e-mail"
   ; login_label_password= "Mot de passe"
   ; login_remember_me= "Se souvenir de moi"
+  ; login_session_expired=
+      "Votre session a expiré. Veuillez vous reconnecter."
   ; login_footer= "© L'équipe Yoda 2026"
   ; sidebar_app_name= "YodaApp"
   ; tabbar_actions_label= "Actions du code"
@@ -448,8 +452,8 @@ let fr =
   ; tabbar_copy= "Copier"
   ; tabbar_copy_title= "Copier tout le code dans le presse-papiers"
   ; tabbar_confirm_skeleton=
-      "Voulez-vous remplacer le code actuel par le squelette ? Toutes les modifications non \
-       enregistrées seront perdues."
+      "Voulez-vous remplacer le code actuel par le squelette ? Toutes les \
+       modifications non enregistrées seront perdues."
   ; tabbar_skeleton= "Squelette"
   ; tabbar_set_skeleton_title= "Définir le squelette"
   ; codebar_all_changes_saved= "Toutes les modifications enregistrées"
@@ -671,6 +675,7 @@ let es =
   ; login_label_email= "Dirección de correo"
   ; login_label_password= "Contraseña"
   ; login_remember_me= "Recordarme"
+  ; login_session_expired= "Tu sesión ha expirado. Vuelve a iniciar sesión."
   ; login_footer= "© El equipo Yoda 2026"
   ; sidebar_app_name= "YodaApp"
   ; tabbar_actions_label= "Acciones del código"
@@ -678,8 +683,8 @@ let es =
   ; tabbar_copy= "Copiar"
   ; tabbar_copy_title= "Copiar todo el código al portapapeles"
   ; tabbar_confirm_skeleton=
-      "¿Quieres reemplazar el código actual por el esqueleto? Todas las alteraciones no \
-       guardadas serán perdidas."
+      "¿Quieres reemplazar el código actual por el esqueleto? Todas las \
+       alteraciones no guardadas serán perdidas."
   ; tabbar_skeleton= "Esqueleto"
   ; tabbar_set_skeleton_title= "Establecer esqueleto"
   ; codebar_all_changes_saved= "Todos los cambios guardados"
@@ -898,6 +903,7 @@ let pt =
   ; login_label_email= "Endereço de e-mail"
   ; login_label_password= "Senha"
   ; login_remember_me= "Lembrar-me"
+  ; login_session_expired= "Sua sessão expirou. Faça login novamente."
   ; login_footer= "© A equipe Yoda 2026"
   ; sidebar_app_name= "YodaApp"
   ; tabbar_actions_label= "Ações de código"
@@ -1124,6 +1130,7 @@ let ar =
   ; login_label_email= "عنوان البريد الإلكتروني"
   ; login_label_password= "كلمة المرور"
   ; login_remember_me= "تذكرني"
+  ; login_session_expired= "انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى."
   ; login_footer= "© فريق يودا 2026"
   ; sidebar_app_name= "YodaApp"
   ; tabbar_actions_label= "إجراءات الكود"
@@ -1345,6 +1352,7 @@ let map : translations -> (string, string) Hashtbl.t =
   add "login_label_email" tr.login_label_email ;
   add "login_label_password" tr.login_label_password ;
   add "login_remember_me" tr.login_remember_me ;
+  add "login_session_expired" tr.login_session_expired ;
   add "login_footer" tr.login_footer ;
   add "sidebar_app_name" tr.sidebar_app_name ;
   add "tabbar_actions_label" tr.tabbar_actions_label ;

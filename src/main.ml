@@ -1,6 +1,11 @@
 open Js_of_ocaml
 open Js_of_ocaml_tyxml
 
+let hash_of_url (url : string) =
+  match Astring.String.cut ~sep:"#" url with
+  | Some (_, hash_suffix) when hash_suffix <> "" -> "#" ^ hash_suffix
+  | _ -> ""
+
 let () =
   Blobs.init () ;
   I18n.init () ;
@@ -22,15 +27,9 @@ let () =
     (* Determine the page to render based on hash *)
     let page =
       match hash with
-      | "#login" ->
-          [ Pages.Login.render
-              ~on_success:(fun () -> Helpers.navigate_to "#contests")
-              () ]
       | "#logout" ->
-          Helpers.remove_session_variable "token" ;
-          Helpers.remove_cookies_variable "dream.session" ;
+          Helpers.clear_auth_state () ;
           Pages.Settings_user.reset_state () ;
-          Helpers.navigate_to_with_reload "#login" ;
           []
       | "#users" -> [Pages.Users.render ()]
       | "#contests" -> Pages.Contests.render ()
@@ -63,7 +62,7 @@ let () =
           (* Defaults to login *)
       | _ ->
           [ Pages.Login.render
-              ~on_success:(fun () -> Helpers.navigate_to "#contests")
+              ~on_success:(fun () -> Helpers.navigate_after_login ())
               () ]
       (* save last 10 previous hash *)
     in
@@ -75,7 +74,20 @@ let () =
   (* Handle the hashchange event to respond to changes in the hash part of
      the URL *)
   Dom_html.window##.onhashchange
-  := Dom.handler (fun _ ->
+  := Dom.handler (fun ev ->
+      let current_hash = Js.to_string Dom_html.window##.location##.hash in
+      let old_hash =
+        try
+          Js.Unsafe.get ev (Js.string "oldURL")
+          |> Js.to_string |> hash_of_url
+        with _ -> ""
+      in
+      if
+        current_hash = "#login" && old_hash <> "" && old_hash <> "#login"
+        && old_hash <> "#logout"
+      then (
+        Helpers.remember_post_login_redirect old_hash ;
+        Helpers.set_session_expired_notice () ) ;
       Console.console##log (Js.string "Hash changed") ;
       render_page () ;
       Js._false ) ;

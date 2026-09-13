@@ -3,6 +3,14 @@ open Tyxml_js.Html
 open Lwt.Infix
 
 let render ~on_success () =
+  let show_session_expired = Helpers.consume_session_expired_notice () in
+  let session_expired_alert =
+    if show_session_expired then
+      [ div
+          ~a:[a_class ["alert"; "alert-warning"; "mt-2"]]
+          [txt (I18n.t "login_session_expired")] ]
+    else []
+  in
   (* check if user is already logged in *)
   match Helpers.get_session_variable "token" with
   | Some _token ->
@@ -22,6 +30,7 @@ let render ~on_success () =
         [ img ~src:Blobs.yoda_logo_url ~alt:"Yoda Logo"
             ~a:[a_class ["yoda-logo"; "d-block"; "mx-auto"]; a_width 300]
             ()
+        ; div session_expired_alert
         ; Components.Login_form.render ~on_login:on_success ()
         ; p
             ~a:

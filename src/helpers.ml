@@ -263,3 +263,35 @@ let handle_unauthorized ?(redirect_on_unauthorized = true)
     (resp : Js_of_ocaml_lwt.XmlHttpRequest.http_frame) =
   if redirect_on_unauthorized && resp.code = 401 then (
     clear_auth_state () ; redirect_to_login () )
+
+(** Helper functions for managing post-login redirects *)
+let key_post_login_redirect = "yoda-post-login-redirect"
+
+let key_login_notice = "yoda-login-notice"
+
+let remember_post_login_redirect hash =
+  if hash <> "" && hash <> "#login" && hash <> "#logout" then
+    set_session_variable key_post_login_redirect hash
+
+let consume_post_login_redirect () =
+  match get_session_variable key_post_login_redirect with
+  | Some h ->
+      remove_session_variable key_post_login_redirect ;
+      Some (Js.to_string h)
+  | None -> None
+
+let set_session_expired_notice () =
+  set_session_variable key_login_notice "session-expired"
+
+let consume_session_expired_notice () =
+  match get_session_variable key_login_notice with
+  | Some v ->
+      remove_session_variable key_login_notice ;
+      Js.to_string v = "session-expired"
+  | None -> false
+
+let navigate_after_login ?(default_hash = "#contests") () =
+  match consume_post_login_redirect () with
+  | Some hash when hash <> "" && hash <> "#login" && hash <> "#logout" ->
+      navigate_to hash
+  | _ -> navigate_to default_hash
