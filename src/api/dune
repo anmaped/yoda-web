@@ -2,6 +2,12 @@
  (name api)
  (modules helpers openapi)
  (wrapped true)
- (libraries js_of_ocaml js_of_ocaml-lwt lwt yojson)
+ (libraries js_of_ocaml js_of_ocaml-lwt lwt yojson external_lib)
  (preprocess
   (pps js_of_ocaml-ppx)))
+
+(library
+ (name external_lib)
+ (modules external_lib)
+ (wrapped false)
+ (libraries helpers))

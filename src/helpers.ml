@@ -240,3 +240,26 @@ let set_current_contest_id id =
   set_local_variable "yoda-state-contest-id" (string_of_int id) ;
   Console.console##log
     (Js.string ("Current contest_id set to: " ^ string_of_int id))
+
+(** Authentication helpers *)
+let auth_token () =
+  match get_session_variable "token" with
+  | Some t -> t
+  | None -> Js.string ""
+
+let clear_auth_state () =
+  Js.Optdef.iter Dom_html.window##.sessionStorage (fun storage ->
+      storage##removeItem (Js.string "token") ;
+      storage##removeItem (Js.string "user") ;
+      storage##removeItem (Js.string "error") ) ;
+  remove_cookies_variable "dream.session"
+
+let redirect_to_login () =
+  let current_hash = Js.to_string Dom_html.window##.location##.hash in
+  if current_hash <> "#login" then
+    Dom_html.window##.location##.hash := Js.string "#login"
+
+let handle_unauthorized ?(redirect_on_unauthorized = true)
+    (resp : Js_of_ocaml_lwt.XmlHttpRequest.http_frame) =
+  if redirect_on_unauthorized && resp.code = 401 then (
+    clear_auth_state () ; redirect_to_login () )

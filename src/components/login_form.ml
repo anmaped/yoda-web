@@ -77,7 +77,7 @@ let render ~on_login () =
         let x =
           Api.Openapi.AuthLoginPostRequest.create ~username:u ~password:p ()
         in
-        Api.Helpers.post_json
+        Api.Helpers.post_json ~redirect_on_unauthorized:false
           (Api.Helpers.base_url ^ "/auth/login")
           (Api.Openapi.AuthLoginPostRequest.to_json x)
         >>= fun (resp, status) ->

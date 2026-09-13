@@ -20,37 +20,24 @@ let get_base_url () : string =
 
 let base_url = get_base_url ()
 
-let get_local_storage_item key =
-  match Js.Optdef.to_option Dom_html.window##.localStorage with
-  | None -> None
-  | Some storage -> Js.Opt.to_option (storage##getItem (Js.string key))
-
-let auth_token () =
-  match get_local_storage_item "token" with
-  | Some t -> t
-  | None -> Js.string ""
-
 let headers () =
-  let token = Js.to_string (auth_token ()) in
+  let token = Js.to_string (External_lib.Helpers.auth_token ()) in
   let h = [("Content-Type", "application/json")] in
   if token <> "" then ("Authorization", "Bearer " ^ token) :: h else h
 
-let fetch_json url =
+let fetch_json ?(redirect_on_unauthorized = true) url =
   XmlHttpRequest.perform_raw_url ~headers:(headers ()) url
   >>= fun resp ->
+  External_lib.Helpers.handle_unauthorized ~redirect_on_unauthorized resp ;
   Console.console##log (Js.string ("Response: " ^ resp.content)) ;
   Lwt.return (Yojson.Safe.from_string resp.content, resp.code)
 
-let post_json url body =
+let post_json ?(redirect_on_unauthorized = true) url body =
   XmlHttpRequest.perform_raw_url ~override_method:`POST ~headers:(headers ())
     ~contents:(`String body) url
-  >>= fun resp -> Lwt.return (Yojson.Safe.from_string resp.content, resp.code)
-
-let login username password =
-  let body =
-    Printf.sprintf {|{"username":"%s","password":"%s"}|} username password
-  in
-  post_json (base_url ^ "/auth/login") body
+  >>= fun resp ->
+  External_lib.Helpers.handle_unauthorized ~redirect_on_unauthorized resp ;
+  Lwt.return (Yojson.Safe.from_string resp.content, resp.code)
 
 let get_users () = fetch_json (base_url ^ "/users")
 
@@ -77,12 +64,16 @@ let get_problem problem_id =
 let put_json url body =
   XmlHttpRequest.perform_raw_url ~override_method:`PUT ~headers:(headers ())
     ~contents:(`String body) url
-  >>= fun resp -> Lwt.return (Yojson.Safe.from_string resp.content, resp.code)
+  >>= fun resp ->
+  External_lib.Helpers.handle_unauthorized resp ;
+  Lwt.return (Yojson.Safe.from_string resp.content, resp.code)
 
 let delete_json url =
   XmlHttpRequest.perform_raw_url ~override_method:`DELETE
     ~headers:(headers ()) url
-  >>= fun resp -> Lwt.return resp.code
+  >>= fun resp ->
+  External_lib.Helpers.handle_unauthorized resp ;
+  Lwt.return resp.code
 
 let post_admin_user json_obj =
   post_json (base_url ^ "/admin/users") (Yojson.Basic.to_string json_obj)

@@ -22,7 +22,7 @@
 (library
  (name helpers)
  (modules helpers)
- (wrapped true)
+ (wrapped false)
  (libraries js_of_ocaml js_of_ocaml-tyxml js_of_ocaml-lwt lwt yojson astring)
  (preprocess
   (pps js_of_ocaml-ppx)))
@@ -30,7 +30,7 @@
 (library
  (name blobs)
  (modules blobs)
- (wrapped true)
+ (wrapped false)
  (libraries js_of_ocaml)
  (preprocess
   (pps js_of_ocaml-ppx ppx_blob))
