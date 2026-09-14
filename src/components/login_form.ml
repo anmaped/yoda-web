@@ -4,6 +4,28 @@ open Js_of_ocaml_lwt
 open Tyxml_js.Html
 open Lwt.Infix
 
+let set_text id text =
+  Js.Opt.iter
+    (Dom_html.document##getElementById (Js.string id))
+    (fun el -> el##.innerHTML := Js.string text)
+
+let set_placeholder id text =
+  Js.Opt.iter
+    (Dom_html.document##getElementById (Js.string id))
+    (fun el ->
+      Js.Opt.iter
+        (Dom_html.CoerceTo.input el)
+        (fun input -> input##.placeholder := Js.string text) )
+
+let refresh_i18n () =
+  set_text "login-title" (I18n.t "login_title") ;
+  set_text "login-label-email" (I18n.t "login_label_email") ;
+  set_text "login-label-password" (I18n.t "login_label_password") ;
+  set_text "login-label-remember" (I18n.t "login_remember_me") ;
+  set_text "login-submit" (I18n.t "login_sign_in") ;
+  set_placeholder "username" (I18n.t "login_placeholder_email") ;
+  set_placeholder "password" (I18n.t "login_placeholder_password")
+
 let render ~on_login () =
   let username =
     input
@@ -27,6 +49,7 @@ let render ~on_login () =
     button
       ~a:
         [ a_class ["btn"; "btn-primary"; "w-100"; "py-2"]
+        ; a_id "login-submit"
         ; a_button_type `Submit ]
       [txt (I18n.t "login_sign_in")]
   in
@@ -40,20 +63,20 @@ let render ~on_login () =
       ~a:
         [a_method `Post; a_onsubmit (fun ev -> Dom.preventDefault ev ; false)]
       [ h1
-          ~a:[a_class ["h3"; "mb-3"; "fw-normal"]]
+          ~a:[a_id "login-title"; a_class ["h3"; "mb-3"; "fw-normal"]]
           [txt (I18n.t "login_title")]
       ; error_div
       ; div
           ~a:[a_class ["form-floating"]]
           [ username
           ; label
-              ~a:[a_label_for "username"]
+            ~a:[a_id "login-label-email"; a_label_for "username"]
               [txt (I18n.t "login_label_email")] ]
       ; div
           ~a:[a_class ["form-floating"]]
           [ password
           ; label
-              ~a:[a_label_for "password"]
+            ~a:[a_id "login-label-password"; a_label_for "password"]
               [txt (I18n.t "login_label_password")] ]
       ; div
           ~a:[a_class ["form-check"; "text-start"; "my-3"]]
@@ -64,7 +87,10 @@ let render ~on_login () =
                 ; a_id "checkDefault" ]
               ()
           ; label
-              ~a:[a_class ["form-check-label"]; a_label_for "checkDefault"]
+              ~a:
+                [ a_id "login-label-remember"
+                ; a_class ["form-check-label"]
+                ; a_label_for "checkDefault" ]
               [txt (I18n.t "login_remember_me")] ]
       ; submit_btn ]
   in

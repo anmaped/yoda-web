@@ -2,27 +2,41 @@ open Js_of_ocaml
 
 type language = EN | FR | ES | PT | AR
 
+let language_of_code = function
+  | "en" -> EN
+  | "fr" -> FR
+  | "es" -> ES
+  | "pt" -> PT
+  | "ar" -> AR
+  | _ -> EN
+
+let language_to_code = function
+  | EN -> "en"
+  | FR -> "fr"
+  | ES -> "es"
+  | PT -> "pt"
+  | AR -> "ar"
+
+let apply_direction lang =
+  let dir = match lang with AR -> "rtl" | _ -> "ltr" in
+  let body = Js.Unsafe.get Dom_html.document "body" in
+  ignore
+    (Js.Unsafe.fun_call
+       (Js.Unsafe.get body "setAttribute")
+       [| Js.Unsafe.inject (Js.string "dir")
+        ; Js.Unsafe.inject (Js.string dir) |] )
+
 let current_language () =
   Helpers.get_local_variable "yoda-language"
   |> Option.map Js.to_string
   |> function
-  | Some "en" -> EN
-  | Some "fr" -> FR
-  | Some "es" -> ES
-  | Some "pt" -> PT
-  | Some "ar" -> AR
-  | _ -> EN (* defaults to English *)
+  | Some code -> language_of_code code
+  | None -> EN (* defaults to English *)
 
 let set_language lang =
-  let code =
-    match lang with
-    | EN -> "en"
-    | FR -> "fr"
-    | ES -> "es"
-    | PT -> "pt"
-    | AR -> "ar"
-  in
-  Helpers.set_local_variable "yoda-language" code
+  let code = language_to_code lang in
+  Helpers.set_local_variable "yoda-language" code ;
+  apply_direction lang
 
 let languages =
   [ (EN, "English")
@@ -49,22 +63,23 @@ let interpolate template values =
   let i = ref 0 in
   let values = ref values in
   while !i < String.length template do
-    if !i + 1 < String.length template
-       && template.[!i] = '%'
-       && template.[!i + 1] = 's'
+    if
+      !i + 1 < String.length template
+      && template.[!i] = '%'
+      && template.[!i + 1] = 's'
     then begin
-      (match !values with
+      ( match !values with
       | v :: vs ->
-          Buffer.add_string buf v;
+          Buffer.add_string buf v ;
           values := vs
-      | [] ->
-          Buffer.add_string buf "%s");
+      | [] -> Buffer.add_string buf "%s" ) ;
       i := !i + 2
-    end else begin
-      Buffer.add_char buf template.[!i];
+    end
+    else begin
+      Buffer.add_char buf template.[!i] ;
       incr i
     end
-  done;
+  done ;
   Buffer.contents buf
 
 let init () =
