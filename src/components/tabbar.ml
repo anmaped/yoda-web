@@ -247,7 +247,7 @@ let copy_active_file_to_clipboard () =
       save_active_editor_content () ;
       copy_text_to_clipboard file.content
 
-let actions_bar =
+let actions_bar () =
   div
     ~a:[a_class ["d-flex"; "justify-content-between"; "align-items-center"]]
     [ div
@@ -305,4 +305,4 @@ let content () =
           [ a_class
               ["contest-card"; "rounded"; "shadow-sm"; "align-items-center"]
           ]
-        [tab_div; actions_bar] ]
+        [tab_div; actions_bar ()] ]

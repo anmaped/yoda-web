@@ -114,7 +114,7 @@ let apply_theme t =
   Helpers.trigger_render ()
 
 (* Apply saved theme on page load *)
-let _ = apply_theme (get_theme ())
+let init () = apply_theme (get_theme ())
 
 (* Settings referrer helper *)
 let save_referrer () =

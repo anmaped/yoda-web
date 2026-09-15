@@ -2,7 +2,7 @@ open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 
 (* save editor state and testbar state using a auto-save mechanism *)
-let () =
+let init () =
   let open Lwt.Infix in
   (* load all state before starting the auto-save loop *)
   Components.Editor.load_state () ;

@@ -115,7 +115,7 @@ let render ~on_login () =
             (Js.string
                ("Login successful: " ^ Api.Openapi.AuthToken.to_json y) ) ;
           (* Store the token in local storage *)
-          Helpers.set_session_variable "token" y.token ;
+          Helpers.set_session_variable "token" "" ;
           Helpers.set_session_variable "user"
             (Api.Openapi.User.to_json y.user) ;
           Helpers.set_session_variable "error" "" ;

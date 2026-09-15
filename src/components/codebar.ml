@@ -14,7 +14,7 @@ let spinner = make_spinner "run"
 let status_message =
   span
     ~a:[a_id "status-message"; a_class ["text-muted"; "small"; "ml-3"]]
-    [txt (I18n.t "codebar_all_changes_saved")]
+    [txt "..."]
 
 let status_bar =
   div

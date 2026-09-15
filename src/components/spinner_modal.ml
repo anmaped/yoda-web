@@ -4,7 +4,7 @@ open Tyxml_js.Html
 
 let spinner = div []
 
-let status_p_tyxml = p [txt (I18n.t "spinner_modal_ready")]
+let status_p_tyxml = p [txt "..."]
 
 let status_p_dom = Tyxml_js.To_dom.of_p status_p_tyxml
 
@@ -17,8 +17,7 @@ type status_entry = {message: string; kind: string; show_in_history: bool}
 
 let status_entries : status_entry list ref = ref []
 
-let status_h5_tyxml =
-  h5 ~a:[a_class ["modal-title"]] [txt (I18n.t "spinner_modal_processing")]
+let status_h5_tyxml = h5 ~a:[a_class ["modal-title"]] [txt "..."]
 
 let status_h5_dom = Tyxml_js.To_dom.of_h5 status_h5_tyxml
 

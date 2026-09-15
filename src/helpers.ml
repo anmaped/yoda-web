@@ -113,15 +113,6 @@ let remove_cookies_variable name =
   Dom_html.document##.cookie := expired ;
   Console.console##log (Js.string ("Cookie removed: " ^ name))
 
-let set_local_variable key value =
-  Js.Optdef.iter Dom_html.window##.localStorage (fun storage ->
-      storage##setItem (Js.string key) (Js.string value) )
-
-let get_local_variable key =
-  match Js.Optdef.to_option Dom_html.window##.localStorage with
-  | Some storage -> Js.Opt.to_option (storage##getItem (Js.string key))
-  | None -> None
-
 let get_username () =
   match get_session_variable "user" with
   | Some t -> (
@@ -136,6 +127,82 @@ let get_username () =
         cleanup_json_string raw
       with _ -> "Guest" )
   | None -> "Guest"
+
+let secure_local_storage_sync () =
+  let value : Js.Unsafe.any Js.optdef =
+    Js.Unsafe.get Dom_html.window "secureLocalStorageSync"
+  in
+  Js.Optdef.to_option value
+
+let preloaded_local_storage_user : string option ref = ref None
+
+let ensure_local_cache_preloaded () : unit Lwt.t =
+  match secure_local_storage_sync () with
+  | None -> Lwt.return_unit
+  | Some bridge ->
+      let user_id = get_username () in
+      if !preloaded_local_storage_user = Some user_id then Lwt.return_unit
+      else
+        let promise : Js.Unsafe.any Promise.t =
+          Js.Unsafe.meth_call bridge "preloadAll"
+            [|Js.Unsafe.inject (Js.string user_id)|]
+          |> Promise.of_any
+        in
+        let waiter, wakener = Lwt.wait () in
+        ignore
+          (Promise.then_
+             ~on_error:(fun _err ->
+               if Lwt.is_sleeping waiter then
+                 Lwt.wakeup_exn wakener (Failure "preloadAll failed") ;
+               Promise.resolve () )
+             (fun _result ->
+               preloaded_local_storage_user := Some user_id ;
+               if Lwt.is_sleeping waiter then Lwt.wakeup wakener () ;
+               Promise.resolve () )
+             promise ) ;
+        waiter
+
+let set_local_variable key value =
+  match secure_local_storage_sync () with
+  | Some bridge ->
+      let user_id = get_username () in
+      ignore
+        (Js.Unsafe.meth_call bridge "setItem"
+           [| Js.Unsafe.inject (Js.string user_id)
+            ; Js.Unsafe.inject (Js.string key)
+            ; Js.Unsafe.inject (Js.string value) |] )
+  | None ->
+      Js.Optdef.iter Dom_html.window##.localStorage (fun storage ->
+          storage##setItem (Js.string key) (Js.string value) )
+
+let trace msg () : unit =
+  ignore
+    (Js.Unsafe.meth_call
+       (Js.Unsafe.get Js.Unsafe.global "console")
+       "trace"
+       [|Js.Unsafe.inject (Js.string ("Trace: " ^ msg))|] )
+
+let get_local_variable key =
+  (*trace "get_local_variable" () ;*)
+  match secure_local_storage_sync () with
+  | Some bridge ->
+      let user_id = get_username () in
+      let value : Js.js_string Js.t Js.opt =
+        Js.Unsafe.meth_call bridge "getItem"
+          [| Js.Unsafe.inject (Js.string user_id)
+           ; Js.Unsafe.inject (Js.string key) |]
+      in
+      (* print value *)
+      Console.console##log
+        (Js.string
+           ( "Retrieved " ^ key ^ " : "
+           ^ Js.to_string (Js.Opt.get value (fun _ -> Js.string "Not found!"))
+           ) ) ;
+      Js.Opt.to_option value
+  | None -> (
+    match Js.Optdef.to_option Dom_html.window##.localStorage with
+    | Some storage -> Js.Opt.to_option (storage##getItem (Js.string key))
+    | None -> None )
 
 let is_user_role role =
   match get_session_variable "user" with
@@ -293,5 +360,5 @@ let consume_session_expired_notice () =
 let navigate_after_login ?(default_hash = "#contests") () =
   match consume_post_login_redirect () with
   | Some hash when hash <> "" && hash <> "#login" && hash <> "#logout" ->
-      navigate_to hash
-  | _ -> navigate_to default_hash
+      navigate_to_with_reload hash
+  | _ -> navigate_to_with_reload default_hash

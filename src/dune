@@ -15,7 +15,12 @@
   blobs
   i18n)
  (js_of_ocaml
-  (javascript_files bootstrap.js ../static/editor.js jszip.min.js))
+  (javascript_files
+   bootstrap.js
+   ../static/editor.js
+   jszip.min.js
+   ../static/sls.min.js
+   ../static/sls-sync-bridge.min.js))
  (preprocess
   (pps js_of_ocaml-ppx)))
 
