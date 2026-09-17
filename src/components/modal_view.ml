@@ -39,7 +39,8 @@ let make name title content action () =
                         ~a:
                           [ a_class ["btn"; "btn-primary"]
                           ; a_onclick (fun _ ->
+                                let result = action () in
                                 Helpers.remove_first_element_from_app
                                   ("#" ^ name) ;
-                                action () ) ]
+                                result ) ]
                         [txt (I18n.t "modal_confirm")] ] ] ] ] ]
