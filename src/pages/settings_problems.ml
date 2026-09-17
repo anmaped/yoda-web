@@ -162,10 +162,37 @@ let load_source_artifacts (problem_id : int) =
 let get_source_artifacts_for_problem problem_id =
   try Hashtbl.find !state.source_artifacts problem_id with Not_found -> []
 
-let open_add_testcase_modal ~problem_id =
-  let input_id = Printf.sprintf "new-testcase-input-%d" problem_id in
-  let output_id = Printf.sprintf "new-testcase-output-%d" problem_id in
-  let sample_id = Printf.sprintf "new-testcase-sample-%d" problem_id in
+let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
+    =
+  let title =
+    match testcase with
+    | Some _ -> I18n.t "problems_edit_testcase"
+    | None -> I18n.t "problems_add_testcase"
+  in
+  let input_id =
+    match testcase with
+    | Some tc -> Printf.sprintf "edit-testcase-input-%d" tc.id
+    | None -> Printf.sprintf "new-testcase-input-%d" problem_id
+  in
+  let output_id =
+    match testcase with
+    | Some tc -> Printf.sprintf "edit-testcase-output-%d" tc.id
+    | None -> Printf.sprintf "new-testcase-output-%d" problem_id
+  in
+  let sample_id =
+    match testcase with
+    | Some tc -> Printf.sprintf "edit-testcase-sample-%d" tc.id
+    | None -> Printf.sprintf "new-testcase-sample-%d" problem_id
+  in
+  let default_input =
+    match testcase with Some tc -> tc.input | None -> ""
+  in
+  let default_output =
+    match testcase with Some tc -> tc.output | None -> ""
+  in
+  let default_is_sample =
+    match testcase with Some tc -> tc.is_sample | None -> false
+  in
   let get_textarea_value field_id =
     match
       Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.textarea
@@ -174,12 +201,18 @@ let open_add_testcase_modal ~problem_id =
     | None -> ""
   in
   let get_checkbox_value field_id =
-    match Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.input with
+    match
+      Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.input
+    with
     | Some el -> Js.to_bool el##.checked
     | None -> false
   in
-  Components.Modal_view.make "add-testcase-modal"
-    (I18n.t "problems_add_testcase")
+  let modal_name =
+    match testcase with
+    | Some tc -> Printf.sprintf "testcase-modal-%d" tc.id
+    | None -> Printf.sprintf "testcase-modal-new-%d" problem_id
+  in
+  Components.Modal_view.make modal_name title
     [ div
         ~a:[a_class ["mb-3"]]
         [ label ~a:[a_class ["form-label"]] [txt "Input"]
@@ -189,7 +222,7 @@ let open_add_testcase_modal ~problem_id =
               ; a_class ["form-control"]
               ; a_rows 5
               ; a_placeholder "Test input" ]
-            (txt "") ]
+            (txt default_input) ]
     ; div
         ~a:[a_class ["mb-3"]]
         [ label ~a:[a_class ["form-label"]] [txt "Output"]
@@ -199,14 +232,15 @@ let open_add_testcase_modal ~problem_id =
               ; a_class ["form-control"]
               ; a_rows 5
               ; a_placeholder "Expected output" ]
-            (txt "") ]
+            (txt default_output) ]
     ; div
         ~a:[a_class ["form-check"]]
         [ input
             ~a:
-              [ a_id sample_id
-              ; a_class ["form-check-input"]
-              ; a_input_type `Checkbox ]
+              ( [ a_id sample_id
+                ; a_class ["form-check-input"]
+                ; a_input_type `Checkbox ]
+              @ if default_is_sample then [a_checked ()] else [] )
             ()
         ; label
             ~a:[a_class ["form-check-label"]; a_label_for sample_id]
@@ -221,16 +255,29 @@ let open_add_testcase_modal ~problem_id =
         |> Api.Openapi.TestCaseCreateRequest.to_json
       in
       Lwt.async (fun () ->
-          Api.Helpers.post_testcase problem_id body
-          >>= fun (_resp, status) ->
-          if status = 200 || status = 201 then (
-            Hashtbl.remove !state.testcases problem_id ;
-            load_testcases problem_id
-            >>= fun () ->
-            Settings_problems_import.RerenderFlag.set_rerender () ;
-            Helpers.trigger_render () ;
-            Lwt.return_unit )
-          else Lwt.return_unit ) ;
+          match testcase with
+          | Some tc ->
+              Api.Helpers.put_testcase tc.id body
+              >>= fun (_resp, status) ->
+              if status = 200 || status = 201 || status = 204 then (
+                Hashtbl.remove !state.testcases problem_id ;
+                load_testcases problem_id
+                >>= fun () ->
+                Settings_problems_import.RerenderFlag.set_rerender () ;
+                Helpers.trigger_render () ;
+                Lwt.return_unit )
+              else Lwt.return_unit
+          | None ->
+              Api.Helpers.post_testcase problem_id body
+              >>= fun (_resp, status) ->
+              if status = 200 || status = 201 then (
+                Hashtbl.remove !state.testcases problem_id ;
+                load_testcases problem_id
+                >>= fun () ->
+                Settings_problems_import.RerenderFlag.set_rerender () ;
+                Helpers.trigger_render () ;
+                Lwt.return_unit )
+              else Lwt.return_unit ) ;
       false )
     ()
   |> Helpers.add_element_to_app
@@ -615,11 +662,10 @@ let problem_card (problem : Api.Openapi.problem) =
                          ~a:
                            [ a_class ["btn"; "btn-sm"; "btn-primary"]
                            ; a_onclick (fun _ ->
-                                 ( match
-                                     (problem.id, !state.contest_id)
-                                   with
+                                 ( match (problem.id, !state.contest_id) with
                                  | Some problem_id, Some _contest_id ->
-                                     open_add_testcase_modal ~problem_id
+                                     open_testcase_modal ~problem_id
+                                       ~testcase:None
                                  | _ -> () ) ;
                                  false ) ]
                          [ Components.Icons.plus_lg_icon ~a:["me-2"] ()
@@ -638,104 +684,101 @@ let problem_card (problem : Api.Openapi.problem) =
                        let test_case_rows =
                          List.mapi
                            (fun idx (tc : Api.Openapi.testCase) ->
-                            div
-                              ~a:
-                                [a_class ["mb-3"; "border"; "rounded"; "p-3"]]
-                              [ div
-                                  ~a:
-                                    [ a_class
-                                        [ "d-flex"
-                                        ; "align-items-center"
-                                        ; "justify-content-between"
-                                        ; "mb-2" ] ]
-                                  [ span
-                                      [ kbd
-                                          [ txt
-                                              (Printf.sprintf "Test Case %d"
-                                                 (idx + 1) ) ]
-                                      ; ( if tc.is_sample then
-                                            span
-                                              ~a:
-                                                [ a_class
-                                                    [ "badge"
-                                                    ; "bg-info"
-                                                    ; "ms-2" ] ]
-                                              [txt "Sample"]
-                                          else span [] ) ]
-                                  ; (* edit button *)
-                                    button
-                                      ~a:
-                                        [ a_class
-                                            [ "btn"
-                                            ; "btn-sm"
-                                            ; "btn-outline-secondary"
-                                            ; "me-1"
-                                            ; "ms-auto" ]
-                                        ; a_onclick (fun _ ->
-                                              Console.console##log
-                                                (Js.string
-                                                   (Printf.sprintf
-                                                      "Edit testcase: %d"
-                                                      tc.id ) ) ;
-                                              Components.Modal_view.make
-                                                "edit-testcase-modal"
-                                                (Printf.sprintf
-                                                   "Edit Test Case %d (id:%d)" (idx + 1) tc.id )
-                                                [ (* modal content here *) ]
-                                                (fun () ->
-                                                  (* save logic here *)
-                                                  false )
-                                                ()
-                                              |> Helpers.add_element_to_app ;
-                                              false ) ]
-                                      [Components.Icons.pencil_icon ()]
-                                  ; button
-                                      ~a:
-                                        [ a_class
-                                            [ "btn"
-                                            ; "btn-sm"
-                                            ; "btn-outline-danger" ]
-                                        ; a_onclick (fun _ ->
-                                              Console.console##log
-                                                (Js.string
-                                                   (Printf.sprintf
-                                                      "Delete testcase: %d"
-                                                      tc.id ) ) ;
-                                              Lwt.async (fun () ->
-                                                  Api.Helpers.delete_testcase
-                                                    tc.id
-                                                  >>= fun status ->
-                                                  if status = 204 then (
-                                                    Settings_problems_import
-                                                    .RerenderFlag
-                                                    .set_rerender () ;
-                                                    Helpers.trigger_render () ;
-                                                    Lwt.return_unit )
-                                                  else Lwt.return_unit ) ;
-                                              false ) ]
-                                      [Components.Icons.trash_icon ()] ]
-                              ; label
-                                  ~a:[a_class ["form-label"]]
-                                  [txt "Input"]
-                              ; pre
-                                  ~a:
-                                    [ a_class
-                                        [ "bg-light"
-                                        ; "p-2"
-                                        ; "rounded"
-                                        ; "font-monospace" ] ]
-                                  [txt tc.input]
-                              ; label
-                                  ~a:[a_class ["form-label"; "mt-2"]]
-                                  [txt "Output"]
-                              ; pre
-                                  ~a:
-                                    [ a_class
-                                        [ "bg-light"
-                                        ; "p-2"
-                                        ; "rounded"
-                                        ; "font-monospace" ] ]
-                                  [txt tc.output] ] )
+                             div
+                               ~a:
+                                 [ a_class
+                                     ["mb-3"; "border"; "rounded"; "p-3"] ]
+                               [ div
+                                   ~a:
+                                     [ a_class
+                                         [ "d-flex"
+                                         ; "align-items-center"
+                                         ; "justify-content-between"
+                                         ; "mb-2" ] ]
+                                   [ span
+                                       [ kbd
+                                           [ txt
+                                               (Printf.sprintf "Test Case %d"
+                                                  (idx + 1) ) ]
+                                       ; ( if tc.is_sample then
+                                             span
+                                               ~a:
+                                                 [ a_class
+                                                     [ "badge"
+                                                     ; "bg-info"
+                                                     ; "ms-2" ] ]
+                                               [txt "Sample"]
+                                           else span [] ) ]
+                                   ; (* edit button *)
+                                     button
+                                       ~a:
+                                         [ a_class
+                                             [ "btn"
+                                             ; "btn-sm"
+                                             ; "btn-outline-secondary"
+                                             ; "me-1"
+                                             ; "ms-auto" ]
+                                         ; a_onclick (fun _ ->
+                                               Console.console##log
+                                                 (Js.string
+                                                    (Printf.sprintf
+                                                       "Edit testcase: %d"
+                                                       tc.id ) ) ;
+                                               open_testcase_modal
+                                                 ~problem_id:
+                                                   (Option.value ~default:0
+                                                      problem.id )
+                                                 ~testcase:(Some tc) ;
+                                               false ) ]
+                                       [Components.Icons.pencil_icon ()]
+                                   ; button
+                                       ~a:
+                                         [ a_class
+                                             [ "btn"
+                                             ; "btn-sm"
+                                             ; "btn-outline-danger" ]
+                                         ; a_onclick (fun _ ->
+                                               Console.console##log
+                                                 (Js.string
+                                                    (Printf.sprintf
+                                                       "Delete testcase: %d"
+                                                       tc.id ) ) ;
+                                               Lwt.async (fun () ->
+                                                   Api.Helpers
+                                                   .delete_testcase tc.id
+                                                   >>= fun status ->
+                                                   if status = 204 then (
+                                                     Settings_problems_import
+                                                     .RerenderFlag
+                                                     .set_rerender () ;
+                                                     Helpers.trigger_render
+                                                       () ;
+                                                     Lwt.return_unit )
+                                                   else Lwt.return_unit ) ;
+                                               false ) ]
+                                       [Components.Icons.trash_icon ()] ]
+                               ; label
+                                   ~a:[a_class ["form-label"]]
+                                   [txt "Input"]
+                               ; pre
+                                   ~a:
+                                     [ a_class
+                                         [ "bg-light"
+                                         ; "p-2"
+                                         ; "rounded"
+                                         ; "font-monospace" ] ]
+                                   [txt tc.input]
+                               ; label
+                                   ~a:[a_class ["form-label"; "mt-2"]]
+                                   [txt "Output"]
+                               ; pre
+                                   ~a:
+                                     [ a_class
+                                         [ "bg-light"
+                                         ; "p-2"
+                                         ; "rounded"
+                                         ; "font-monospace" ] ]
+                                   [txt tc.output] ] )
                            tcases
                        in
                        div
@@ -750,8 +793,8 @@ let problem_card (problem : Api.Openapi.problem) =
                                               else "" ) ] ]
                                     [row] )
                                 test_case_rows ) ]
-                   | None ->
-                       p ~a:[a_class ["text-muted"]] [txt "Loading..."] ) ])
+                   | None -> p ~a:[a_class ["text-muted"]] [txt "Loading..."]
+                   ) ] )
             ; (* Source artifacts *)
               div
                 [ label

@@ -134,6 +134,9 @@ let post_testcase problem_id body =
     (Printf.sprintf "%s/problems/%d/testcases" base_url problem_id)
     body
 
+let put_testcase testcase_id body =
+  put_json (Printf.sprintf "%s/testcases/%d" base_url testcase_id) body
+
 let delete_testcase testcase_id =
   delete_json (Printf.sprintf "%s/testcases/%d" base_url testcase_id)
 
