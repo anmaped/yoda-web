@@ -300,7 +300,7 @@ let navigate_to path =
 let get_current_contest_id () =
   match get_local_variable "yoda-state-contest-id" with
   | Some id -> int_of_string (Js.to_string id)
-  | None -> navigate_to "#contests" ; 0
+  | None -> navigate_to "#contests" ; failwith "No current contest selected. Abort."
 
 (** Sets the ID of the currently selected contest *)
 let set_current_contest_id id =

@@ -129,10 +129,9 @@ let re_evaluate_submission submission_id =
 let get_testcases problem_id =
   fetch_json (Printf.sprintf "%s/problems/%d/testcases" base_url problem_id)
 
-let post_testcase contest_id problem_id body =
+let post_testcase problem_id body =
   post_json
-    (Printf.sprintf "%s/contests/%d/problems/%d/testcases" base_url
-       contest_id problem_id )
+    (Printf.sprintf "%s/problems/%d/testcases" base_url problem_id)
     body
 
 let delete_testcase testcase_id =

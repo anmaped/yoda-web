@@ -162,6 +162,79 @@ let load_source_artifacts (problem_id : int) =
 let get_source_artifacts_for_problem problem_id =
   try Hashtbl.find !state.source_artifacts problem_id with Not_found -> []
 
+let open_add_testcase_modal ~problem_id =
+  let input_id = Printf.sprintf "new-testcase-input-%d" problem_id in
+  let output_id = Printf.sprintf "new-testcase-output-%d" problem_id in
+  let sample_id = Printf.sprintf "new-testcase-sample-%d" problem_id in
+  let get_textarea_value field_id =
+    match
+      Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.textarea
+    with
+    | Some el -> Js.to_string el##.value
+    | None -> ""
+  in
+  let get_checkbox_value field_id =
+    match Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.input with
+    | Some el -> Js.to_bool el##.checked
+    | None -> false
+  in
+  Components.Modal_view.make "add-testcase-modal"
+    (I18n.t "problems_add_testcase")
+    [ div
+        ~a:[a_class ["mb-3"]]
+        [ label ~a:[a_class ["form-label"]] [txt "Input"]
+        ; textarea
+            ~a:
+              [ a_id input_id
+              ; a_class ["form-control"]
+              ; a_rows 5
+              ; a_placeholder "Test input" ]
+            (txt "") ]
+    ; div
+        ~a:[a_class ["mb-3"]]
+        [ label ~a:[a_class ["form-label"]] [txt "Output"]
+        ; textarea
+            ~a:
+              [ a_id output_id
+              ; a_class ["form-control"]
+              ; a_rows 5
+              ; a_placeholder "Expected output" ]
+            (txt "") ]
+    ; div
+        ~a:[a_class ["form-check"]]
+        [ input
+            ~a:
+              [ a_id sample_id
+              ; a_class ["form-check-input"]
+              ; a_input_type `Checkbox ]
+            ()
+        ; label
+            ~a:[a_class ["form-check-label"]; a_label_for sample_id]
+            [txt "Sample"] ] ]
+    (fun () ->
+      let input_v = get_textarea_value input_id in
+      let output_v = get_textarea_value output_id in
+      let is_sample_v = get_checkbox_value sample_id in
+      let body =
+        Api.Openapi.TestCaseCreateRequest.create ~input:input_v
+          ~output:output_v ~is_sample:is_sample_v ()
+        |> Api.Openapi.TestCaseCreateRequest.to_json
+      in
+      Lwt.async (fun () ->
+          Api.Helpers.post_testcase problem_id body
+          >>= fun (_resp, status) ->
+          if status = 200 || status = 201 then (
+            Hashtbl.remove !state.testcases problem_id ;
+            load_testcases problem_id
+            >>= fun () ->
+            Settings_problems_import.RerenderFlag.set_rerender () ;
+            Helpers.trigger_render () ;
+            Lwt.return_unit )
+          else Lwt.return_unit ) ;
+      false )
+    ()
+  |> Helpers.add_element_to_app
+
 (* --- Format helpers --- *)
 
 let format_time_ms ms =
@@ -535,18 +608,36 @@ let problem_card (problem : Api.Openapi.problem) =
                     [txt problem.description] ]
             ; (* Test cases *)
               div
-                [ label
-                    ~a:[a_class ["form-label"; "fw-bold"]]
-                    [txt "Test Cases"]
-                ; ( match cases with
-                  | Some [] ->
-                      p
-                        ~a:[a_class ["text-muted"]]
-                        [txt "No test cases defined"]
-                  | Some tcases ->
-                      let test_case_rows =
-                        List.mapi
-                          (fun idx (tc : Api.Openapi.testCase) ->
+                (let add_testcase_button =
+                   div
+                     ~a:[a_class ["mb-2"]]
+                     [ button
+                         ~a:
+                           [ a_class ["btn"; "btn-sm"; "btn-primary"]
+                           ; a_onclick (fun _ ->
+                                 ( match
+                                     (problem.id, !state.contest_id)
+                                   with
+                                 | Some problem_id, Some _contest_id ->
+                                     open_add_testcase_modal ~problem_id
+                                 | _ -> () ) ;
+                                 false ) ]
+                         [ Components.Icons.plus_lg_icon ~a:["me-2"] ()
+                         ; txt (I18n.t "problems_add_testcase") ] ]
+                 in
+                 [ label
+                     ~a:[a_class ["form-label"; "fw-bold"]]
+                     [txt "Test Cases"]
+                 ; add_testcase_button
+                 ; ( match cases with
+                   | Some [] ->
+                       p
+                         ~a:[a_class ["text-muted"]]
+                         [txt "No test cases defined"]
+                   | Some tcases ->
+                       let test_case_rows =
+                         List.mapi
+                           (fun idx (tc : Api.Openapi.testCase) ->
                             div
                               ~a:
                                 [a_class ["mb-3"; "border"; "rounded"; "p-3"]]
@@ -645,22 +736,22 @@ let problem_card (problem : Api.Openapi.problem) =
                                         ; "rounded"
                                         ; "font-monospace" ] ]
                                   [txt tc.output] ] )
-                          tcases
-                      in
-                      div
-                        [ div
-                            ~a:[a_class ["row"]]
-                            (List.mapi
-                               (fun i row ->
-                                 div
-                                   ~a:
-                                     [ a_class
-                                         [ ( if i mod 2 = 0 then "col-md-6"
-                                             else "" ) ] ]
-                                   [row] )
-                               test_case_rows ) ]
-                  | None -> p ~a:[a_class ["text-muted"]] [txt "Loading..."]
-                  ) ]
+                           tcases
+                       in
+                       div
+                         [ div
+                             ~a:[a_class ["row"]]
+                             (List.mapi
+                                (fun i row ->
+                                  div
+                                    ~a:
+                                      [ a_class
+                                          [ ( if i mod 2 = 0 then "col-md-6"
+                                              else "" ) ] ]
+                                    [row] )
+                                test_case_rows ) ]
+                   | None ->
+                       p ~a:[a_class ["text-muted"]] [txt "Loading..."] ) ])
             ; (* Source artifacts *)
               div
                 [ label
