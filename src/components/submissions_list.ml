@@ -126,8 +126,8 @@ let load_submissions table contest_id last =
         in
         let submissions =
           submissions |> List.rev
-          |> List.filteri (fun i _ -> i < last)
           |> List.sort compare_submission
+          |> List.filteri (fun i _ -> i < last)
         in
         (* Create rows in parallel, but keep the original order *)
         Lwt_list.map_p
