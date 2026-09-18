@@ -186,6 +186,7 @@ type translations =
   ; problems_difficulty_label: string
   ; problems_time_limit_label: string
   ; problems_memory_limit_label: string
+  ; problems_languages_label: string
   ; problems_description_label: string
   ; problems_input_spec_label: string
   ; problems_output_spec_label: string
@@ -405,11 +406,12 @@ let en =
   ; problems_add_btn= "Add Problem"
   ; problems_add_title= "Add New Problem"
   ; problems_edit_title= "Edit Problem"
-  ; problems_code_label= "Code (slug: id-problem-name)"
+  ; problems_code_label= "Code"
   ; problems_title_label= "Title"
   ; problems_difficulty_label= "Difficulty"
   ; problems_time_limit_label= "Time Limit (ms)"
   ; problems_memory_limit_label= "Memory Limit (MB)"
+  ; problems_languages_label= "Languages"
   ; problems_description_label= "Description"
   ; problems_input_spec_label= "Input Specification"
   ; problems_output_spec_label= "Output Specification"
@@ -637,11 +639,12 @@ let fr =
   ; problems_add_btn= "Ajouter un problème"
   ; problems_add_title= "Ajouter un nouveau problème"
   ; problems_edit_title= "Modifier le problème"
-  ; problems_code_label= "Code (slug: id-problem-name)"
+  ; problems_code_label= "Code"
   ; problems_title_label= "Titre"
   ; problems_difficulty_label= "Difficulté"
   ; problems_time_limit_label= "Limite de temps (ms)"
   ; problems_memory_limit_label= "Limite de mémoire (MB)"
+  ; problems_languages_label= "Langages"
   ; problems_description_label= "Description"
   ; problems_input_spec_label= "Spécification d'entrée"
   ; problems_output_spec_label= "Spécification de sortie"
@@ -865,11 +868,12 @@ let es =
   ; problems_add_btn= "Agregar problema"
   ; problems_add_title= "Agregar nuevo problema"
   ; problems_edit_title= "Editar problema"
-  ; problems_code_label= "Código (slug: id-problem-name)"
+  ; problems_code_label= "Código"
   ; problems_title_label= "Título"
   ; problems_difficulty_label= "Dificultad"
   ; problems_time_limit_label= "Límite de tiempo (ms)"
   ; problems_memory_limit_label= "Límite de memoria (MB)"
+  ; problems_languages_label= "Idiomas"
   ; problems_description_label= "Descripción"
   ; problems_input_spec_label= "Especificación de entrada"
   ; problems_output_spec_label= "Especificación de salida"
@@ -1092,11 +1096,12 @@ let pt =
   ; problems_add_btn= "Adicionar problema"
   ; problems_add_title= "Adicionar novo problema"
   ; problems_edit_title= "Editar problema"
-  ; problems_code_label= "Código (slug: id-problem-name)"
+  ; problems_code_label= "Código"
   ; problems_title_label= "Título"
   ; problems_difficulty_label= "Dificuldade"
   ; problems_time_limit_label= "Limite de tempo (ms)"
   ; problems_memory_limit_label= "Limite de memória (MB)"
+  ; problems_languages_label= "Idiomas"
   ; problems_description_label= "Descrição"
   ; problems_input_spec_label= "Especificação de entrada"
   ; problems_output_spec_label= "Especificação de saída"
@@ -1311,11 +1316,12 @@ let ar =
   ; problems_add_btn= "إضافة مشكلة"
   ; problems_add_title= "إضافة مشكلة جديدة"
   ; problems_edit_title= "تحرير المشكلة"
-  ; problems_code_label= "الرمز (slug: id-problem-name)"
+  ; problems_code_label= "الرمز"
   ; problems_title_label= "العنوان"
   ; problems_difficulty_label= "الصعوبة"
   ; problems_time_limit_label= "الحد الزمني (مللي ثانية)"
   ; problems_memory_limit_label= "حد الذاكرة (ميغابايت)"
+  ; problems_languages_label= "اللغات"
   ; problems_description_label= "الوصف"
   ; problems_input_spec_label= "مواصفات الإدخال"
   ; problems_output_spec_label= "مواصفات الإخراج"
@@ -1534,6 +1540,7 @@ let map : translations -> (string, string) Hashtbl.t =
   add "problems_difficulty_label" tr.problems_difficulty_label ;
   add "problems_time_limit_label" tr.problems_time_limit_label ;
   add "problems_memory_limit_label" tr.problems_memory_limit_label ;
+  add "problems_languages_label" tr.problems_languages_label ;
   add "problems_description_label" tr.problems_description_label ;
   add "problems_input_spec_label" tr.problems_input_spec_label ;
   add "problems_output_spec_label" tr.problems_output_spec_label ;

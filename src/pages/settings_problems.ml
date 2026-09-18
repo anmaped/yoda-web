@@ -395,7 +395,9 @@ let make_problem_modal () =
                                 ~a:[a_class ["col-md-4"]]
                                 [ label
                                     ~a:[a_class ["form-label"]]
-                                    [txt "Code *"]
+                                    [ txt
+                                        (I18n.t "problems_code_label" ^ " *")
+                                    ]
                                 ; input
                                     ~a:
                                       [ a_class ["form-control"]
@@ -406,7 +408,9 @@ let make_problem_modal () =
                                 ~a:[a_class ["col-md-8"]]
                                 [ label
                                     ~a:[a_class ["form-label"]]
-                                    [txt "Title *"]
+                                    [ txt
+                                        (I18n.t "problems_title_label" ^ " *")
+                                    ]
                                 ; input
                                     ~a:
                                       [ a_class ["form-control"]
@@ -418,7 +422,9 @@ let make_problem_modal () =
                                 ~a:[a_class ["col-md-6"]]
                                 [ label
                                     ~a:[a_class ["form-label"]]
-                                    [txt "Time Limit (ms)"]
+                                    [ txt
+                                        ( I18n.t "problem_time_limit"
+                                        ^ " (ms)" ) ]
                                 ; input
                                     ~a:
                                       [ a_class ["form-control"]
@@ -430,7 +436,9 @@ let make_problem_modal () =
                                 ~a:[a_class ["col-md-6"]]
                                 [ label
                                     ~a:[a_class ["form-label"]]
-                                    [txt "Memory Limit (MB)"]
+                                    [ txt
+                                        ( I18n.t "problem_memory_limit"
+                                        ^ " (MB)" ) ]
                                 ; input
                                     ~a:
                                       [ a_class ["form-control"]
@@ -444,12 +452,11 @@ let make_problem_modal () =
                                 ~a:[a_class ["col-12"]]
                                 [ label
                                     ~a:[a_class ["form-label"]]
-                                    [txt "Languages"]
+                                    [txt (I18n.t "problems_languages_label")]
                                 ; input
                                     ~a:
                                       [ a_class ["form-control"]
-                                      ; a_placeholder
-                                          "python, java, cpp"
+                                      ; a_placeholder "python, java, cpp"
                                       ; a_value languages ]
                                     () ]
                             ; (* Description *)
@@ -457,7 +464,9 @@ let make_problem_modal () =
                                 ~a:[a_class ["col-12"]]
                                 [ label
                                     ~a:[a_class ["form-label"]]
-                                    [txt "Description"]
+                                    [ txt
+                                        (I18n.t "problems_description_label")
+                                    ]
                                 ; textarea
                                     ~a:
                                       [ a_class ["form-control"]
@@ -653,6 +662,15 @@ let problem_card (problem : Api.Openapi.problem) =
                     ; p
                         ~a:[a_class ["form-control-static"]]
                         [txt (format_memory_mb problem.memory_limit_mb)] ] ]
+            ; (* languages *)
+              div
+                ~a:[a_class ["col-12"]]
+                [ label
+                    ~a:[a_class ["form-label"; "fw-bold"]]
+                    [txt (I18n.t "problems_languages_label")]
+                ; p
+                    ~a:[a_class ["form-control-static"]]
+                    [txt (String.concat ", " problem.languages)] ]
             ; (* Description *)
               div
                 ~a:[a_class ["mb-3"]]
