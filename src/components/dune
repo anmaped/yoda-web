@@ -16,6 +16,7 @@
   view_summary
   view_submissions
   view_problem
+  view_problem_markdown
   view_problems
   view_contest_progress
   editor

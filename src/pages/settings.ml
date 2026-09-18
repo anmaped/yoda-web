@@ -108,6 +108,7 @@ let apply_theme t =
   | "onedark" -> ignore (body##.classList##add (Js.string "theme-onedark"))
   | _ -> ()
   end ;
+  Components.Editor.set_theme t ;
   (* Persist theme *)
   set_theme t ;
   (* Re-render *)

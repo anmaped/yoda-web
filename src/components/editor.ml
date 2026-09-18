@@ -5,6 +5,18 @@ open Tyxml_js.Html
 let codeboard =
   div ~a:[a_id "codeboard"; a_style "height: 100%; min-height: 0;"] []
 
+let settings_theme = ref ""
+
+let current_theme () =
+  match String.lowercase_ascii (String.trim !settings_theme) with
+  | "dark" | "onedark" -> "material-darker"
+  | "monokai" -> "monokai"
+  | "eclipse" -> "eclipse"
+  | "nord" -> "nord"
+  | _ -> "default"
+
+let current_codemirror_theme_class () = "cm-s-" ^ current_theme ()
+
 let textarea_or_create ~textarea_id =
   match
     Js.Opt.to_option
@@ -48,7 +60,7 @@ let editor =
 
       val mode = Js.string "mllike"
 
-      val theme = Js.string "default"
+      val theme = Js.string (current_theme ())
 
       val indentUnit = 2
 
@@ -71,6 +83,14 @@ let editor =
   editor##refresh ;
   editor##setValue (Js.string "(* Start coding here *)\n") ;
   editor
+
+let set_theme t =
+  settings_theme := t ;
+  let theme = current_theme () in
+  ignore
+    (Js.Unsafe.meth_call editor "setOption"
+       [| Js.Unsafe.inject (Js.string "theme")
+        ; Js.Unsafe.inject (Js.string theme) |] )
 
 let load_state () = ()
 

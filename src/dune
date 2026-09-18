@@ -20,7 +20,8 @@
    ../static/editor.js
    jszip.min.js
    ../static/sls.min.js
-   ../static/sls-sync-bridge.min.js))
+   ../static/sls-sync-bridge.min.js
+   markdown-it.min.js))
  (preprocess
   (pps js_of_ocaml-ppx)))
 
@@ -95,3 +96,16 @@
     -o
     %{targets}
     https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js))))
+
+;; Rule to download MarkdownIT
+
+(rule
+ (targets markdown-it.min.js)
+ (action
+  (progn
+   (run
+    curl
+    -L
+    -o
+    %{targets}
+    https://unpkg.com/markdown-it@14.3.2/dist/markdown-it.min.js))))

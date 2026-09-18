@@ -4,21 +4,28 @@ open Tyxml_js.Html
 open Lwt.Infix
 
 let problem_view (problem : Api.Openapi.problem) =
+  let description_html = div ~a:[a_class ["markdown-content"]] [] in
+  let description_dom = Tyxml_js.To_dom.of_div description_html in
+  description_dom##.innerHTML
+  := Js.string (View_problem_markdown.render_markdown problem.description) ;
   section
     ~a:[a_class ["panel-section"]]
-    [ h2 [txt (problem.code ^ ". " ^ problem.title)]
-    ; p
-        [ b [txt (I18n.t "problem_time_limit"); txt ": "]
-        ; txt (Printf.sprintf "%d ms" problem.time_limit_ms) ]
-    ; p
-        [ b [txt (I18n.t "problem_memory_limit"); txt ": "]
-        ; txt (Printf.sprintf "%d MB" problem.memory_limit_mb) ]
-    ; h3 [txt (I18n.t "problem_description")]
-    ; p [txt problem.description]
-    ; h3 [txt (I18n.t "problem_input")]
-    ; p [txt problem.input_spec]
-    ; h3 [txt (I18n.t "problem_output")]
-    ; p [txt problem.output_spec] ]
+    ( [ h2 [txt (problem.code ^ ". " ^ problem.title)]
+      ; p
+          [ b [txt (I18n.t "problem_time_limit"); txt ": "]
+          ; txt (Printf.sprintf "%d ms" problem.time_limit_ms) ]
+      ; p
+          [ b [txt (I18n.t "problem_memory_limit"); txt ": "]
+          ; txt (Printf.sprintf "%d MB" problem.memory_limit_mb) ]
+      ; h3 [txt (I18n.t "problem_description")]
+      ; description_html ]
+    @ ( if problem.input_spec <> "" then
+          [h3 [txt (I18n.t "problem_input")]; p [txt problem.input_spec]]
+        else [] )
+    @
+    if problem.output_spec <> "" then
+      [h3 [txt (I18n.t "problem_output")]; p [txt problem.output_spec]]
+    else [] )
 
 let content ~contest_id ~problem_id () =
   let subcontainer = div ~a:[a_class ["card-header"]] [] in

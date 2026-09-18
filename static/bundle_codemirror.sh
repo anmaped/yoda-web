@@ -26,7 +26,10 @@ window.CodeMirror = CodeMirror;
 import "codemirror/lib/codemirror.css";
 
 // Themes
-//import "codemirror/theme/default.css";
+import "codemirror/theme/material-darker.css";
+import "codemirror/theme/monokai.css";
+import "codemirror/theme/eclipse.css";
+import "codemirror/theme/nord.css";
 
 // Modes
 import "codemirror/mode/mllike/mllike";
@@ -46,6 +49,7 @@ import "codemirror/addon/edit/matchbrackets";
 import "codemirror/addon/edit/closebrackets";
 import "codemirror/addon/comment/comment";
 import "codemirror/addon/search/searchcursor";
+import "codemirror/addon/runmode/runmode";
 import "codemirror/addon/fold/foldcode";
 import "codemirror/addon/fold/foldgutter";
 import "codemirror/addon/fold/brace-fold";
