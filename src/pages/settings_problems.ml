@@ -346,7 +346,8 @@ let make_problem_modal () =
           , memory_limit_mb
           , description
           , input_spec
-          , output_spec ) =
+          , output_spec
+          , languages ) =
         match mode with
         | Create p | Edit p ->
             ( p.code
@@ -355,8 +356,9 @@ let make_problem_modal () =
             , p.memory_limit_mb
             , p.description
             , p.input_spec
-            , p.output_spec )
-        | None_ -> ("", "", 0, 0, "", "", "")
+            , p.output_spec
+            , String.concat ", " p.languages )
+        | None_ -> ("", "", 0, 0, "", "", "", "")
       in
       div
         ~a:[a_id "problem-modal"]
@@ -436,6 +438,19 @@ let make_problem_modal () =
                                       ; a_value
                                           (string_of_int memory_limit_mb)
                                       ; a_input_min (`Number 16) ]
+                                    () ]
+                            ; (* Languages *)
+                              div
+                                ~a:[a_class ["col-12"]]
+                                [ label
+                                    ~a:[a_class ["form-label"]]
+                                    [txt "Languages"]
+                                ; input
+                                    ~a:
+                                      [ a_class ["form-control"]
+                                      ; a_placeholder
+                                          "python, java, cpp"
+                                      ; a_value languages ]
                                     () ]
                             ; (* Description *)
                               div
