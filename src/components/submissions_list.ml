@@ -28,13 +28,23 @@ let sort_indicator col =
   else if !sort_reverse then txt " ▼"
   else txt " ▲"
 
-let compare_submission (a : Api.Openapi.submission)
+let compare_submission problems_by_id (a : Api.Openapi.submission)
     (b : Api.Openapi.submission) =
   let result =
     match !sort_column with
     | Col_id -> Int.compare a.id b.id
-    | Col_problem -> Int.compare a.problem_id b.problem_id (* [TODO] *)
-    | Col_language -> Int.compare a.problem_id b.problem_id (* [TODO] *)
+    | Col_problem ->
+        String.compare
+          ( Hashtbl.find_opt problems_by_id a.problem_id
+          |> Option.map (fun (x : Api.Openapi.problem) -> x.title)
+          |> Option.value ~default:"" )
+          ( Hashtbl.find_opt problems_by_id b.problem_id
+          |> Option.map (fun (x : Api.Openapi.problem) -> x.title)
+          |> Option.value ~default:"" )
+    | Col_language ->
+        String.compare
+          (Option.value ~default:"" a.language)
+          (Option.value ~default:"" b.language)
     | Col_result -> String.compare a.status b.status
     | Col_time -> Int.compare a.time_ms b.time_ms
   in
@@ -124,11 +134,6 @@ let load_submissions table contest_id last =
         let submissions : Api.Openapi.submission list =
           Api.Openapi.Submissions.of_yojson resp
         in
-        let submissions =
-          submissions |> List.rev
-          |> List.sort compare_submission
-          |> List.filteri (fun i _ -> i < last)
-        in
         (* Fetch each unique problem once, then reuse the result for every
            submission that references it. *)
         let unique_problem_ids =
@@ -161,6 +166,11 @@ let load_submissions table contest_id last =
             | Some p -> Hashtbl.replace problems_by_id problem_id p
             | None -> () )
           fetched_problems ;
+        let submissions =
+          submissions |> List.rev
+          |> List.sort (compare_submission problems_by_id)
+          |> List.filteri (fun i _ -> i < last)
+        in
         Lwt_list.map_s
           (fun (sub : Api.Openapi.submission) ->
             match Hashtbl.find_opt problems_by_id sub.problem_id with
