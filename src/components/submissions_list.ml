@@ -129,12 +129,17 @@ let load_submissions table contest_id last =
           |> List.sort compare_submission
           |> List.filteri (fun i _ -> i < last)
         in
-        (* Create rows in parallel, but keep the original order *)
+        (* Fetch each unique problem once, then reuse the result for every
+           submission that references it. *)
+        let unique_problem_ids =
+          submissions
+          |> List.map (fun (sub : Api.Openapi.submission) -> sub.problem_id)
+          |> List.sort_uniq Int.compare
+        in
         Lwt_list.map_p
-          (fun (sub : Api.Openapi.submission) ->
+          (fun problem_id ->
             let problem_url =
-              Printf.sprintf "%s/problems/%d" Api.Helpers.base_url
-                sub.problem_id
+              Printf.sprintf "%s/problems/%d" Api.Helpers.base_url problem_id
             in
             Api.Helpers.fetch_json problem_url
             >>= fun (problem_resp, problem_status) ->
@@ -143,16 +148,31 @@ let load_submissions table contest_id last =
                 (Js.string
                    (Printf.sprintf "Failed to fetch problem: %d"
                       problem_status ) ) ;
-              Lwt.return_none )
+              Lwt.return (problem_id, None) )
             else
               let p = Api.Openapi.Problem.of_yojson problem_resp in
-              let lang = Option.value ~default:"Unknown" sub.language in
-              let row =
-                submission_row sub.id p.code lang
-                  (status_of_string sub.status)
-                  (format_time_ms sub.time_ms)
-              in
-              Lwt.return_some row )
+              Lwt.return (problem_id, Some p) )
+          unique_problem_ids
+        >>= fun fetched_problems ->
+        let problems_by_id = Hashtbl.create (List.length fetched_problems) in
+        List.iter
+          (fun (problem_id, problem_opt) ->
+            match problem_opt with
+            | Some p -> Hashtbl.replace problems_by_id problem_id p
+            | None -> () )
+          fetched_problems ;
+        Lwt_list.map_s
+          (fun (sub : Api.Openapi.submission) ->
+            match Hashtbl.find_opt problems_by_id sub.problem_id with
+            | Some p ->
+                let lang = Option.value ~default:"Unknown" sub.language in
+                let row =
+                  submission_row sub.id p.code lang
+                    (status_of_string sub.status)
+                    (format_time_ms sub.time_ms)
+                in
+                Lwt.return_some row
+            | None -> Lwt.return_none )
           submissions
         >>= fun rows ->
         (* Insert rows in the same order as submissions *)
