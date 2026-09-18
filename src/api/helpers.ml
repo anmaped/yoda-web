@@ -107,11 +107,8 @@ let post_problem contest_id body =
     (Printf.sprintf "%s/contests/%d/problems" base_url contest_id)
     body
 
-let put_problem contest_id problem_id body =
-  put_json
-    (Printf.sprintf "%s/contests/%d/problems/%d" base_url contest_id
-       problem_id )
-    body
+let put_problem problem_id body =
+  put_json (Printf.sprintf "%s/admin/problems/%d" base_url problem_id) body
 
 let delete_problem problem_id =
   delete_json (Printf.sprintf "%s/admin/problems/%d" base_url problem_id)

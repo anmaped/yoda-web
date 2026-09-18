@@ -334,6 +334,116 @@ let contest_options (contests : Api.Openapi.contest list)
 
 (* --- Add / Edit Modal --- *)
 
+let problem_modal_id = "problem-modal"
+
+let problem_code_input_id = "problem-code-input"
+
+let problem_title_input_id = "problem-title-input"
+
+let problem_time_limit_input_id = "problem-time-limit-input"
+
+let problem_memory_limit_input_id = "problem-memory-limit-input"
+
+let problem_languages_input_id = "problem-languages-input"
+
+let problem_description_input_id = "problem-description-input"
+
+let problem_input_spec_input_id = "problem-input-spec-input"
+
+let problem_output_spec_input_id = "problem-output-spec-input"
+
+let close_problem_modal () =
+  edit_mode := None_ ;
+  Helpers.remove_first_element_from_app ("#" ^ problem_modal_id) ;
+  Helpers.trigger_render ()
+
+let get_input_value field_id =
+  match Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.input with
+  | Some el -> Js.to_string el##.value
+  | None -> ""
+
+let get_textarea_value field_id =
+  match
+    Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.textarea
+  with
+  | Some el -> Js.to_string el##.value
+  | None -> ""
+
+let parse_languages raw_value =
+  raw_value |> String.split_on_char ',' |> List.map String.trim
+  |> List.filter (fun value -> value <> "")
+
+let submit_problem_modal ~mode ~default_time_limit_ms
+    ~default_memory_limit_mb () =
+  let code = get_input_value problem_code_input_id |> String.trim in
+  let title = get_input_value problem_title_input_id |> String.trim in
+  let time_limit_ms =
+    get_input_value problem_time_limit_input_id
+    |> int_of_string_opt
+    |> Option.value ~default:default_time_limit_ms
+  in
+  let memory_limit_mb =
+    get_input_value problem_memory_limit_input_id
+    |> int_of_string_opt
+    |> Option.value ~default:default_memory_limit_mb
+  in
+  let languages =
+    get_input_value problem_languages_input_id |> parse_languages
+  in
+  let description = get_textarea_value problem_description_input_id in
+  let input_spec = get_textarea_value problem_input_spec_input_id in
+  let output_spec = get_textarea_value problem_output_spec_input_id in
+  if code = "" || title = "" then (
+    error_msg :=
+      Some
+        (Printf.sprintf "%s and %s are required"
+           (I18n.t "problems_code_label")
+           (I18n.t "problems_title_label") ) ;
+    Helpers.trigger_render () ;
+    Lwt.return_unit )
+  else
+    match !state.contest_id with
+    | None ->
+        error_msg := Some "No contest selected" ;
+        Helpers.trigger_render () ;
+        Lwt.return_unit
+    | Some contest_id ->
+        let save_request =
+          match mode with
+          | Create _ ->
+              let body =
+                Api.Openapi.ProblemCreateRequest.create ~code ~title
+                  ~description ~input_spec ~output_spec ~languages
+                  ~time_limit_ms ~memory_limit_mb ~source_artifacts:[] ()
+                |> Api.Openapi.ProblemCreateRequest.to_json
+              in
+              Api.Helpers.post_problem contest_id body
+          | Edit problem -> (
+            match problem.id with
+            | None -> Lwt.return (`Null, 400)
+            | Some problem_id ->
+                let body =
+                  Api.Openapi.ProblemUpdateRequest.create ~code ~title
+                    ~description ~input_spec ~output_spec ~languages
+                    ~time_limit_ms ~memory_limit_mb ()
+                  |> Api.Openapi.ProblemUpdateRequest.to_json
+                in
+                Api.Helpers.put_problem problem_id body )
+          | None_ -> Lwt.return (`Null, 400)
+        in
+        save_request
+        >>= fun (_resp, status) ->
+        if status = 200 || status = 201 || status = 204 then (
+          error_msg := None ;
+          Settings_problems_import.RerenderFlag.set_rerender () ;
+          close_problem_modal () ;
+          Lwt.return_unit )
+        else (
+          error_msg :=
+            Some (Printf.sprintf "Failed to save problem: HTTP %d" status) ;
+          Helpers.trigger_render () ;
+          Lwt.return_unit )
+
 let make_problem_modal () =
   match !edit_mode with
   | None_ -> div []
@@ -361,7 +471,7 @@ let make_problem_modal () =
         | None_ -> ("", "", 0, 0, "", "", "", "")
       in
       div
-        ~a:[a_id "problem-modal"]
+        ~a:[a_id problem_modal_id]
         [ (* Backdrop *)
           div ~a:[a_class ["modal-backdrop"; "fade"; "show"]] []
         ; (* Modal dialog *)
@@ -381,9 +491,7 @@ let make_problem_modal () =
                             ~a:
                               [ a_class ["btn-close"]
                               ; a_onclick (fun _ ->
-                                    edit_mode := None_ ;
-                                    Helpers.trigger_render () ;
-                                    false ) ]
+                                    close_problem_modal () ; false ) ]
                             [] ]
                     ; (* Body *)
                       div
@@ -400,7 +508,8 @@ let make_problem_modal () =
                                     ]
                                 ; input
                                     ~a:
-                                      [ a_class ["form-control"]
+                                      [ a_id problem_code_input_id
+                                      ; a_class ["form-control"]
                                       ; a_placeholder "A01"
                                       ; a_value code ]
                                     () ]
@@ -413,7 +522,8 @@ let make_problem_modal () =
                                     ]
                                 ; input
                                     ~a:
-                                      [ a_class ["form-control"]
+                                      [ a_id problem_title_input_id
+                                      ; a_class ["form-control"]
                                       ; a_placeholder "Add Two Numbers"
                                       ; a_value title_t ]
                                     () ]
@@ -427,7 +537,8 @@ let make_problem_modal () =
                                         ^ " (ms)" ) ]
                                 ; input
                                     ~a:
-                                      [ a_class ["form-control"]
+                                      [ a_id problem_time_limit_input_id
+                                      ; a_class ["form-control"]
                                       ; a_input_type `Number
                                       ; a_value (string_of_int time_limit_ms)
                                       ; a_input_min (`Number 10) ]
@@ -441,7 +552,8 @@ let make_problem_modal () =
                                         ^ " (MB)" ) ]
                                 ; input
                                     ~a:
-                                      [ a_class ["form-control"]
+                                      [ a_id problem_memory_limit_input_id
+                                      ; a_class ["form-control"]
                                       ; a_input_type `Number
                                       ; a_value
                                           (string_of_int memory_limit_mb)
@@ -455,7 +567,8 @@ let make_problem_modal () =
                                     [txt (I18n.t "problems_languages_label")]
                                 ; input
                                     ~a:
-                                      [ a_class ["form-control"]
+                                      [ a_id problem_languages_input_id
+                                      ; a_class ["form-control"]
                                       ; a_placeholder "python, java, cpp"
                                       ; a_value languages ]
                                     () ]
@@ -469,7 +582,8 @@ let make_problem_modal () =
                                     ]
                                 ; textarea
                                     ~a:
-                                      [ a_class ["form-control"]
+                                      [ a_id problem_description_input_id
+                                      ; a_class ["form-control"]
                                       ; a_rows 4
                                       ; a_placeholder
                                           "Problem description..."
@@ -483,7 +597,8 @@ let make_problem_modal () =
                                     [txt "Input Specification"]
                                 ; textarea
                                     ~a:
-                                      [ a_class ["form-control"]
+                                      [ a_id problem_input_spec_input_id
+                                      ; a_class ["form-control"]
                                       ; a_rows 3
                                       ; a_placeholder
                                           "Describe the input format..."
@@ -497,7 +612,8 @@ let make_problem_modal () =
                                     [txt "Output Specification"]
                                 ; textarea
                                     ~a:
-                                      [ a_class ["form-control"]
+                                      [ a_id problem_output_spec_input_id
+                                      ; a_class ["form-control"]
                                       ; a_rows 3
                                       ; a_placeholder
                                           "Describe the expected output..."
@@ -507,10 +623,22 @@ let make_problem_modal () =
                           div
                             ~a:[a_class ["modal-footer"]]
                             [ button
-                                ~a:[a_class ["btn"; "btn-secondary"]]
+                                ~a:
+                                  [ a_class ["btn"; "btn-secondary"]
+                                  ; a_onclick (fun _ ->
+                                        close_problem_modal () ; false ) ]
                                 [txt "Cancel"]
                             ; button
-                                ~a:[a_class ["btn"; "btn-primary"]]
+                                ~a:
+                                  [ a_class ["btn"; "btn-primary"]
+                                  ; a_onclick (fun _ ->
+                                        Lwt.async
+                                          (submit_problem_modal ~mode
+                                             ~default_time_limit_ms:
+                                               time_limit_ms
+                                             ~default_memory_limit_mb:
+                                               memory_limit_mb ) ;
+                                        false ) ]
                                 [txt (if is_create then "Create" else "Save")]
                             ] ] ] ] ] ]
 
@@ -1002,7 +1130,7 @@ let render_problems_tab () =
                       ; output_spec= ""
                       ; languages= []
                       ; source_artifacts= None } ;
-                  Helpers.trigger_render () ;
+                  make_problem_modal () |> Helpers.add_element_to_app ;
                   false ) ]
           [ Components.Icons.plus_lg_icon ~a:["me-2"] ()
           ; txt (I18n.t "problems_add_btn") ] ]
