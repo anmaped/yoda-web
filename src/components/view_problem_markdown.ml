@@ -1,60 +1,5 @@
 open Js_of_ocaml
 
-(** Remove YAML front matter. *)
-let strip_yaml_front_matter text =
-  let lines = String.split_on_char '\n' text in
-  match lines with
-  | "---" :: rest ->
-      let rec consume = function
-        | "---" :: tail -> tail
-        | _ :: tail -> consume tail
-        | [] -> []
-      in
-      String.concat "\n" (consume rest)
-  | _ -> text
-
-(** Remove myst directives from the markdown text. *)
-let strip_myst_directives text =
-  let lines = String.split_on_char '\n' text in
-  let rec loop acc = function
-    | [] -> String.concat "\n" (List.rev acc)
-    | line :: rest ->
-        let trimmed = String.trim line in
-        if String.starts_with ~prefix:"```{" trimmed then
-          let directive_name =
-            let inner =
-              String.trim (String.sub trimmed 4 (String.length trimmed - 4))
-            in
-            if inner = "" || inner.[0] <> '{' then ""
-            else
-              let close_idx =
-                try String.index_from inner 1 '}' with Not_found -> -1
-              in
-              if close_idx < 0 then "" else String.sub inner 1 (close_idx - 1)
-          in
-          let rec collect_inner acc_inner = function
-            | [] -> (List.rev acc_inner, [])
-            | current :: tail ->
-                let current_trimmed = String.trim current in
-                if current_trimmed = "```" then (List.rev acc_inner, tail)
-                else if current_trimmed <> "" && current_trimmed.[0] = ':'
-                then collect_inner acc_inner tail
-                else collect_inner (current :: acc_inner) tail
-          in
-          let inner_lines, remaining = collect_inner [] rest in
-          if directive_name = "eval-rst" || directive_name = "graphviz" then
-            loop acc remaining
-          else loop (List.rev inner_lines @ acc) remaining
-        else if String.starts_with ~prefix:"```" trimmed then
-          loop (line :: acc) rest
-        else loop (line :: acc) rest
-  in
-  loop [] lines
-
-(** Preprocess the markdown text by removing YAML front matter and myst directives. *)
-let preprocess_markdown text =
-  text |> strip_yaml_front_matter |> strip_myst_directives
-
 let codemirror_mode_of_markdown_lang lang =
   match String.lowercase_ascii (String.trim lang) with
   | "" | "text" | "plain" | "plaintext" -> "text/plain"
@@ -98,7 +43,7 @@ let highlight_with_codemirror ~code ~lang =
       Js.to_string sink##.outerHTML
 
 let render_markdown text =
-  let cleaned = preprocess_markdown text in
+  let cleaned = text in
   match
     Js.Optdef.to_option (Js.Unsafe.get Js.Unsafe.global "markdownit")
   with
@@ -127,3 +72,69 @@ let render_markdown text =
           [|Js.Unsafe.inject (Js.string cleaned)|]
       in
       Js.to_string rendered
+
+let trigger_math_render (root : Dom_html.element Js.t) =
+  let render_graphviz_blocks () =
+    match Js.Optdef.to_option (Js.Unsafe.get Js.Unsafe.global "Viz") with
+    | None -> ()
+    | Some viz_constructor ->
+        let blocks =
+          Js.Unsafe.meth_call root "querySelectorAll"
+            [| Js.Unsafe.inject
+                 (Js.string
+                    "pre > code.language-dot, pre > code.language-graphviz" )
+            |]
+        in
+        let length = Js.Unsafe.get blocks "length" in
+        for i = 0 to length - 1 do
+          let code_el =
+            Js.Unsafe.meth_call blocks "item" [|Js.Unsafe.inject i|]
+          in
+          if Js.Optdef.test code_el then
+            let dot_src =
+              Js.to_string (Js.Unsafe.get code_el "textContent")
+            in
+            let parent = Js.Unsafe.get code_el "parentElement" in
+            if Js.Optdef.test parent then
+              let viz = Js.Unsafe.new_obj viz_constructor [||] in
+              let promise =
+                Js.Unsafe.meth_call viz "renderSVGElement"
+                  [|Js.Unsafe.inject (Js.string dot_src)|]
+              in
+              let on_success =
+                Js.wrap_callback (fun svg ->
+                    ignore
+                      (Js.Unsafe.meth_call parent "replaceWith"
+                         [|Js.Unsafe.inject svg|] ) )
+              in
+              let on_failure =
+                Js.wrap_callback (fun err ->
+                    Js.Unsafe.meth_call Js.Unsafe.global "setTimeout"
+                      [| Js.Unsafe.inject
+                           (Js.wrap_callback (fun () ->
+                                Js.Unsafe.fun_call
+                                  (Js.Unsafe.js_expr "console.warn")
+                                  [| Js.Unsafe.inject
+                                       (Js.string
+                                          "Failed to render Graphviz block" )
+                                   ; Js.Unsafe.inject err |] ) )
+                       ; Js.Unsafe.inject 0 |] )
+              in
+              ignore
+                (Js.Unsafe.meth_call promise "then"
+                   [| Js.Unsafe.inject on_success
+                    ; Js.Unsafe.inject on_failure |] )
+        done
+  in
+  render_graphviz_blocks () ;
+  match Js.Optdef.to_option (Js.Unsafe.get Js.Unsafe.global "MathJax") with
+  | None -> failwith "MathJax not found"
+  | Some mathjax ->
+      let roots = Js.array [|Js.Unsafe.inject root|] in
+      if Js.Optdef.test (Js.Unsafe.get mathjax "typesetPromise") then
+        ignore
+          (Js.Unsafe.meth_call mathjax "typesetPromise"
+             [|Js.Unsafe.inject roots|] )
+      else if Js.Optdef.test (Js.Unsafe.get mathjax "typeset") then
+        ignore
+          (Js.Unsafe.meth_call mathjax "typeset" [|Js.Unsafe.inject roots|])

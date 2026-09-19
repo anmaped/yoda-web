@@ -8,6 +8,7 @@ let problem_view (problem : Api.Openapi.problem) =
   let description_dom = Tyxml_js.To_dom.of_div description_html in
   description_dom##.innerHTML
   := Js.string (View_problem_markdown.render_markdown problem.description) ;
+  View_problem_markdown.trigger_math_render description_dom ;
   section
     ~a:[a_class ["panel-section"]]
     ( [ h2 [txt (problem.code ^ ". " ^ problem.title)]

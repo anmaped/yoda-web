@@ -21,7 +21,10 @@
    jszip.min.js
    ../static/sls.min.js
    ../static/sls-sync-bridge.min.js
-   markdown-it.min.js))
+   markdown-it.min.js
+   viz.js
+   full.render.js
+   mathjax.min.js))
  (preprocess
   (pps js_of_ocaml-ppx)))
 
@@ -109,3 +112,32 @@
     -o
     %{targets}
     https://unpkg.com/markdown-it@14.3.2/dist/markdown-it.min.js))))
+
+;; Rule to download MathJax
+
+(rule
+ (targets mathjax.min.js)
+ (action
+  (progn
+   (run
+    curl
+    -L
+    -o
+    %{targets}
+    https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js))))
+
+;; Rule to download Viz.js
+
+(rule
+ (targets viz.js)
+ (action
+  (progn
+   (run curl -L -o %{targets} https://unpkg.com/viz.js@2.1.2/viz.js))))
+
+;; Rule to download Viz.js Graphviz renderer
+
+(rule
+ (targets full.render.js)
+ (action
+  (progn
+   (run curl -L -o %{targets} https://unpkg.com/viz.js@2.1.2/full.render.js))))
