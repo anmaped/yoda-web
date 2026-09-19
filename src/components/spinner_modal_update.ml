@@ -87,9 +87,18 @@ let get_submission_context () =
   | Some problem_id ->
       let languages_allowed = Tabbar.get_current_languages () in
       let source_artifacts = Tabbar.get_current_source_artifacts () in
-      (* Select the language based on the extension of the artifacts;
-         fallback to the first one if none match *)
-      let language = select_language ~languages_allowed ~source_artifacts in
+      (* Select the language based on the selected problem or the extension
+         of the artifacts; fallback to the first language allowed if none
+         match *)
+      let language =
+        match Problem_dropdown.get_selected_problem_language () with
+        | Some selected_language
+          when List.mem
+                 (String.lowercase_ascii selected_language)
+                 (List.map String.lowercase_ascii languages_allowed) ->
+            selected_language
+        | _ -> select_language ~languages_allowed ~source_artifacts
+      in
       if language = "none" then
         Lwt.return (Error "No language selected or allowed for this problem")
       else

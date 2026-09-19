@@ -200,22 +200,21 @@ let get_current_source_artifacts () =
 let get_current_languages () = !current_languages
 
 let update pid () =
-  Lwt.async (fun () ->
-      save_active_editor_content () ;
-      Api.Helpers.get_problem pid
-      >>= fun (resp, status) ->
-      if status <> 200 then (
-        Js_of_ocaml.Console.console##log
-          (Js_of_ocaml.Js.string
-             (Printf.sprintf "Failed to fetch problem: %d" status) ) ;
-        Lwt.return_unit )
-      else
-        let problem = Api.Openapi.Problem.of_yojson resp in
-        current_languages := problem.languages ;
-        let artifacts = problem.source_artifacts in
-        let artifacts = Option.value ~default:[] artifacts in
-        init_files_for_problem pid artifacts ;
-        Lwt.return_unit )
+  save_active_editor_content () ;
+  Api.Helpers.get_problem pid
+  >>= fun (resp, status) ->
+  if status <> 200 then (
+    Js_of_ocaml.Console.console##log
+      (Js_of_ocaml.Js.string
+         (Printf.sprintf "Failed to fetch problem: %d" status) ) ;
+    Lwt.return_unit )
+  else
+    let problem = Api.Openapi.Problem.of_yojson resp in
+    current_languages := problem.languages ;
+    let artifacts = problem.source_artifacts in
+    let artifacts = Option.value ~default:[] artifacts in
+    init_files_for_problem pid artifacts ;
+    Lwt.return_unit
 
 let copy_text_to_clipboard text =
   let textarea =

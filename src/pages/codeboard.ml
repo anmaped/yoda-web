@@ -67,6 +67,7 @@ let render () =
   match Helpers.layout () with
   | Helpers.Mobile ->
       [ div
+          ~a:[a_style "width:100%;"]
           [ Components.Sidebar.sidebar ~mobile:true ()
           ; content_short ~mobile:true ] ]
   | Helpers.Normal ->

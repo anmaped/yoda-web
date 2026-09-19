@@ -7,6 +7,8 @@ let key_problem_id = "yoda-state-current-problem-id"
 
 let key_problem_description = "yoda-state-current-problem-description"
 
+let key_problem_language = "yoda-state-current-problem-language"
+
 let parse_problem_id value = try Some (int_of_string value) with _ -> None
 
 (** Returns the ID of the currently selected problem *)
@@ -18,6 +20,14 @@ let get_selected_problem_id () =
 let set_current_problem_id id =
   Helpers.set_local_variable key_problem_id (string_of_int id)
 
+let get_selected_problem_language () =
+  match Helpers.get_local_variable key_problem_language with
+  | Some language -> Some (Js.to_string language)
+  | None -> None
+
+let set_current_problem_language language =
+  Helpers.set_local_variable key_problem_language language
+
 let get_current_problem_description () =
   match Helpers.get_local_variable key_problem_description with
   | Some desc -> Js.to_string desc
@@ -26,11 +36,119 @@ let get_current_problem_description () =
 let set_current_problem_description desc =
   Helpers.set_local_variable key_problem_description desc
 
+let update_language_selection dom_language_select languages =
+  let rec clear_options () =
+    match Js.Opt.to_option dom_language_select##.firstChild with
+    | Some child ->
+        Dom.removeChild dom_language_select child ;
+        clear_options ()
+    | None -> ()
+  in
+  clear_options () ;
+  let add_option value label =
+    let opt = Dom_html.createOption Dom_html.document in
+    opt##.value := Js.string value ;
+    Dom.appendChild opt (Dom_html.document##createTextNode (Js.string label)) ;
+    Dom.appendChild dom_language_select opt
+  in
+  match languages with
+  | [] -> add_option "none" "No supported languages"
+  | _ -> (
+      List.iter (fun language -> add_option language language) languages ;
+      let preferred_language =
+        match get_selected_problem_language () with
+        | Some selected when List.mem selected languages -> Some selected
+        | _ -> List.nth_opt languages 0
+      in
+      match preferred_language with
+      | Some language ->
+          let options = dom_language_select##.options in
+          let rec find_and_select idx =
+            if idx >= options##.length then ()
+            else
+              match Js.Opt.to_option (options##item idx) with
+              | Some opt ->
+                  if Js.to_string opt##.value = language then (
+                    opt##.selected := Js._true ;
+                    set_current_problem_language language )
+                  else find_and_select (idx + 1)
+              | None -> find_and_select (idx + 1)
+          in
+          find_and_select 0
+      | None -> () )
+
+let update_current_problem dom_problem_selection dom_language_select =
+  let selected_problem () =
+    let idx = dom_problem_selection##.selectedIndex in
+    if idx <= 0 then None
+    else
+      match Js.Opt.to_option (dom_problem_selection##.options##item idx) with
+      | None -> None
+      | Some opt ->
+          let id = Js.to_string opt##.value |> int_of_string in
+          let desc =
+            Js.Opt.get opt##.textContent (fun () -> Js.string "")
+            |> Js.to_string
+          in
+          Some (id, desc)
+  in
+  match selected_problem () with
+  | None -> Lwt.return_unit
+  | Some (id, desc) ->
+      set_current_problem_id id ;
+      set_current_problem_description desc ;
+      (* Update the tabbar with the selected problem asynchronously *)
+      Tabbar.update id ()
+      >>= fun () ->
+      (* wait for the update to complete *)
+      let languages = Tabbar.get_current_languages () in
+      update_language_selection dom_language_select languages ;
+      Lwt.return_unit
+
 let content () =
-  let sel =
+  let language_select =
+    select
+      ~a:
+        [ a_id "problem-language-select"
+        ; a_class ["form-select"; "w-auto"; "ms-2"] ]
+      []
+  in
+  (* Update when language selection changes *)
+  let dom_language_select = Tyxml_js.To_dom.of_select language_select in
+  ignore
+    (Dom_html.addEventListener dom_language_select Dom_html.Event.change
+       (Dom_html.handler (fun _ ->
+            match
+              Js.Opt.to_option
+                (dom_language_select##.options##item
+                   dom_language_select##.selectedIndex )
+            with
+            | Some opt ->
+                let value = Js.to_string opt##.value in
+                if value <> "" && value <> "none" then
+                  set_current_problem_language value ;
+                Js._false
+            | None -> Js._false ) )
+       Js._false ) ;
+  let problem_select =
     select
       ~a:[a_id "problem-select"; a_class ["form-select"; "w-auto"]]
       [option ~a:[a_value ""] (txt (I18n.t "dropdown_select_problem"))]
+  in
+  let dom_problem_selection = Tyxml_js.To_dom.of_select problem_select in
+  (* Update when problem selection changes *)
+  ignore
+    (Dom_html.addEventListener dom_problem_selection Dom_html.Event.change
+       (Dom_html.handler (fun _ ->
+            Lwt.async (fun () ->
+                update_current_problem dom_problem_selection
+                  dom_language_select ) ;
+            Js._false ) )
+       Js._false ) ;
+  let wrapper =
+    div
+      ~a:[a_class ["d-flex"; "align-items-center"; "gap-2"]]
+      [problem_select; language_select]
   in
   let fetch_and_populate () =
     let contest_id = Helpers.get_current_contest_id () in
@@ -47,11 +165,10 @@ let content () =
             Api.Openapi.ContestsContestsidProblemsGetResponse2.of_yojson resp
           in
           (* Replace the select's children with our options *)
-          let dom_sel = Tyxml_js.To_dom.of_select sel in
           (* Clear existing options *)
           (* Remove all options *)
-          while dom_sel##.length > 0 do
-            dom_sel##remove 0
+          while dom_problem_selection##.length > 0 do
+            dom_problem_selection##remove 0
           done ;
           (* Add option *)
           let add_option value label =
@@ -59,10 +176,10 @@ let content () =
             opt##.value := Js.string value ;
             Dom.appendChild opt
               (Dom_html.document##createTextNode (Js.string label)) ;
-            Dom.appendChild dom_sel opt
+            Dom.appendChild dom_problem_selection opt
           in
           (* Add default option *)
-          add_option "" "-- Select a problem --" ;
+          add_option "" (I18n.t "dropdown_select_problem") ;
           (* Build option elements *)
           (* Add problem options *)
           List.iter
@@ -73,7 +190,7 @@ let content () =
             problems ;
           (* Set last problem as selected if none is selected or invalid *)
           let select_problem code =
-            let options = dom_sel##.options in
+            let options = dom_problem_selection##.options in
             let rec find_and_select idx =
               if idx >= options##.length then ()
               else
@@ -99,36 +216,7 @@ let content () =
                   select_problem last_problem.code
               | [] -> () )
           in
-          let selected_problem () =
-            let idx = dom_sel##.selectedIndex in
-            if idx <= 0 then None
-            else
-              match Js.Opt.to_option (dom_sel##.options##item idx) with
-              | None -> None
-              | Some opt ->
-                  let id = Js.to_string opt##.value |> int_of_string in
-                  let desc =
-                    Js.Opt.get opt##.textContent (fun () -> Js.string "")
-                    |> Js.to_string
-                  in
-                  Some (id, desc)
-          in
-          let update_current_problem () =
-            match selected_problem () with
-            | None -> ()
-            | Some (id, desc) ->
-                set_current_problem_id id ;
-                set_current_problem_description desc ;
-                Tabbar.update id ()
-          in
           (* Update tabbar with current pid *)
-          update_current_problem () ;
-          (* Update when selection changes *)
-          ignore
-            (Dom_html.addEventListener dom_sel Dom_html.Event.change
-               (Dom_html.handler (fun _ ->
-                    update_current_problem () ; Js._false ) )
-               Js._false ) ;
-          Lwt.return_unit )
+          update_current_problem dom_problem_selection dom_language_select )
   in
-  fetch_and_populate () ; sel
+  fetch_and_populate () ; wrapper

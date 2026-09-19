@@ -18,6 +18,11 @@ let problem_view (problem : Api.Openapi.problem) =
       ; p
           [ b [txt (I18n.t "problem_memory_limit"); txt ": "]
           ; txt (Printf.sprintf "%d MB" problem.memory_limit_mb) ]
+      ; p
+          [ b [txt (I18n.t "problems_languages_label"); txt ": "]
+          ; txt
+              ( if problem.languages = [] then "-"
+                else String.concat ", " problem.languages ) ]
       ; h3 [txt (I18n.t "problem_description")]
       ; description_html ]
     @ ( if problem.input_spec <> "" then

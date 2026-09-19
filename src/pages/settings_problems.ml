@@ -812,8 +812,9 @@ let problem_card (problem : Api.Openapi.problem) =
                           ; "p-3"
                           ; "rounded"
                           ; "font-monospace"
-                          ; "border" ] ]
-                    [txt problem.description] ]
+                          ; "border" ]
+                      ; a_style "white-space: pre-wrap;" ]
+                    [code [txt problem.description]] ]
             ; (* Test cases *)
               div
                 (let add_testcase_button =

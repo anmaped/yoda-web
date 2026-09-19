@@ -1,8 +1,12 @@
+open Js_of_ocaml_tyxml
+open Tyxml_js.Html
+
 let render () =
   let contest_id = Helpers.get_current_contest_id () in
   match Helpers.layout () with
   | Helpers.Mobile ->
-      [ Js_of_ocaml_tyxml.Tyxml_js.Html.div
+      [ div
+          ~a:[a_style "width:100%;"]
           [ Components.Sidebar.sidebar ~mobile:true ()
           ; Components.View_summary.content ~contest_id () ] ]
   | Helpers.Normal ->

@@ -103,6 +103,8 @@ let trigger_math_render (root : Dom_html.element Js.t) =
               in
               let on_success =
                 Js.wrap_callback (fun svg ->
+                  (* add class to svg *)
+                  ignore (Js.Unsafe.meth_call svg "setAttribute" [|Js.Unsafe.inject (Js.string "class"); Js.Unsafe.inject (Js.string "graphviz-svg")|]);
                     ignore
                       (Js.Unsafe.meth_call parent "replaceWith"
                          [|Js.Unsafe.inject svg|] ) )

@@ -62,7 +62,7 @@ let sidebar ?(only_icons = false) ?(horizontal = false) () =
               if horizontal then "" else "width: 4.5rem; height: inherit;"
             else "width: 11rem; height: inherit;" ) ]
     [ (* User initials *)
-      div
+      (* div
         ~a:[a_class ["border-bottom"; "py-3"; "text-center"]]
         [ span
             ~a:
@@ -90,20 +90,15 @@ let sidebar ?(only_icons = false) ?(horizontal = false) () =
                   ; a_width (if only_icons then 0 else 96) ]
                 ()
             ; span ~a:[a_class ["visually-hidden"]] [txt "About"] ] ]
-    ; (* Logo *)
-      (*a
-        ~a:
-          [ a_href "#about"
-          ; a_class
-              ["d-block"; "p-3"; "link-body-emphasis"; "text-decoration-none"]
-          ; Unsafe.string_attrib "data-bs-toggle" "tooltip"
-          ; Unsafe.string_attrib "data-bs-placement" "right"
-          ; Unsafe.string_attrib "data-bs-original-title" "About" ]
-        [ img ~src:yoda_logo_url ~alt:"Yoda Logo"
-            ~a:[a_class ["yoda-logo"; "d-block"; "mx-auto"]; a_width 50]
-            ()
-        ; span ~a:[a_class ["visually-hidden"]] [txt "About"] ]
-    ;*)
+    ; *)
+      (* Logo *)
+      (*a ~a: [ a_href "#about" ; a_class ["d-block"; "p-3";
+        "link-body-emphasis"; "text-decoration-none"] ; Unsafe.string_attrib
+        "data-bs-toggle" "tooltip" ; Unsafe.string_attrib "data-bs-placement"
+        "right" ; Unsafe.string_attrib "data-bs-original-title" "About" ] [
+        img ~src:yoda_logo_url ~alt:"Yoda Logo" ~a:[a_class ["yoda-logo";
+        "d-block"; "mx-auto"]; a_width 50] () ; span ~a:[a_class
+        ["visually-hidden"]] [txt "About"] ] ;*)
       ul
         ~a:
           [ a_class
@@ -155,7 +150,20 @@ let sidebar ?(only_icons = false) ?(horizontal = false) () =
             [ nav_link "#logout"
                 (I18n.t "sidebar_sign_out")
                 (Icons.box_arrow_right_icon ())
-                (if only_icons then "" else I18n.t "sidebar_sign_out") ] ] ]
+                (if only_icons then "" else I18n.t "sidebar_sign_out") ] ]
+    ; a
+        ~a:
+          [ a_href "#about"
+          ; a_class ["position-fixed"; "bottom-0"; "start-0"; "m-3"; "z-3"]
+          ; Unsafe.string_attrib "data-bs-toggle" "tooltip"
+          ; Unsafe.string_attrib "data-bs-placement" "right"
+          ; Unsafe.string_attrib "data-bs-original-title" "About" ]
+        [ img ~src:Blobs.yoda_logo_url ~alt:"Yoda Logo"
+            ~a:
+              [ a_class ["yoda-logo"; "mx-auto"]
+              ; a_width (if only_icons then 0 else 128) ]
+            ()
+        ; span ~a:[a_class ["visually-hidden"]] [txt "About"] ] ]
 
 let sidebar ?(mobile = false) ?(wide = true) () =
   if mobile then sidebar ~only_icons:true ~horizontal:true ()
