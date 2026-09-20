@@ -8,6 +8,8 @@ let edit_mode : bool ref = ref false
 (* Config tab async state using openapi types *)
 let config_json_str : string ref = ref ""
 
+let original_config_json_str : string ref = ref ""
+
 let config_loaded : bool ref = ref false
 
 let config_error : string option ref = ref None
@@ -17,6 +19,16 @@ let config_notice : string option ref = ref None
 let current_config : Api.Openapi.yodacConfigGetResponse option ref = ref None
 
 let config_history : Api.Openapi.yodacConfigHistoryGetResponse ref = ref []
+
+class type codeMirror = object
+  method getValue : Js.js_string Js.t Js.meth
+
+  method setValue : Js.js_string Js.t -> unit Js.meth
+
+  method refresh : unit Js.meth
+end
+
+let config_editor : codeMirror Js.t option ref = ref None
 
 let history_loaded : bool ref = ref false
 
@@ -36,17 +48,86 @@ let config_editor_json (config : Api.Openapi.yodacLanguagesConfig) =
   Api.Openapi.yojson_of_yodacLanguagesConfig config
   |> Yojson.Safe.pretty_to_string
 
+let sync_config_from_editor (editor : codeMirror Js.t) =
+  config_json_str := Js.to_string editor##getValue
+
 let current_config_editor_text () =
+  match !config_editor with
+  | Some editor ->
+      sync_config_from_editor editor ;
+      !config_json_str
+  | None -> (
+    match
+      Js.Opt.to_option
+        (Dom_html.document##getElementById
+           (Js.string "config-editor-textarea") )
+    with
+    | None -> !config_json_str
+    | Some element -> (
+      match Js.Opt.to_option (Dom_html.CoerceTo.textarea element) with
+      | None -> !config_json_str
+      | Some textarea -> Js.to_string textarea##.value ) )
+
+let init_config_editor () =
   match
     Js.Opt.to_option
       (Dom_html.document##getElementById
          (Js.string "config-editor-textarea") )
   with
-  | None -> !config_json_str
+  | None -> config_editor := None
   | Some element -> (
     match Js.Opt.to_option (Dom_html.CoerceTo.textarea element) with
-    | None -> !config_json_str
-    | Some textarea -> Js.to_string textarea##.value )
+    | None -> config_editor := None
+    | Some textarea -> (
+      match
+        Js.Optdef.to_option (Js.Unsafe.get Js.Unsafe.global "CodeMirror")
+      with
+      | None -> config_editor := None
+      | Some code_mirror ->
+          let from_text_area = Js.Unsafe.get code_mirror "fromTextArea" in
+          let options =
+            object%js
+              val lineNumbers = Js._true
+
+              val mode = Js.string "application/json"
+
+              val theme = Js.string (Components.Editor.current_theme ())
+
+              val readOnly = Js.bool (not !edit_mode)
+
+              val indentUnit = 2
+
+              val tabSize = 2
+
+              val matchBrackets = Js._true
+
+              val autoCloseBrackets = Js.bool !edit_mode
+
+              val lineWrapping = Js._true
+            end
+          in
+          let raw_editor =
+            Js.Unsafe.fun_call from_text_area
+              [|Js.Unsafe.inject textarea; Js.Unsafe.inject options|]
+          in
+          let editor : codeMirror Js.t = Js.Unsafe.coerce raw_editor in
+          config_editor := Some editor ;
+          ignore
+            (Js.Unsafe.meth_call editor "on"
+               [| Js.Unsafe.inject (Js.string "change")
+                ; Js.Unsafe.inject
+                    (Js.wrap_callback (fun _ _ ->
+                         sync_config_from_editor editor ) ) |] ) ;
+          editor##setValue (Js.string !config_json_str) ;
+          editor##refresh ;
+          sync_config_from_editor editor ) )
+
+let schedule_config_editor_setup () =
+  ignore
+    (Js.Unsafe.fun_call
+       (Js.Unsafe.js_expr "window.setTimeout")
+       [| Js.Unsafe.inject (Js.wrap_callback init_config_editor)
+        ; Js.Unsafe.inject 0 |] )
 
 (* Load / Save config (async) using openapi types *)
 let load_config () : unit Lwt.t =
@@ -55,7 +136,9 @@ let load_config () : unit Lwt.t =
   if code = 200 then (
     let json_config = Api.Openapi.yodacConfigGetResponse_of_yojson json in
     current_config := Some json_config ;
-    config_json_str := config_editor_json json_config.config ;
+    let config_str = config_editor_json json_config.config in
+    config_json_str := config_str ;
+    original_config_json_str := config_str ;
     config_loaded := true ;
     config_error := None ;
     config_notice := None ;
@@ -215,6 +298,18 @@ let render_config_tab () =
                     ; ( if !edit_mode then "btn-warning"
                         else "btn-outline-secondary" ) ]
                 ; a_onclick (fun _ ->
+                      if !edit_mode then (
+                        (* When exiting edit mode, restore original config *)
+                        config_json_str := !original_config_json_str ;
+                        match !config_editor with
+                        | Some editor ->
+                            editor##setValue
+                              (Js.string !original_config_json_str)
+                        | None -> () )
+                      else
+                        (* When entering edit mode, save current content *)
+                        config_json_str := current_config_editor_text () ;
+                      config_editor := None ;
                       edit_mode := not !edit_mode ;
                       Helpers.trigger_render () ;
                       false ) ]
@@ -226,6 +321,7 @@ let render_config_tab () =
               ~a:
                 [ a_class ["btn"; "btn-primary"]
                 ; a_onclick (fun _ ->
+                      config_json_str := current_config_editor_text () ;
                       ignore (Lwt.join [save_config ()]) ;
                       Helpers.trigger_render () ;
                       false ) ]
@@ -287,6 +383,7 @@ let render_config_tab () =
   let _ =
     if not !history_loaded then ignore (Lwt.join [load_history ()]) else ()
   in
+  let _ = schedule_config_editor_setup () in
   div
     [ Settings_helpers.section_card
         (I18n.t "config_editor_title")
