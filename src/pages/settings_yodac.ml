@@ -32,14 +32,30 @@ let contains_no_change_hint s =
 let json_has_no_change_hint (json : Yojson.Safe.t) =
   Yojson.Safe.to_string json |> contains_no_change_hint
 
+let config_editor_json (config : Api.Openapi.yodacLanguagesConfig) =
+  Api.Openapi.yojson_of_yodacLanguagesConfig config
+  |> Yojson.Safe.pretty_to_string
+
+let current_config_editor_text () =
+  match
+    Js.Opt.to_option
+      (Dom_html.document##getElementById
+         (Js.string "config-editor-textarea") )
+  with
+  | None -> !config_json_str
+  | Some element -> (
+    match Js.Opt.to_option (Dom_html.CoerceTo.textarea element) with
+    | None -> !config_json_str
+    | Some textarea -> Js.to_string textarea##.value )
+
 (* Load / Save config (async) using openapi types *)
 let load_config () : unit Lwt.t =
   Api.Helpers.get_config ()
   >>= fun (json, code) ->
   if code = 200 then (
-    current_config :=
-      Some (Api.Openapi.yodacConfigGetResponse_of_yojson json) ;
-    config_json_str := Yojson.Safe.to_string json ;
+    let json_config = Api.Openapi.yodacConfigGetResponse_of_yojson json in
+    current_config := Some json_config ;
+    config_json_str := config_editor_json json_config.config ;
     config_loaded := true ;
     config_error := None ;
     config_notice := None ;
@@ -54,46 +70,44 @@ let save_config () : unit Lwt.t =
   try
     config_error := None ;
     config_notice := None ;
+    config_json_str := current_config_editor_text () ;
     let json = Yojson.Safe.from_string !config_json_str in
-    match json with
-    | `Assoc pairs -> (
-      match List.assoc_opt "config" pairs with
-      | Some cfg ->
-          let langs = Api.Openapi.yodacLanguagesConfig_of_yojson cfg in
-          let req =
-            Api.Openapi.create_yodacConfigPutRequest ~config:langs ()
-          in
-          Api.Helpers.put_config
-            ( Api.Openapi.yojson_of_yodacConfigPutRequest req
-            |> Yojson.Safe.to_basic )
-          >>= fun (resp_json, code) ->
-          if code = 200 || code = 201 then (
-            Console.console##log (Js.string "Config saved successfully") ;
-            load_config () )
-          else if code = 400 && json_has_no_change_hint resp_json then (
-            config_error := None ;
-            config_notice := Some (I18n.t "config_save_no_changes") ;
-            Helpers.trigger_render () ;
-            Lwt.return () )
-          else (
-            config_error :=
-              Some ("Failed to save config (HTTP " ^ string_of_int code ^ ")") ;
-            config_notice := None ;
-            Helpers.trigger_render () ;
-            Lwt.return () )
-      | None ->
-          config_error := Some "Missing 'config' key in JSON" ;
-          config_notice := None ;
-          Helpers.trigger_render () ;
-          Lwt.return () )
-    | _ ->
-        config_error := Some "Expected JSON object with 'config' key" ;
-        config_notice := None ;
-        Helpers.trigger_render () ;
-        Lwt.return ()
+    let langs =
+      match json with
+      | `List _ -> Api.Openapi.yodacLanguagesConfig_of_yojson json
+      | `Assoc pairs -> (
+        match List.assoc_opt "config" pairs with
+        | Some cfg -> Api.Openapi.yodacLanguagesConfig_of_yojson cfg
+        | None -> failwith "Missing 'config' key in JSON" )
+      | _ -> failwith "Expected JSON array or object with 'config' key"
+    in
+    let req = Api.Openapi.create_yodacConfigPutRequest ~config:langs () in
+    Api.Helpers.put_config
+      ( Api.Openapi.yojson_of_yodacConfigPutRequest req
+      |> Yojson.Safe.to_basic )
+    >>= fun (resp_json, code) ->
+    if code = 200 || code = 201 then (
+      Console.console##log (Js.string "Config saved successfully") ;
+      load_config () )
+    else if code = 400 && json_has_no_change_hint resp_json then (
+      config_error := None ;
+      config_notice := Some (I18n.t "config_save_no_changes") ;
+      Helpers.trigger_render () ;
+      Lwt.return () )
+    else (
+      config_error :=
+        Some ("Failed to save config (HTTP " ^ string_of_int code ^ ")") ;
+      config_notice := None ;
+      Helpers.trigger_render () ;
+      Lwt.return () )
   with
   | Yojson.Json_error e ->
       config_error := Some ("Invalid JSON: " ^ e) ;
+      config_notice := None ;
+      Helpers.trigger_render () ;
+      Lwt.return ()
+  | Failure e ->
+      config_error := Some e ;
       config_notice := None ;
       Helpers.trigger_render () ;
       Lwt.return ()
@@ -178,7 +192,16 @@ let render_config_tab () =
       ; a_rows 25
       ; a_id "config-editor-textarea"
       ; a_wrap `Soft ]
-      @ if !edit_mode then [] else [a_readonly ()]
+      @ (if !edit_mode then [] else [a_readonly ()])
+      @ [ a_oninput (fun ev ->
+              let target =
+                Js.Opt.get
+                  (Dom_html.CoerceTo.textarea
+                     (Js.Opt.get ev##.target (fun () -> assert false)) )
+                  (fun () -> assert false)
+              in
+              config_json_str := Js.to_string target##.value ;
+              false ) ]
     in
     div
       [ meta_div ()
@@ -265,5 +288,9 @@ let render_config_tab () =
     if not !history_loaded then ignore (Lwt.join [load_history ()]) else ()
   in
   div
-    [ Settings_helpers.section_card (I18n.t "config_editor_title") [config_body ()]
-    ; Settings_helpers.section_card (I18n.t "config_history_title") [history_body ()] ]
+    [ Settings_helpers.section_card
+        (I18n.t "config_editor_title")
+        [config_body ()]
+    ; Settings_helpers.section_card
+        (I18n.t "config_history_title")
+        [history_body ()] ]
