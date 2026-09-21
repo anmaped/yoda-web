@@ -404,7 +404,7 @@ let submit_problem_modal ~mode ~default_time_limit_ms
   else
     match !state.contest_id with
     | None ->
-        error_msg := Some "No contest selected" ;
+        error_msg := Some (I18n.t "problems_no_contest") ;
         Helpers.trigger_render () ;
         Lwt.return_unit
     | Some contest_id ->

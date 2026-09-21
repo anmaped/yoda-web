@@ -104,7 +104,7 @@ let render_stats_content (stats : Api.Openapi.adminStatsResponse) =
   in
   div
     [ Settings_helpers.section_card
-        (I18n.t "stats_service_info")
+        (I18n.t "stats_yodab_info")
         [ render_metric_table
             [ metric_row (I18n.t "stats_api_version") stats.api_version
             ; metric_row (I18n.t "stats_yoda_version") stats.yoda_version
