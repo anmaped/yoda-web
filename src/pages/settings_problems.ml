@@ -815,28 +815,46 @@ let problem_card (problem : Api.Openapi.problem) =
                           ; "border" ]
                       ; a_style "white-space: pre-wrap;" ]
                     [code [txt problem.description]] ]
-            ; (* Test cases *)
-              div
-                (let add_testcase_button =
-                   div
-                     ~a:[a_class ["mb-2"]]
-                     [ button
-                         ~a:
-                           [ a_class ["btn"; "btn-sm"; "btn-primary"]
-                           ; a_onclick (fun _ ->
-                                 ( match (problem.id, !state.contest_id) with
-                                 | Some problem_id, Some _contest_id ->
-                                     open_testcase_modal ~problem_id
-                                       ~testcase:None
-                                 | _ -> () ) ;
-                                 false ) ]
-                         [ Components.Icons.plus_lg_icon ~a:["me-2"] ()
-                         ; txt (I18n.t "problems_add_testcase") ] ]
-                 in
-                 [ label
-                     ~a:[a_class ["form-label"; "fw-bold"]]
-                     [txt "Test Cases"]
-                 ; add_testcase_button
+             ; (* Test cases *)
+               div
+                 (let testcase_actions =
+                    div
+                      ~a:[a_class ["d-flex"; "gap-2"; "mb-2"]]
+                      [ button
+                          ~a:
+                            [ a_class ["btn"; "btn-sm"; "btn-primary"]
+                            ; a_onclick (fun _ ->
+                                  ( match (problem.id, !state.contest_id) with
+                                  | Some problem_id, Some _contest_id ->
+                                      open_testcase_modal ~problem_id
+                                        ~testcase:None
+                                  | _ -> () ) ;
+                                  false ) ]
+                          [ Components.Icons.plus_lg_icon ~a:["me-2"] ()
+                          ; txt (I18n.t "problems_add_testcase") ]
+                      ; button
+                          ~a:
+                            [ a_class
+                                [ "btn"
+                                ; "btn-sm"
+                                ; "btn-outline-secondary" ]
+                            ; a_onclick (fun _ ->
+                                  ( match problem.id with
+                                  | Some problem_id -> (
+                                      match cases with
+                                      | Some testcases ->
+                                          Settings_problems_export
+                                          .export_testcases ~problem_id testcases
+                                      | None -> () )
+                                  | None -> () ) ;
+                                  false ) ]
+                          [ Components.Icons.download_icon ()
+                          ; txt "Export tests" ] ]
+                  in
+                  [ label
+                      ~a:[a_class ["form-label"; "fw-bold"]]
+                      [txt "Test Cases"]
+                  ; testcase_actions
                  ; ( match cases with
                    | Some [] ->
                        p
