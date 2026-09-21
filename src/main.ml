@@ -19,6 +19,7 @@ let () =
       let app_div = Dom_html.getElementById "app" in
       (* Function to render the page based on the URL hash *)
       let render_page () =
+        let scroll_y = Dom_html.window##.scrollY in
         let hash = Js.to_string Dom_html.window##.location##.hash in
         (* update title with current hash *)
         Dom_html.document##.title :=
@@ -76,7 +77,22 @@ let () =
         (* Append the divs that need to be rendered *)
         List.iter
           (fun p -> Dom.appendChild app_div (Tyxml_js.To_dom.of_div p))
-          page
+          page ;
+        (* Restore the scroll position so re-renders (e.g. after clicking
+           cancel or submit) do not snap the viewport back to the top.
+           Deferred to the next tick so it runs after editor/widgets finish
+           their layout and the final page height is known *)
+        if Js.to_float scroll_y > 0.0 then
+          ignore
+            (Js.Unsafe.fun_call
+               (Js.Unsafe.js_expr "window.setTimeout")
+               [| Js.Unsafe.inject
+                    (Js.wrap_callback (fun () ->
+                         ignore
+                           (Js.Unsafe.meth_call Dom_html.window "scrollTo"
+                              [| Js.Unsafe.inject 0.0
+                               ; Js.Unsafe.inject (Js.to_float scroll_y) |] ) ))
+                 ; Js.Unsafe.inject 0 |] )
       in
       (* Handle the hashchange event to respond to changes in the hash part
          of the URL *)
