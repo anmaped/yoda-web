@@ -104,6 +104,8 @@ let init_config_editor () =
               val autoCloseBrackets = Js.bool !edit_mode
 
               val lineWrapping = Js._true
+
+              val cursorBlinkRate = if !edit_mode then 530 else -1
             end
           in
           let raw_editor =
@@ -142,7 +144,6 @@ let load_config () : unit Lwt.t =
     config_loaded := true ;
     config_error := None ;
     config_notice := None ;
-    Helpers.trigger_render () ;
     Lwt.return () )
   else (
     config_error :=
@@ -208,7 +209,6 @@ let load_history () : unit Lwt.t =
       Api.Openapi.yodacConfigHistoryGetResponse_of_yojson json ;
     history_loaded := true ;
     history_error := None ;
-    Helpers.trigger_render () ;
     Lwt.return () )
   else (
     history_error :=
@@ -319,11 +319,11 @@ let render_config_tab () =
                     else I18n.interpolate (I18n.t "config_edit_btn") [] ) ]
           ; button
               ~a:
-                [ a_class ["btn"; "btn-primary"]
+                [ a_class
+                    ( ["btn"; "btn-primary"]
+                    @ if !edit_mode then [] else ["disabled"] )
                 ; a_onclick (fun _ ->
-                      config_json_str := current_config_editor_text () ;
-                      ignore (Lwt.join [save_config ()]) ;
-                      Helpers.trigger_render () ;
+                      if !edit_mode then ignore (Lwt.join [save_config ()]) ;
                       false ) ]
               [txt (I18n.t "settings_save_btn")] ]
       ; ( match !config_error with
@@ -377,12 +377,13 @@ let render_config_tab () =
     else div [p [txt (I18n.t "config_loading_history")]]
   in
   (* async load on first render *)
-  let _ =
-    if not !config_loaded then ignore (Lwt.join [load_config ()]) else ()
-  in
-  let _ =
-    if not !history_loaded then ignore (Lwt.join [load_history ()]) else ()
-  in
+  Lwt.async (fun () ->
+      if (not !config_loaded) || not !history_loaded then (
+        load_config ()
+        >>= fun () ->
+        load_history ()
+        >>= fun () -> Helpers.trigger_render () ; Lwt.return () )
+      else Lwt.return () ) ;
   let _ = schedule_config_editor_setup () in
   div
     [ Settings_helpers.section_card
