@@ -298,6 +298,83 @@ let process_zip_file contest_id file_input =
              ("Error processing ZIP import: " ^ Printexc.to_string exn) ) ;
         Lwt.return_unit )
 
+(** Read all test case files from a directory and import them for a problem *)
+let import_testcases_from_directory problem_id
+    (file_list : File.fileList Js.t) =
+  let read_file_as_text (file : File.file Js.t) : string Lwt.t =
+    let waiter, wakener = Lwt.wait () in
+    let promise = Js.Unsafe.meth_call file "text" [||] in
+    let on_success =
+      Js.wrap_callback (fun content ->
+          Lwt.wakeup_later wakener (Js.to_string content) )
+    in
+    let on_error =
+      Js.wrap_callback (fun _ ->
+          Lwt.wakeup_later_exn wakener (Failure "file_read_error") )
+    in
+    ignore
+      (Js.Unsafe.meth_call promise "then"
+         [|Js.Unsafe.inject on_success; Js.Unsafe.inject on_error|] ) ;
+    waiter
+  in
+  let filename_without_extension filename =
+    try Filename.chop_extension filename
+    with Invalid_argument _ -> filename
+  in
+  let files =
+    Array.init file_list##.length (fun index ->
+        Js.Opt.to_option (file_list##item index) )
+    |> Array.to_list
+    |> List.filter_map (fun file -> file)
+  in
+  let inputs, expected =
+    List.partition
+      (fun file ->
+        Astring.String.is_suffix ~affix:".in"
+          (String.lowercase_ascii (Js.to_string file##.name)) )
+      files
+  in
+  let expected_by_name =
+    List.fold_left
+      (fun map file ->
+        let name = Js.to_string file##.name in
+        if
+          Astring.String.is_suffix ~affix:".exp"
+            (String.lowercase_ascii name)
+        then
+          let key = filename_without_extension name in
+          (key, file) :: map
+        else map )
+      [] expected
+  in
+  Lwt.async (fun () ->
+      Lwt_list.iter_s
+        (fun input_file ->
+          let input_name = Js.to_string input_file##.name in
+          let key = filename_without_extension input_name in
+          match List.assoc_opt key expected_by_name with
+          | None -> Lwt.return_unit
+          | Some expected_file ->
+              read_file_as_text input_file
+              >>= fun input ->
+              read_file_as_text expected_file
+              >>= fun output ->
+              let body =
+                Api.Openapi.TestCaseCreateRequest.create ~input ~output
+                  ~is_sample:false ()
+                |> Api.Openapi.TestCaseCreateRequest.to_json
+              in
+              Api.Helpers.post_testcase problem_id body
+              >>= fun (_response, status) ->
+              if status = 200 || status = 201 then Lwt.return_unit
+              else (
+                Console.console##log
+                  (Js.string
+                     (Printf.sprintf "Failed to import testcase %s (%d)"
+                        input_name status ) ) ;
+                Lwt.return_unit ) )
+        inputs )
+
 (* --- UI Card Component --- *)
 
 let render_import_card contest_id () =

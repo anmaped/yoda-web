@@ -691,6 +691,45 @@ let problem_card (problem : Api.Openapi.problem) =
               (* placeholder for difficulty badge when field exists *)
             ; button
                 ~a:
+                  [ a_class ["btn"; "btn-sm"; "btn-outline-secondary"]
+                  ; a_title "Export problem"
+                  ; a_onclick (fun _ ->
+                        let problem_id =
+                          Option.value ~default:0 problem.id
+                        in
+                        Lwt.async (fun () ->
+                            ( match cases with
+                              | Some testcases -> Lwt.return testcases
+                              | None ->
+                                  load_testcases problem_id
+                                  >>= fun () ->
+                                  Lwt.return
+                                    ( try
+                                        Hashtbl.find !state.testcases
+                                          problem_id
+                                      with Not_found -> [] ) )
+                            >>= fun testcases ->
+                            ( match
+                                Hashtbl.find_opt !state.source_artifacts
+                                  problem_id
+                              with
+                              | Some artifacts -> Lwt.return artifacts
+                              | None ->
+                                  load_source_artifacts problem_id
+                                  >>= fun () ->
+                                  Lwt.return
+                                    ( try
+                                        Hashtbl.find !state.source_artifacts
+                                          problem_id
+                                      with Not_found -> [] ) )
+                            >>= fun source_artifacts ->
+                            Settings_problems_export.export_problem
+                              ~testcases ~source_artifacts problem ;
+                            Lwt.return_unit ) ;
+                        false ) ]
+                [Components.Icons.download_icon ()]
+            ; button
+                ~a:
                   [ a_class ["btn"; "btn-sm"; "btn-outline-primary"]
                   ; a_onclick (fun _ ->
                         let () =
@@ -815,46 +854,86 @@ let problem_card (problem : Api.Openapi.problem) =
                           ; "border" ]
                       ; a_style "white-space: pre-wrap;" ]
                     [code [txt problem.description]] ]
-             ; (* Test cases *)
-               div
-                 (let testcase_actions =
-                    div
-                      ~a:[a_class ["d-flex"; "gap-2"; "mb-2"]]
-                      [ button
-                          ~a:
-                            [ a_class ["btn"; "btn-sm"; "btn-primary"]
-                            ; a_onclick (fun _ ->
-                                  ( match (problem.id, !state.contest_id) with
-                                  | Some problem_id, Some _contest_id ->
-                                      open_testcase_modal ~problem_id
-                                        ~testcase:None
-                                  | _ -> () ) ;
-                                  false ) ]
-                          [ Components.Icons.plus_lg_icon ~a:["me-2"] ()
-                          ; txt (I18n.t "problems_add_testcase") ]
-                      ; button
-                          ~a:
-                            [ a_class
-                                [ "btn"
-                                ; "btn-sm"
-                                ; "btn-outline-secondary" ]
-                            ; a_onclick (fun _ ->
-                                  ( match problem.id with
-                                  | Some problem_id -> (
-                                      match cases with
-                                      | Some testcases ->
-                                          Settings_problems_export
-                                          .export_testcases ~problem_id testcases
-                                      | None -> () )
-                                  | None -> () ) ;
-                                  false ) ]
-                          [ Components.Icons.download_icon ()
-                          ; txt "Export tests" ] ]
-                  in
-                  [ label
-                      ~a:[a_class ["form-label"; "fw-bold"]]
-                      [txt "Test Cases"]
-                  ; testcase_actions
+            ; (* Test cases *)
+              div
+                (let testcase_actions =
+                   div
+                     ~a:[a_class ["d-flex"; "gap-2"; "mb-2"]]
+                     [ button
+                         ~a:
+                           [ a_class ["btn"; "btn-sm"; "btn-primary"]
+                           ; a_onclick (fun _ ->
+                                 ( match (problem.id, !state.contest_id) with
+                                 | Some problem_id, Some _contest_id ->
+                                     open_testcase_modal ~problem_id
+                                       ~testcase:None
+                                 | _ -> () ) ;
+                                 false ) ]
+                         [ Components.Icons.plus_lg_icon ~a:["me-2"] ()
+                         ; txt (I18n.t "problems_add_testcase") ]
+                     ; (let input_id =
+                          Printf.sprintf "testcase-directory-input-%d"
+                            (Option.value ~default:0 problem.id)
+                        in
+                        div
+                          [ input
+                              ~a:
+                                [ a_id input_id
+                                ; a_input_type `File
+                                ; a_class ["d-none"]
+                                ; Unsafe.string_attrib "webkitdirectory"
+                                    "true"
+                                ; Unsafe.string_attrib "directory" "true"
+                                ; a_onchange (fun _ ->
+                                      let input =
+                                        Dom_html.CoerceTo.input
+                                          (Dom_html.getElementById input_id)
+                                      in
+                                      match Js.Opt.to_option input with
+                                      | None -> false
+                                      | Some element -> (
+                                        match
+                                          Js.Opt.to_option element##.files
+                                        with
+                                        | None -> false
+                                        | Some files ->
+                                            ( match problem.id with
+                                            | Some problem_id ->
+                                                Settings_problems_import
+                                                .import_testcases_from_directory
+                                                  problem_id files
+                                            | None -> () ) ;
+                                            false ) ) ]
+                              ()
+                          ; button
+                              ~a:
+                                [ a_class
+                                    ["btn"; "btn-sm"; "btn-outline-primary"]
+                                ; a_onclick (fun _ ->
+                                      let input =
+                                        Dom_html.CoerceTo.input
+                                          (Dom_html.getElementById input_id)
+                                      in
+                                      ( match Js.Opt.to_option input with
+                                      | Some element ->
+                                          ignore
+                                            (Js.Unsafe.set element
+                                               "webkitdirectory"
+                                               (Js.Unsafe.inject Js._true) ) ;
+                                          ignore
+                                            (Js.Unsafe.set element
+                                               "directory"
+                                               (Js.Unsafe.inject Js._true) ) ;
+                                          element##click
+                                      | None -> () ) ;
+                                      false ) ]
+                                [ Components.Icons.folder_upload_icon ()
+                                ; txt "Import tests" ] ] ) ]
+                 in
+                 [ label
+                     ~a:[a_class ["form-label"; "fw-bold"]]
+                     [txt "Test Cases"]
+                 ; testcase_actions
                  ; ( match cases with
                    | Some [] ->
                        p

@@ -258,6 +258,30 @@ let download_icon () =
                0-.708.708z" ]
         [] ]
 
+let folder_upload_icon () =
+  Tyxml_js.Html.svg
+    ~a:
+      [ a_class ["bi"; "bi-folder-symlink"; "me-1"]
+      ; a_width (16., Some `Px)
+      ; a_height (16., Some `Px)
+      ; a_viewBox (0., 0., 16., 16.)
+      ; a_fill (`Color ("currentColor", None)) ]
+    [ path
+        ~a:
+          [ a_d
+              "M.5 3.5A1.5 1.5 0 0 1 2 2h3.586a1.5 1.5 0 0 1 1.06.44L8.12 \
+               3.914A.5.5 0 0 0 8.475 4H14a1.5 1.5 0 0 1 1.5 \
+               1.5v.75h-1V5.5a.5.5 0 0 0-.5-.5H8.475a1.5 1.5 0 0 \
+               1-1.06-.44L5.94 3.146A.5.5 0 0 0 5.586 3H2a.5.5 0 0 \
+               0-.5.5v9a.5.5 0 0 0 .5.5h5v1H2A1.5 1.5 0 0 1 .5 12.5z" ]
+        []
+    ; path
+        ~a:
+          [ a_d
+              "M10.5 7a.5.5 0 0 1 .5.5v2h2a.5.5 0 0 1 0 1h-2v2a.5.5 0 0 1-1 \
+               0v-2H8a.5.5 0 0 1 0-1h2v-2a.5.5 0 0 1 .5-.5" ]
+        [] ]
+
 let clipboard_icon () =
   Tyxml_js.Html.svg
     ~a:
@@ -435,12 +459,11 @@ let arrow_repeat_icon () =
 let reeval_icon ?(a = []) () =
   Tyxml_js.Html.svg
     ~a:
-      ( a_class (["bi"; "bi-arrow-repeat"] @ a)
-      :: a_width (14., Some `Px)
-      :: a_height (14., Some `Px)
-      :: a_viewBox (-0., -0., 16., 16.)
-      :: a_fill (`Color ("currentColor", None))
-      :: [] )
+      [ a_class (["bi"; "bi-arrow-repeat"] @ a)
+      ; a_width (14., Some `Px)
+      ; a_height (14., Some `Px)
+      ; a_viewBox (-0., -0., 16., 16.)
+      ; a_fill (`Color ("currentColor", None)) ]
     [ path
         ~a:
           [ a_d
