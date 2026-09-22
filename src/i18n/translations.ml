@@ -32,7 +32,7 @@ type translations =
   ; submission_sending: string
   ; submission_processing: string
   ; submission_result: string
-  ; submission_close: string
+  ; modal_close: string
   ; problem_time_limit: string
   ; problem_memory_limit: string
   ; problem_description: string
@@ -171,7 +171,6 @@ type translations =
   ; stats_queued_jobs_per_minute: string
   ; stats_processed_jobs_total: string
   ; stats_processed_jobs_per_minute: string
-  ; spinner_model_close: string
   ; problems_manage_title: string
   ; problems_manage_subtitle: string
   ; problems_loading: string
@@ -247,7 +246,7 @@ let en =
   ; submission_sending= "Sending your solution..."
   ; submission_processing= "Processing your solution... (polling every 2s)"
   ; submission_result= "Result:"
-  ; submission_close= "Close"
+  ; modal_close= "Close"
   ; codebar_run= "Run the code"
   ; codebar_confirm_run= "Do you want to run the '%s' code ?"
   ; modal_cancel= "Cancel"
@@ -396,7 +395,6 @@ let en =
   ; stats_queued_jobs_per_minute= "Queued Jobs per Minute"
   ; stats_processed_jobs_total= "Processed Jobs Total"
   ; stats_processed_jobs_per_minute= "Processed Jobs per Minute"
-  ; spinner_model_close= "Close"
   ; problems_manage_title= "Problem Management"
   ; problems_manage_subtitle= "Add, edit, or remove problems and test cases."
   ; problems_loading= "Loading problems..."
@@ -473,7 +471,7 @@ let fr =
   ; submission_sending= "Envoi de votre solution..."
   ; submission_processing= "Traitement en cours... (sonde toutes les 2s)"
   ; submission_result= "Résultat :"
-  ; submission_close= "Fermer"
+  ; modal_close= "Fermer"
   ; codebar_run= "Exécuter le code"
   ; codebar_confirm_run= "Voulez-vous exécuter le code '%s' ?"
   ; modal_cancel= "Annuler"
@@ -628,7 +626,6 @@ let fr =
   ; stats_queued_jobs_per_minute= "Tâches en file par minute"
   ; stats_processed_jobs_total= "Total des tâches traitées"
   ; stats_processed_jobs_per_minute= "Tâches traitées par minute"
-  ; spinner_model_close= "Fermer"
   ; problems_manage_title= "Gestion des problèmes"
   ; problems_manage_subtitle=
       "Ajouter, modifier ou supprimer des problèmes et des cas de test."
@@ -705,7 +702,7 @@ let es =
   ; submission_sending= "Enviando tu solución..."
   ; submission_processing= "Procesando tu solución... (consultando cada 2s)"
   ; submission_result= "Resultado:"
-  ; submission_close= "Cerrar"
+  ; modal_close= "Cerrar"
   ; codebar_run= "Ejecutar el código"
   ; codebar_confirm_run= "¿Quieres ejecutar el código '%s' ?"
   ; modal_cancel= "Cancelar"
@@ -857,7 +854,6 @@ let es =
   ; stats_queued_jobs_per_minute= "Trabajos en cola por minuto"
   ; stats_processed_jobs_total= "Trabajos procesados totales"
   ; stats_processed_jobs_per_minute= "Trabajos procesados por minuto"
-  ; spinner_model_close= "Cerrar"
   ; problems_manage_title= "Gestión de problemas"
   ; problems_manage_subtitle=
       "Agrega, edita o elimina problemas y casos de prueba."
@@ -935,7 +931,7 @@ let pt =
   ; submission_processing=
       "Processando sua solução... (verificando a cada 2s)"
   ; submission_result= "Resultado:"
-  ; submission_close= "Fechar"
+  ; modal_close= "Fechar"
   ; codebar_run= "Executar o código"
   ; codebar_confirm_run= "Deseja executar o código '%s' ?"
   ; modal_cancel= "Cancelar"
@@ -1085,7 +1081,6 @@ let pt =
   ; stats_queued_jobs_per_minute= "Tarefas na fila por minuto"
   ; stats_processed_jobs_total= "Total de tarefas processadas"
   ; stats_processed_jobs_per_minute= "Tarefas processadas por minuto"
-  ; spinner_model_close= "Fechar"
   ; problems_manage_title= "Gestão de problemas"
   ; problems_manage_subtitle=
       "Adicione, edite ou remova problemas e casos de teste."
@@ -1159,7 +1154,7 @@ let ar =
   ; submission_sending= "جارٍ إرسال حلّك..."
   ; submission_processing= "جارٍ معالجة حلّك... (الاستعلام كل ثانيتين)"
   ; submission_result= "النتيجة:"
-  ; submission_close= "إغلاق"
+  ; modal_close= "إغلاق"
   ; codebar_run= "تشغيل الكود"
   ; codebar_confirm_run= "هل تريد تشغيل الكود '%s'?"
   ; modal_cancel= "إلغاء"
@@ -1306,7 +1301,6 @@ let ar =
   ; stats_queued_jobs_per_minute= "المهام في الطابور لكل دقيقة"
   ; stats_processed_jobs_total= "إجمالي المهام المعالجة"
   ; stats_processed_jobs_per_minute= "المهام المعالجة لكل دقيقة"
-  ; spinner_model_close= "إغلاق"
   ; problems_manage_title= "إدارة المشاكل"
   ; problems_manage_subtitle= "أضف أو حرر أو احذف المشاكل وحالات الاختبار."
   ; problems_loading= "جارٍ تحميل المشاكل..."
@@ -1384,7 +1378,7 @@ let map : translations -> (string, string) Hashtbl.t =
   add "submission_sending" tr.submission_sending ;
   add "submission_processing" tr.submission_processing ;
   add "submission_result" tr.submission_result ;
-  add "submission_close" tr.submission_close ;
+  add "modal_close" tr.modal_close ;
   add "problem_submit_solution" tr.problem_submit_solution ;
   add "problem_time_limit" tr.problem_time_limit ;
   add "problem_memory_limit" tr.problem_memory_limit ;
@@ -1525,7 +1519,6 @@ let map : translations -> (string, string) Hashtbl.t =
   add "stats_queued_jobs_per_minute" tr.stats_queued_jobs_per_minute ;
   add "stats_processed_jobs_total" tr.stats_processed_jobs_total ;
   add "stats_processed_jobs_per_minute" tr.stats_processed_jobs_per_minute ;
-  add "spinner_model_close" tr.spinner_model_close ;
   add "problems_manage_title" tr.problems_manage_title ;
   add "problems_manage_subtitle" tr.problems_manage_subtitle ;
   add "problems_loading" tr.problems_loading ;

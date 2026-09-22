@@ -38,39 +38,12 @@ let modal_kind_of_submission_status status =
       "error"
   | _ -> "warning"
 
-let extension_language_map =
-  [ (".ml", "ocaml")
-  ; (".js", "javascript")
-  ; (".py", "python")
-  ; (".java", "java")
-  ; (".cpp", "cpp")
-  ; (".c", "c")
-  ; (".rs", "rust")
-  ; (".go", "go")
-  ; (".ts", "typescript")
-  ; (".php", "php")
-  ; (".rb", "ruby")
-  ; (".swift", "swift")
-  ; (".kt", "kotlin")
-  ; (".hs", "haskell")
-  ; (".pl", "perl")
-  ; (".sh", "shell")
-  ; (".sql", "sql") ]
-
-let language_for_filename filename =
-  let lowercase = String.lowercase_ascii filename in
-  List.find_map
-    (fun (ext, language) ->
-      if Astring.String.is_suffix ~affix:ext lowercase then Some language
-      else None )
-    extension_language_map
-
 let select_language ~languages_allowed ~source_artifacts =
   let allowed_set = List.map String.lowercase_ascii languages_allowed in
   let from_extensions =
     List.find_map
       (fun (artifact : Api.Openapi.sourceArtifact) ->
-        match language_for_filename artifact.filename with
+        match Tabbar.language_for_filename artifact.filename with
         | Some language when List.mem language allowed_set -> Some language
         | _ -> None )
       source_artifacts
@@ -82,7 +55,7 @@ let select_language ~languages_allowed ~source_artifacts =
 
 let get_submission_context () =
   let contest_id = Helpers.get_current_contest_id () in
-  match Problem_dropdown.get_selected_problem_id () with
+  match Model.Problem_state.get_selected_problem_id () with
   | None -> Lwt.return (Error "No selected problem found")
   | Some problem_id ->
       let languages_allowed = Tabbar.get_current_languages () in
@@ -91,7 +64,7 @@ let get_submission_context () =
          of the artifacts; fallback to the first language allowed if none
          match *)
       let language =
-        match Problem_dropdown.get_selected_problem_language () with
+        match Model.Problem_state.get_selected_problem_language () with
         | Some selected_language
           when List.mem
                  (String.lowercase_ascii selected_language)

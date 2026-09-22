@@ -88,7 +88,37 @@ let format_time_ms ms =
   let s = total mod 60 in
   Printf.sprintf "%02d:%02d:%02d" h m s
 
-let submission_row id problem lang result time =
+let submission_row (submission : Api.Openapi.submission) problem lang =
+  let id = submission.id in
+  let result = status_of_string submission.status in
+  let time = format_time_ms submission.time_ms in
+  let action_buttons =
+    let results_action =
+      match Submissions_list_details.action id submission with
+      | Some action -> [action]
+      | None -> []
+    in
+    let reeval_action =
+      if Helpers.is_judge_or_admin () then
+        [ button
+            ~a:
+              [ a_class ["btn"; "btn-sm"; "btn-outline-warning"]
+              ; a_title (I18n.t "submissions_reevaluate")
+              ; a_id ("reeval-btn-" ^ string_of_int id)
+              ; a_onclick (fun _ ->
+                    Lwt.async (fun () ->
+                        Api.Helpers.re_evaluate_submission id
+                        >>= fun (_, status) ->
+                        Console.console##log
+                          (Js.string
+                             ("Re-eval status: " ^ string_of_int status) ) ;
+                        Lwt.return_unit ) ;
+                    false ) ]
+            [Icons.reeval_icon ()] ]
+      else []
+    in
+    reeval_action @ results_action
+  in
   tr
     ( [ td ~a:[a_class ["ps-3"]] [txt (string_of_int id)]
       ; td [txt problem]
@@ -97,25 +127,13 @@ let submission_row id problem lang result time =
           [span ~a:[a_class (badge_class result)] [txt (status_label result)]]
       ; td [txt time] ]
     @
-    if Helpers.is_judge_or_admin () then
+    if action_buttons = [] then []
+    else
       [ td
           ~a:[a_style "text-align:center; vertical-align: middle"]
-          [ button
-              ~a:
-                [ a_class ["btn"; "btn-sm"; "btn-outline-warning"]
-                ; a_title (I18n.t "submissions_reevaluate")
-                ; a_id ("reeval-btn-" ^ string_of_int id)
-                ; a_onclick (fun _ ->
-                      Lwt.async (fun () ->
-                          Api.Helpers.re_evaluate_submission id
-                          >>= fun (_, status) ->
-                          Console.console##log
-                            (Js.string
-                               ("Re-eval status: " ^ string_of_int status) ) ;
-                          Lwt.return_unit ) ;
-                      false ) ]
-              [Icons.reeval_icon ()] ] ]
-    else [] )
+          [ div
+              ~a:[a_class ["d-flex"; "justify-content-center"; "gap-1"]]
+              action_buttons ] ] )
 
 let load_submissions table contest_id last =
   Lwt.async (fun () ->
@@ -176,11 +194,7 @@ let load_submissions table contest_id last =
             match Hashtbl.find_opt problems_by_id sub.problem_id with
             | Some p ->
                 let lang = Option.value ~default:"Unknown" sub.language in
-                let row =
-                  submission_row sub.id p.code lang
-                    (status_of_string sub.status)
-                    (format_time_ms sub.time_ms)
-                in
+                let row = submission_row sub p.code lang in
                 Lwt.return_some row
             | None -> Lwt.return_none )
           submissions
@@ -256,12 +270,9 @@ and submission_header x () =
           ; sortable_th x Col_language
           ; sortable_th x Col_result
           ; sortable_th x Col_time ]
-        @
-        if Helpers.is_judge_or_admin () then
-          [ th
+        @ [ th
               ~a:[a_style "cursor:pointer"]
-              [txt (I18n.t "submissions_col_action")] ]
-        else [] ) ]
+              [txt (I18n.t "submissions_col_action")] ] ) ]
 
 let content ~contest_id ~last () =
   let table =

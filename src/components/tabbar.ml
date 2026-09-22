@@ -23,6 +23,51 @@ let storage_key_for_problem pid =
 let active_tab_key_for_problem pid =
   Printf.sprintf "%s-%d" key_state_editor_active_file pid
 
+let extension_language_map =
+  [ (".ml", "ocaml")
+  ; (".js", "javascript")
+  ; (".py", "python")
+  ; (".java", "java")
+  ; (".cpp", "cpp")
+  ; (".c", "c")
+  ; (".rs", "rust")
+  ; (".go", "go")
+  ; (".ts", "typescript")
+  ; (".php", "php")
+  ; (".rb", "ruby")
+  ; (".swift", "swift")
+  ; (".kt", "kotlin")
+  ; (".hs", "haskell")
+  ; (".pl", "perl")
+  ; (".sh", "shell")
+  ; (".sql", "sql") ]
+
+let language_for_filename filename =
+  let lowercase = String.lowercase_ascii filename in
+  List.find_map
+    (fun (ext, language) ->
+      if Astring.String.is_suffix ~affix:ext lowercase then Some language
+      else None )
+    extension_language_map
+
+let get_extension_for_language language =
+  let lowercase = String.lowercase_ascii language in
+  List.find_map
+    (fun (ext, language) -> if lowercase = language then Some ext else None)
+    extension_language_map
+
+let get_fallback_filename_for_problem () =
+  "main"
+  ^
+  (* get extension from current language *)
+  match
+    get_extension_for_language
+      ( Model.Problem_state.get_selected_problem_language ()
+      |> Option.value ~default:"" )
+  with
+  | Some ext -> ext
+  | None -> ""
+
 let get_editor_content () = Js_of_ocaml.Js.to_string Editor.editor##getValue
 
 let set_editor_content content =
@@ -121,14 +166,22 @@ and create_tabs_from_files files =
         ~tab_id ~tab_index:i )
     files
 
+(** Update the tab bar DOM with the current tabs. Note that this function does not update the tabs extension of 'main' file when there are multiple files. *)
 and update_tab_div_dom () =
   let tabs =
-    if List.length !current_files > 0 then
+    if List.length !current_files > 1 then
       create_tabs_from_files !current_files
-    else
+    else if
+      List.exists
+        (fun {filename; _} -> Astring.String.is_prefix ~affix:"main" filename)
+        !current_files
+      && List.length !current_files = 1
+    then
       [ (* Fallback to hardcoded tabs *)
-        create_tab ~filename:"fallback.ml" ~active:true ~tab_id:"tab0"
-          ~tab_index:0 ]
+        create_tab
+          ~filename:(get_fallback_filename_for_problem ())
+          ~active:true ~tab_id:"tab0" ~tab_index:0 ]
+    else failwith "No valid tabs to display"
   in
   let tab_div_el = Tyxml_js.To_dom.of_div tab_div in
   (* Clear existing children *)
@@ -154,7 +207,7 @@ let init_files_for_problem pid artifacts =
   let files =
     match artifacts with
     | [] ->
-        [ { filename= "fallback.ml"
+        [ { filename= get_fallback_filename_for_problem ()
           ; content= "(* Start coding here *)\n"
           ; skeleton_content= "(* Start coding here *)\n" } ]
     | _ ->

@@ -3,39 +3,6 @@ open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 open Lwt.Infix
 
-let key_problem_id = "yoda-state-current-problem-id"
-
-let key_problem_description = "yoda-state-current-problem-description"
-
-let key_problem_language = "yoda-state-current-problem-language"
-
-let parse_problem_id value = try Some (int_of_string value) with _ -> None
-
-(** Returns the ID of the currently selected problem *)
-let get_selected_problem_id () =
-  match Helpers.get_local_variable key_problem_id with
-  | Some id -> parse_problem_id (Js.to_string id)
-  | None -> None
-
-let set_current_problem_id id =
-  Helpers.set_local_variable key_problem_id (string_of_int id)
-
-let get_selected_problem_language () =
-  match Helpers.get_local_variable key_problem_language with
-  | Some language -> Some (Js.to_string language)
-  | None -> None
-
-let set_current_problem_language language =
-  Helpers.set_local_variable key_problem_language language
-
-let get_current_problem_description () =
-  match Helpers.get_local_variable key_problem_description with
-  | Some desc -> Js.to_string desc
-  | None -> ""
-
-let set_current_problem_description desc =
-  Helpers.set_local_variable key_problem_description desc
-
 let update_language_selection dom_language_select languages =
   let rec clear_options () =
     match Js.Opt.to_option dom_language_select##.firstChild with
@@ -56,7 +23,7 @@ let update_language_selection dom_language_select languages =
   | _ -> (
       List.iter (fun language -> add_option language language) languages ;
       let preferred_language =
-        match get_selected_problem_language () with
+        match Model.Problem_state.get_selected_problem_language () with
         | Some selected when List.mem selected languages -> Some selected
         | _ -> List.nth_opt languages 0
       in
@@ -70,7 +37,8 @@ let update_language_selection dom_language_select languages =
               | Some opt ->
                   if Js.to_string opt##.value = language then (
                     opt##.selected := Js._true ;
-                    set_current_problem_language language )
+                    Model.Problem_state.set_current_problem_language language
+                    )
                   else find_and_select (idx + 1)
               | None -> find_and_select (idx + 1)
           in
@@ -95,8 +63,8 @@ let update_current_problem dom_problem_selection dom_language_select =
   match selected_problem () with
   | None -> Lwt.return_unit
   | Some (id, desc) ->
-      set_current_problem_id id ;
-      set_current_problem_description desc ;
+      Model.Problem_state.set_current_problem_id id ;
+      Model.Problem_state.set_current_problem_description desc ;
       (* Update the tabbar with the selected problem asynchronously *)
       Tabbar.update id ()
       >>= fun () ->
@@ -125,8 +93,9 @@ let content () =
             with
             | Some opt ->
                 let value = Js.to_string opt##.value in
-                if value <> "" && value <> "none" then
-                  set_current_problem_language value ;
+                if value <> "" && value <> "none" then (
+                  Model.Problem_state.set_current_problem_language value ;
+                  Tabbar.update_tab_div_dom () ) ;
                 Js._false
             | None -> Js._false ) )
        Js._false ) ;
@@ -204,14 +173,14 @@ let content () =
             find_and_select 0
           in
           let () =
-            match Helpers.get_local_variable key_problem_id with
-            | Some code -> select_problem (Js.to_string code)
+            match Model.Problem_state.get_selected_problem_id () with
+            | Some code -> select_problem (string_of_int code)
             | None -> (
               match List.rev problems with
               | last_problem :: _ ->
-                  set_current_problem_id
+                  Model.Problem_state.set_current_problem_id
                     (Option.value ~default:(-1) last_problem.id) ;
-                  set_current_problem_description
+                  Model.Problem_state.set_current_problem_description
                     (last_problem.code ^ ": " ^ last_problem.title) ;
                   select_problem last_problem.code
               | [] -> () )

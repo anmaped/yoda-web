@@ -149,7 +149,7 @@ let make () =
                             ~a:
                               [ a_class ["btn"; "btn-primary"; "mt-3"]
                               ; a_onclick (fun _ -> remove () ; false) ]
-                            [txt (I18n.t "spinner_model_close")] ] ] ] ] ] ]
+                            [txt (I18n.t "modal_close")] ] ] ] ] ] ]
   in
   (* add modal_backdrop to spinner via dom*)
   List.iter

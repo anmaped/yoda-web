@@ -1,7 +1,7 @@
 (library
  (name model)
  (wrapped true)
- (modules tests)
+ (modules tests problem_state)
  (libraries
   api
   helpers
