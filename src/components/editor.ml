@@ -7,6 +7,10 @@ let codeboard =
 
 let settings_theme = ref ""
 
+let on_change : (unit -> unit) ref = ref (fun () -> ())
+
+let set_on_change callback = on_change := callback
+
 let current_theme () =
   match String.lowercase_ascii (String.trim !settings_theme) with
   | "dark" | "onedark" -> "material-darker"
@@ -79,6 +83,13 @@ let editor =
       [|Js.Unsafe.inject textarea; Js.Unsafe.inject options|]
   in
   let editor : codeMirror Js.t = Js.Unsafe.coerce raw_editor in
+  ignore
+    (Js.Unsafe.meth_call editor "on"
+       [| Js.Unsafe.inject (Js.string "change")
+        ; Js.Unsafe.inject
+            (Js.wrap_callback (fun _editor _change ->
+              (** Trigger the change callback *)
+                 (!on_change) () )) |]) ;
   (* Optional: set initial content explicitly *)
   editor##refresh ;
   editor##setValue (Js.string "(* Start coding here *)\n") ;

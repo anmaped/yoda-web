@@ -4,6 +4,10 @@ open Tyxml_js.Html
 (* save editor state and testbar state using a auto-save mechanism *)
 let init () =
   let open Lwt.Infix in
+  (** Set the callback for when the editor is saved *)
+  Components.Tabbar.set_on_editor_saved (fun () ->
+      Components.Codebar.update_status_bar
+        (I18n.t "codebar_all_changes_saved") ) ;
   (* load all state before starting the auto-save loop *)
   Components.Editor.load_state () ;
   Components.Testbar.load_state () ;

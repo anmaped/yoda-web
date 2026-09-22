@@ -17,6 +17,14 @@ let current_files : file_state list ref = ref []
 
 let editor_state_is_current = ref false
 
+let suppress_editor_change = ref false
+
+let save_timer : unit Lwt.t option ref = ref None
+
+let on_editor_saved : (unit -> unit) ref = ref (fun () -> ())
+
+let set_on_editor_saved callback = on_editor_saved := callback
+
 let current_languages : Api.Openapi.languages ref = ref []
 
 let storage_key_for_problem pid =
@@ -73,8 +81,10 @@ let get_fallback_filename_for_problem () =
 let get_editor_content () = Js_of_ocaml.Js.to_string Editor.editor##getValue
 
 let set_editor_content content =
+  suppress_editor_change := true ;
   Editor.editor##setValue (Js_of_ocaml.Js.string content) ;
-  Editor.editor##refresh
+  Editor.editor##refresh ;
+  suppress_editor_change := false
 
 let deserialize_problem_files raw =
   try
@@ -128,7 +138,21 @@ let save_active_editor_content () =
     | None -> ()
     | Some file ->
         file.content <- get_editor_content () ;
-        persist_current_state ()
+         persist_current_state ()
+
+let schedule_save () =
+  if not !suppress_editor_change then (
+    Option.iter Lwt.cancel !save_timer ;
+    save_timer :=
+      Some
+        (Lwt.catch
+           (fun () ->
+             Js_of_ocaml_lwt.Lwt_js.sleep 2.0 >>= fun () ->
+             save_active_editor_content () ;
+             (** Trigger the saved callback *)
+             (!on_editor_saved) () ;
+             Lwt.return_unit)
+           (fun _ -> Lwt.return_unit)) )
 
 let load_editor_from_active_tab () =
   match List.nth_opt !current_files !current_active_tab with
@@ -270,6 +294,9 @@ let get_current_source_artifacts () =
     !current_files
 
 let get_current_languages () = !current_languages
+
+(** Set the callback for when the editor is saved *)
+let () = Editor.set_on_change schedule_save
 
 let update pid () =
   editor_state_is_current := false ;
