@@ -15,6 +15,8 @@ let current_active_tab : int ref = ref 0
 
 let current_files : file_state list ref = ref []
 
+let editor_state_is_current = ref false
+
 let current_languages : Api.Openapi.languages ref = ref []
 
 let storage_key_for_problem pid =
@@ -120,11 +122,13 @@ let persist_current_state () =
       Helpers.set_local_variable (active_tab_key_for_problem pid) active_file
 
 let save_active_editor_content () =
-  match List.nth_opt !current_files !current_active_tab with
-  | None -> ()
-  | Some file ->
-      file.content <- get_editor_content () ;
-      persist_current_state ()
+  if not !editor_state_is_current then ()
+  else
+    match List.nth_opt !current_files !current_active_tab with
+    | None -> ()
+    | Some file ->
+        file.content <- get_editor_content () ;
+        persist_current_state ()
 
 let load_editor_from_active_tab () =
   match List.nth_opt !current_files !current_active_tab with
@@ -207,9 +211,23 @@ let init_files_for_problem pid artifacts =
   let files =
     match artifacts with
     | [] ->
-        [ { filename= get_fallback_filename_for_problem ()
-          ; content= "(* Start coding here *)\n"
-          ; skeleton_content= "(* Start coding here *)\n" } ]
+        let filename = get_fallback_filename_for_problem () in
+        let skeleton_content = "(* Start coding here *)\n" in
+        [ { filename
+          ; content=
+              Option.value ~default:skeleton_content
+                ( match Hashtbl.find_opt persisted_tbl filename with
+                | Some saved -> Some saved
+                | None ->
+                    List.find_map
+                      (fun (saved_filename, saved_content) ->
+                        if
+                          Astring.String.is_prefix ~affix:"main"
+                            saved_filename
+                        then Some saved_content
+                        else None )
+                      persisted )
+          ; skeleton_content } ]
     | _ ->
         List.map
           (fun (artifact : Api.Openapi.SourceArtifact.t) ->
@@ -239,6 +257,7 @@ let init_files_for_problem pid artifacts =
   current_files := files ;
   current_active_tab := active_idx ;
   load_editor_from_active_tab () ;
+  editor_state_is_current := true ;
   persist_current_state () ;
   update_tab_div_dom ()
 
@@ -253,7 +272,7 @@ let get_current_source_artifacts () =
 let get_current_languages () = !current_languages
 
 let update pid () =
-  save_active_editor_content () ;
+  editor_state_is_current := false ;
   Api.Helpers.get_problem pid
   >>= fun (resp, status) ->
   if status <> 200 then (

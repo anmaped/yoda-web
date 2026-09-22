@@ -13,13 +13,8 @@ let init () =
       (I18n.t "codebar_saving") ;
     Components.Tabbar.save_active_editor_content () ;
     Components.Editor.save_state () ;
-    Lwt.return_unit
-    >>= fun () ->
     Components.Testbar.save_state () ;
-    Lwt.return_unit
-    >>= fun () ->
-    Js_of_ocaml_lwt.Lwt_js.sleep 1.0
-    >>= fun () ->
+    Js_of_ocaml_lwt.Lwt_js.sleep 1.0 >>= fun () ->
     Components.Codebar.update_status_bar (I18n.t "codebar_all_changes_saved") ;
     Components.Codebar.hide Components.Codebar.spinner ;
     Js_of_ocaml_lwt.Lwt_js.sleep 60.0 >>= fun () -> save_state_loop ()
