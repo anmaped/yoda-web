@@ -66,7 +66,7 @@ let editor =
 
       val theme = Js.string (current_theme ())
 
-      val indentUnit = 2
+       val indentUnit = 2
 
       val tabSize = 2
 
@@ -74,7 +74,7 @@ let editor =
 
       val autoCloseBrackets = Js._true
 
-      val lineWrapping = Js._true
+       val lineWrapping = Js._true
     end
   in
   (* Create editor and keep reference *)
@@ -94,6 +94,30 @@ let editor =
   editor##refresh ;
   editor##setValue (Js.string "(* Start coding here *)\n") ;
   editor
+
+let set_option name value =
+  ignore
+    (Js.Unsafe.meth_call editor "setOption"
+       [| Js.Unsafe.inject (Js.string name); Js.Unsafe.inject value |])
+
+let set_font_size size =
+  let style = string_of_int size ^ "px" in
+  match Js.Opt.to_option (Dom_html.document##querySelector (Js.string ".CodeMirror")) with
+  | Some element -> element##.style##.fontSize := Js.string style
+  | None -> ()
+
+let set_tab_size size =
+  set_option "tabSize" (Js.Unsafe.inject size) ;
+  set_option "indentUnit" (Js.Unsafe.inject size)
+
+let set_line_wrapping enabled =
+  set_option "lineWrapping" (Js.Unsafe.inject (Js.bool enabled)) ;
+  editor##refresh
+
+let apply_settings font_size tab_size line_wrapping =
+  set_font_size font_size ;
+  set_tab_size tab_size ;
+  set_line_wrapping line_wrapping
 
 let set_theme t =
   settings_theme := t ;
@@ -116,4 +140,4 @@ let content () =
         ~a:
           [ a_class ["contest-card"; "rounded"; "p-1"; "shadow-sm"]
           ; a_style "height: 100%; min-height: 0;" ]
-        [codeboard] ]
+         [codeboard] ]

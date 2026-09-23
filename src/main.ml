@@ -52,6 +52,10 @@ let () =
               List.iter
                 (fun p -> Dom.appendChild app_div (Tyxml_js.To_dom.of_div p))
                 (Pages.Codeboard.render ()) ;
+              Components.Editor.apply_settings
+                (Pages.Settings.get_font_size ())
+                (Pages.Settings.get_tab_size ())
+                (Pages.Settings.get_line_wrapping ()) ;
               ignore Components.Editor.editor##refresh ;
               []
           | "#submissions" -> Pages.Submissions.render ()
@@ -91,8 +95,9 @@ let () =
                          ignore
                            (Js.Unsafe.meth_call Dom_html.window "scrollTo"
                               [| Js.Unsafe.inject 0.0
-                               ; Js.Unsafe.inject (Js.to_float scroll_y) |] ) ))
-                 ; Js.Unsafe.inject 0 |] )
+                               ; Js.Unsafe.inject (Js.to_float scroll_y) |] ) )
+                    )
+                ; Js.Unsafe.inject 0 |] )
       in
       (* Handle the hashchange event to respond to changes in the hash part
          of the URL *)

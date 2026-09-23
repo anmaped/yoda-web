@@ -37,8 +37,8 @@ let get_theme () =
 
 let get_font_size () =
   match Helpers.get_local_variable key_font_size with
-  | Some s -> ( try int_of_string (Js.to_string s) with _ -> 14 )
-  | None -> 14
+  | Some s -> ( try int_of_string (Js.to_string s) with _ -> 16 )
+  | None -> 16
 
 let get_tab_size () =
   match Helpers.get_local_variable key_tab_size with
@@ -58,13 +58,16 @@ let get_auto_save () =
 let set_theme t = Helpers.set_local_variable key_theme t
 
 let set_font_size n =
-  Helpers.set_local_variable key_font_size (string_of_int n)
+  Helpers.set_local_variable key_font_size (string_of_int n) ;
+  Components.Editor.set_font_size n
 
 let set_tab_size n =
-  Helpers.set_local_variable key_tab_size (string_of_int n)
+  Helpers.set_local_variable key_tab_size (string_of_int n) ;
+  Components.Editor.set_tab_size n
 
 let set_line_wrapping b =
-  Helpers.set_local_variable key_line_wrapping (string_of_bool b)
+  Helpers.set_local_variable key_line_wrapping (string_of_bool b) ;
+  Components.Editor.set_line_wrapping b
 
 let set_auto_save b =
   Helpers.set_local_variable key_auto_save (string_of_bool b)
@@ -115,7 +118,11 @@ let apply_theme t =
   Helpers.trigger_render ()
 
 (* Apply saved theme on page load *)
-let init () = apply_theme (get_theme ())
+let init () =
+  apply_theme (get_theme ()) ;
+  set_font_size (get_font_size ()) ;
+  set_tab_size (get_tab_size ()) ;
+  set_line_wrapping (get_line_wrapping ())
 
 (* Settings referrer helper *)
 let save_referrer () =

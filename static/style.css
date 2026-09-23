@@ -49,6 +49,11 @@ body {
   height: inherit !important;
 }
 
+#codeboard .CodeMirror,
+#codeboard .CodeMirror pre {
+  font-size: inherit;
+}
+
 /* Tab bar styles */
 #tab-bar {
   display: flex;
