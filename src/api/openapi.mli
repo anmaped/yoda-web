@@ -345,9 +345,10 @@ type submission = {
   time_ms: int;
   memory_kb: int;
   details: submissionDetails;
+  owner: bool option;
 }
 
-val create_submission : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails -> unit -> submission
+val create_submission : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails -> ?owner:bool -> unit -> submission
 val submission_of_yojson : Yojson.Safe.t -> submission
 val yojson_of_submission : submission -> Yojson.Safe.t
 val submission_of_json : string -> submission
@@ -355,7 +356,7 @@ val json_of_submission : submission -> string
 
 module Submission : sig
   type nonrec t = submission
-  val create : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails -> unit -> t
+  val create : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails -> ?owner:bool -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -406,6 +407,26 @@ val json_of_sourceArtifacts : sourceArtifacts -> string
 
 module SourceArtifacts : sig
   type nonrec t = sourceArtifacts
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type submissionFullDetails = {
+  submission: submission;
+  source_artifacts: sourceArtifacts;
+}
+
+val create_submissionFullDetails : submission:submission -> source_artifacts:sourceArtifacts -> unit -> submissionFullDetails
+val submissionFullDetails_of_yojson : Yojson.Safe.t -> submissionFullDetails
+val yojson_of_submissionFullDetails : submissionFullDetails -> Yojson.Safe.t
+val submissionFullDetails_of_json : string -> submissionFullDetails
+val json_of_submissionFullDetails : submissionFullDetails -> string
+
+module SubmissionFullDetails : sig
+  type nonrec t = submissionFullDetails
+  val create : submission:submission -> source_artifacts:sourceArtifacts -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -788,6 +809,26 @@ val json_of_authRegisterPostRequest : authRegisterPostRequest -> string
 module AuthRegisterPostRequest : sig
   type nonrec t = authRegisterPostRequest
   val create : username:string -> password:string -> role:userRole -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type authPasswordPostRequest = {
+  current_password: string;
+  new_password: string;
+}
+
+val create_authPasswordPostRequest : current_password:string -> new_password:string -> unit -> authPasswordPostRequest
+val authPasswordPostRequest_of_yojson : Yojson.Safe.t -> authPasswordPostRequest
+val yojson_of_authPasswordPostRequest : authPasswordPostRequest -> Yojson.Safe.t
+val authPasswordPostRequest_of_json : string -> authPasswordPostRequest
+val json_of_authPasswordPostRequest : authPasswordPostRequest -> string
+
+module AuthPasswordPostRequest : sig
+  type nonrec t = authPasswordPostRequest
+  val create : current_password:string -> new_password:string -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

@@ -18,10 +18,11 @@ let key_settings_referrer = "yoda-settings-referrer"
 let key_language = "yoda-language"
 
 (* Tab state *)
-type tab = Settings | Config | Stats | Users | Problems
+type tab = Settings | Password | Config | Stats | Users | Problems
 
 let tab_label = function
   | Settings -> I18n.t "settings_tab_general"
+  | Password -> I18n.t "settings_tab_password"
   | Config -> I18n.t "settings_tab_yodac"
   | Stats -> I18n.t "settings_tab_stats"
   | Users -> I18n.t "settings_tab_users"
@@ -325,6 +326,17 @@ let render_tabs () =
                         Helpers.navigate_to "#settings" ;
                         false ) ]
                 [txt (tab_label Settings)] ]
+        ; li
+            ~a:[a_class ["nav-item"]]
+            [ a
+                ~a:
+                  [ a_class
+                      ("nav-link"
+                      :: (if !active_tab = Password then ["active"] else []))
+                  ; a_href "#settings-password"
+                  ; a_onclick (fun _ ->
+                        Helpers.navigate_to "#settings-password" ; false) ]
+                [txt (tab_label Password)] ]
         ; ( if Helpers.is_admin () then
               li
                 ~a:[a_class ["nav-item"]]
@@ -426,9 +438,12 @@ let render ?(tab = "general") () =
                     [Components.Icons.x_close_icon ()] ]
             ; render_tabs ()
             ; ( match tab with
-              | "general" ->
-                  active_tab := Settings ;
-                  render_settings_tab ()
+               | "general" ->
+                   active_tab := Settings ;
+                   render_settings_tab ()
+               | "password" ->
+                   active_tab := Password ;
+                   Settings_password.render_password_tab ()
               | "yodac" ->
                   active_tab := Config ;
                   Settings_yodac.render_config_tab ()

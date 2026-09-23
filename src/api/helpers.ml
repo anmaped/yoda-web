@@ -78,6 +78,15 @@ let delete_json url =
 let post_admin_user json_obj =
   post_json (base_url ^ "/admin/users") (Yojson.Basic.to_string json_obj)
 
+let post_auth_password ~current_password ~new_password () =
+  let request =
+    Openapi.AuthPasswordPostRequest.create ~current_password ~new_password ()
+  in
+  post_json
+    (base_url ^ "/auth/password")
+    (Openapi.AuthPasswordPostRequest.to_yojson request
+     |> Yojson.Safe.to_string)
+
 let get_admin_users () = fetch_json (base_url ^ "/admin/users")
 
 let put_admin_user user_id json_obj =
