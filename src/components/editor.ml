@@ -3,7 +3,11 @@ open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 
 let codeboard =
-  div ~a:[a_id "codeboard"; a_style "height: 100%; min-height: 0;"] []
+  div
+    ~a:
+      [ a_id "codeboard"
+      ; a_style "height: 100%; min-height: 0; min-width: 0; overflow: hidden;" ]
+    []
 
 let settings_theme = ref ""
 
@@ -134,10 +138,10 @@ let save_state () = ()
 let content () =
   section
     ~a:
-      [ a_class ["panel-section"; "container-fluid"; "py-1"]
-      ; a_style "height: 100%; min-height: 0;" ]
+       [ a_class ["panel-section"; "container-fluid"; "py-1"]
+       ; a_style "height: 100%; min-height: 0; min-width: 0; overflow: hidden;" ]
     [ div
         ~a:
-          [ a_class ["contest-card"; "rounded"; "p-1"; "shadow-sm"]
-          ; a_style "height: 100%; min-height: 0;" ]
+           [ a_class ["contest-card"; "rounded"; "p-1"; "shadow-sm"]
+           ; a_style "height: 100%; min-height: 0; min-width: 0; overflow: hidden;" ]
          [codeboard] ]

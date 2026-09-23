@@ -28,11 +28,13 @@ let init () =
 let render () =
   let content_short ~mobile =
     div
-      ~a:[a_class ["flex-grow-1"]; a_style "height: 100%;"]
+       ~a:
+         [ a_class ["flex-grow-1"]
+         ; a_style "height: 100%; min-height: 0; min-width: 0;" ]
       [ main
           ~a:
             [ a_class ["d-flex"; "flex-column"; "panel"]
-            ; a_style "height: 100%;" ]
+             ; a_style "height: 100%; min-height: 0; min-width: 0;" ]
           [ Components.Codebar.content ~mobile ()
           ; Components.Testbar.content ()
           ; Components.Tabbar.content ()
@@ -40,11 +42,13 @@ let render () =
   in
   let content_wide =
     div
-      ~a:[a_class ["flex-grow-1"]; a_style "height: 100%;"]
+       ~a:
+         [ a_class ["flex-grow-1"]
+         ; a_style "height: 100%; min-height: 0; min-width: 0;" ]
       [ main
           ~a:
             [ a_class ["d-flex"; "flex-column"; "panel"]
-            ; a_style "height: 100%;" ]
+             ; a_style "height: 100%; min-height: 0; min-width: 0;" ]
           [ Components.Codebar.content ~mobile:false ()
           ; div
               ~a:
@@ -52,7 +56,9 @@ let render () =
                 ; a_style "height: 100%; min-height: 0;" ]
               [ (* LEFT: tabbar + editor *)
                 div
-                  ~a:[a_class ["flex-grow-1"; "d-flex"; "flex-column"]]
+                 ~a:
+                   [ a_class ["flex-grow-1"; "d-flex"; "flex-column"]
+                   ; a_style "min-height: 0; min-width: 0; width: 70%;" ]
                   [Components.Tabbar.content (); Components.Editor.content ()]
               ; (* RIGHT: testbar (only spans tabbar + editor) *)
                 aside

@@ -46,7 +46,14 @@ body {
 
 /* CodeMirror styles */
 .CodeMirror {
-  height: inherit !important;
+  height: 100% !important;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+#codeboard .CodeMirror-scroll {
+  overflow: auto !important;
 }
 
 #codeboard .CodeMirror,
