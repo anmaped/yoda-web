@@ -50,6 +50,12 @@ class type codeMirror = object
   method refresh : unit Js.meth
 end
 
+let auto_save_enabled = ref false
+
+let set_auto_save enabled = auto_save_enabled := enabled
+
+let is_auto_save_enabled () = !auto_save_enabled
+
 let editor =
   let textarea = textarea_or_create ~textarea_id:"codeboard-editor" in
   (* Ensure CodeMirror is loaded *)

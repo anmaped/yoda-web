@@ -11,17 +11,25 @@ let init () =
   (* load all state before starting the auto-save loop *)
   Components.Editor.load_state () ;
   Components.Testbar.load_state () ;
-  let rec save_state_loop () =
-    Components.Codebar.show Components.Codebar.spinner ;
+  if not (Components.Editor.is_auto_save_enabled ()) then
     Components.Codebar.update_status_bar ~no_time:true
-      (I18n.t "codebar_saving") ;
-    Components.Tabbar.save_active_editor_content () ;
-    Components.Editor.save_state () ;
-    Components.Testbar.save_state () ;
-    Js_of_ocaml_lwt.Lwt_js.sleep 1.0 >>= fun () ->
-    Components.Codebar.update_status_bar (I18n.t "codebar_all_changes_saved") ;
-    Components.Codebar.hide Components.Codebar.spinner ;
-    Js_of_ocaml_lwt.Lwt_js.sleep 60.0 >>= fun () -> save_state_loop ()
+      (I18n.t "codebar_auto_save_disabled") ;
+  let rec save_state_loop () =
+    if Components.Editor.is_auto_save_enabled () then (
+      Components.Codebar.show Components.Codebar.spinner ;
+      Components.Codebar.update_status_bar ~no_time:true
+        (I18n.t "codebar_saving") ;
+      Components.Tabbar.save_active_editor_content () ;
+      Components.Editor.save_state () ;
+      Components.Testbar.save_state () ;
+      Js_of_ocaml_lwt.Lwt_js.sleep 1.0 >>= fun () ->
+      Components.Codebar.update_status_bar
+        (I18n.t "codebar_all_changes_saved") ;
+      Components.Codebar.hide Components.Codebar.spinner ;
+      Js_of_ocaml_lwt.Lwt_js.sleep 60.0 >>= fun () -> save_state_loop () )
+    else Js_of_ocaml_lwt.Lwt_js.sleep 1.0 >>= fun () ->       
+      Components.Codebar.hide Components.Codebar.spinner ;
+ save_state_loop ()
   in
   Lwt.async save_state_loop
 

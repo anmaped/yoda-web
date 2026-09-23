@@ -18,6 +18,7 @@ type translations =
   ; tabbar_set_skeleton_title: string
   ; codebar_all_changes_saved: string
   ; codebar_saving: string
+  ; codebar_auto_save_disabled: string
   ; spinner_modal_processing: string
   ; spinner_modal_ready: string
   ; codebar_local_run: string
@@ -233,6 +234,7 @@ let en =
   ; tabbar_set_skeleton_title= "Set skeleton"
   ; codebar_all_changes_saved= "All changes saved"
   ; codebar_saving= "Saving..."
+  ; codebar_auto_save_disabled= "Auto-save disabled"
   ; spinner_modal_processing= "Processing..."
   ; spinner_modal_ready= "Ready to start operation."
   ; codebar_local_run= "Local Run"
@@ -458,6 +460,7 @@ let fr =
   ; tabbar_set_skeleton_title= "Définir le squelette"
   ; codebar_all_changes_saved= "Toutes les modifications enregistrées"
   ; codebar_saving= "Enregistrement en cours..."
+  ; codebar_auto_save_disabled= "Sauvegarde automatique désactivée"
   ; spinner_modal_processing= "Traitement en cours..."
   ; spinner_modal_ready= "Prêt à démarrer."
   ; codebar_local_run= "Exécution locale"
@@ -689,6 +692,7 @@ let es =
   ; tabbar_set_skeleton_title= "Establecer esqueleto"
   ; codebar_all_changes_saved= "Todos los cambios guardados"
   ; codebar_saving= "Guardando..."
+  ; codebar_auto_save_disabled= "Guardado automático desactivado"
   ; spinner_modal_processing= "Procesando..."
   ; spinner_modal_ready= "Listo para comenzar."
   ; codebar_local_run= "Ejecución local"
@@ -917,6 +921,7 @@ let pt =
   ; tabbar_set_skeleton_title= "Definir esqueleto"
   ; codebar_all_changes_saved= "Todas as alterações guardadas"
   ; codebar_saving= "Guardando..."
+  ; codebar_auto_save_disabled= "Gravação automática desativada"
   ; spinner_modal_processing= "Processando..."
   ; spinner_modal_ready= "Pronto para começar."
   ; codebar_local_run= "Execução local"
@@ -1142,6 +1147,7 @@ let ar =
   ; tabbar_set_skeleton_title= "تعيين الهيكل العظمي"
   ; codebar_all_changes_saved= "تم حفظ جميع التغييرات"
   ; codebar_saving= "جارٍ الحفظ..."
+  ; codebar_auto_save_disabled= "تم تعطيل الحفظ التلقائي"
   ; spinner_modal_processing= "جارٍ المعالجة..."
   ; spinner_modal_ready= "جاهز للبدء."
   ; codebar_local_run= "تشغيل محلي"
@@ -1364,6 +1370,7 @@ let map : translations -> (string, string) Hashtbl.t =
   add "tabbar_set_skeleton_title" tr.tabbar_set_skeleton_title ;
   add "codebar_all_changes_saved" tr.codebar_all_changes_saved ;
   add "codebar_saving" tr.codebar_saving ;
+  add "codebar_auto_save_disabled" tr.codebar_auto_save_disabled ;
   add "spinner_modal_processing" tr.spinner_modal_processing ;
   add "spinner_modal_ready" tr.spinner_modal_ready ;
   add "codebar_local_run" tr.codebar_local_run ;

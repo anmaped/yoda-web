@@ -70,7 +70,15 @@ let set_line_wrapping b =
   Components.Editor.set_line_wrapping b
 
 let set_auto_save b =
-  Helpers.set_local_variable key_auto_save (string_of_bool b)
+  Helpers.set_local_variable key_auto_save (string_of_bool b) ;
+  Components.Editor.set_auto_save b ;
+  if b then
+    Components.Codebar.update_status_bar ~no_time:true
+      (I18n.t "codebar_all_changes_saved")
+  else
+    Components.Codebar.update_status_bar ~no_time:true
+      (I18n.t "codebar_auto_save_disabled") ;
+  Helpers.trigger_render ()
 
 let get_lang () =
   match Helpers.get_local_variable key_language with
@@ -122,7 +130,8 @@ let init () =
   apply_theme (get_theme ()) ;
   set_font_size (get_font_size ()) ;
   set_tab_size (get_tab_size ()) ;
-  set_line_wrapping (get_line_wrapping ())
+  set_line_wrapping (get_line_wrapping ()) ;
+  Components.Editor.set_auto_save (get_auto_save ())
 
 (* Settings referrer helper *)
 let save_referrer () =
@@ -289,7 +298,7 @@ let render_settings_tab () =
               ; a_onclick (fun _ ->
                     set_lang "en" ;
                     set_theme "eclipse" ;
-                    set_font_size 14 ;
+                    set_font_size 16 ;
                     set_tab_size 2 ;
                     set_line_wrapping true ;
                     set_auto_save true ;
