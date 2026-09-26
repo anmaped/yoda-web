@@ -2,7 +2,9 @@ open Js_of_ocaml_tyxml
 
 let render () =
   let open Tyxml_js.Html in
-  let ul = ul [] in
+  let ul =
+    ul ~a:[a_class ["contest-list"; "list-group"; "list-group-flush"]] []
+  in
   Components.Contest_list.content ul () ;
   let section =
     section
@@ -12,6 +14,9 @@ let render () =
           [ div
               ~a:[a_class ["card-header"]]
               [h2 ~a:[a_class ["h5"; "mb-0"]] [txt (I18n.t "contests_title")]]
+          ; div
+              ~a:[a_class ["contest-selection-hint"; "text-body-secondary"]]
+              [txt (I18n.t "problems_select_contest")]
           ; ul ] ]
   in
   let panel =
