@@ -98,6 +98,11 @@ let submission_row (submission : Api.Openapi.submission) problem lang =
       | Some action -> [action]
       | None -> []
     in
+    let source_action =
+      match Submissions_list_details.source_artifacts_action submission with
+      | Some action -> [action]
+      | None -> []
+    in
     let reeval_action =
       if Helpers.is_judge_or_admin () then
         [ button
@@ -117,7 +122,7 @@ let submission_row (submission : Api.Openapi.submission) problem lang =
             [Icons.reeval_icon ()] ]
       else []
     in
-    reeval_action @ results_action
+    reeval_action @ results_action @ source_action
   in
   tr
     ( [ td ~a:[a_class ["ps-3"]] [txt (string_of_int id)]
@@ -127,7 +132,7 @@ let submission_row (submission : Api.Openapi.submission) problem lang =
           [span ~a:[a_class (badge_class result)] [txt (status_label result)]]
       ; td [txt time] ]
     @
-    if action_buttons = [] then []
+    if action_buttons = [] then [td []]
     else
       [ td
           ~a:[a_style "text-align:center; vertical-align: middle"]
