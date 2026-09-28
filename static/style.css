@@ -150,8 +150,27 @@ body {
   }
 }
 
+.problem-list-item-unselected {
+  animation: problem-selection-pulse 0.8s ease-in-out infinite alternate;
+}
+
+.problem-list-item-unselected > td {
+  animation: problem-selection-pulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes problem-selection-pulse {
+  from {
+    background-color: transparent;
+  }
+
+  to {
+    background-color: rgba(var(--bs-primary-rgb), 0.35);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .contest-list-item {
+  .contest-list-item,
+  .problem-list-item-unselected {
     animation: none;
   }
 }

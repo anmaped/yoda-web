@@ -60,8 +60,9 @@ let content ~contest_id ~problem_id () =
             Dom.appendChild
               (Tyxml_js.To_dom.of_div subcontainer)
               (Tyxml_js.To_dom.of_p (p [txt (I18n.t "problem_not_found")]))
-        | Some problem ->
-            Dom.appendChild
+         | Some problem ->
+             Option.iter Model.Problem_state.mark_problem_viewed problem.id ;
+             Dom.appendChild
               (Tyxml_js.To_dom.of_div subcontainer)
               (Tyxml_js.To_dom.of_section (problem_view problem)) ) ;
         Lwt.return_unit ) ;

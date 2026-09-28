@@ -17,7 +17,7 @@ let content ~contest_id ~problem_row ~tbody () : unit =
         in
         List.iter
           (fun (p : Api.Openapi.problem) ->
-            let tr_elem = problem_row p.code p.title in
+            let tr_elem = problem_row p.id p.code p.title in
             Dom.appendChild tbody (Tyxml_js.To_dom.of_tr tr_elem) )
           problems ;
         Lwt.return_unit ) ;

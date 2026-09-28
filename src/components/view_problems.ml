@@ -2,14 +2,23 @@ open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 
 (* Function to generate a table row for a problem *)
-let problem_row id name =
+let problem_row id code title =
+  let row_class =
+    match id with
+    | Some problem_id
+      when List.mem problem_id
+             (Model.Problem_state.get_viewed_problem_ids ()) ->
+        []
+    | _ -> ["problem-list-item-unselected"]
+  in
   tr
-    [ td ~a:[a_class ["ps-3"]] [txt id]
+    ~a:[a_class row_class]
+    [ td ~a:[a_class ["ps-3"]] [txt code]
     ; td
         ~a:[a_class ["p-0"]]
         [ a
-            ~a:[a_href ("#show-problem-" ^ id); a_class ["p-0"; "m-0"]]
-            [txt name] ] ]
+            ~a:[a_href ("#show-problem-" ^ code); a_class ["p-0"; "m-0"]]
+            [txt title] ] ]
 
 (* Main content function generating the table *)
 let content () =
