@@ -137,11 +137,12 @@ let action submission_id (submission : Api.Openapi.submission) =
         match availability submission.details with
         | Complete ->
             ( ["btn"; "btn-sm"; "btn-outline-success"]
-            , if has_compile_error then "View errors" else "View results" )
+            , if has_compile_error then I18n.t "submission_view_errors"
+              else I18n.t "submission_view_results" )
         | Partial ->
             ( ["btn"; "btn-sm"; "btn-outline-warning"]
-            , if has_compile_error then "View errors"
-              else "View partial results" )
+            , if has_compile_error then I18n.t "submission_view_errors"
+              else I18n.t "submission_view_results" )
         | Unavailable -> ([], "")
       in
       Some
@@ -240,7 +241,7 @@ let source_artifacts_action (submission : Api.Openapi.submission) =
         (button
            ~a:
              [ a_class (classes true)
-             ; a_title "View submitted source"
+             ; a_title (I18n.t "submission_view_source")
              ; a_onclick (fun _ ->
                    show_source_artifacts submission.id ;
                    false ) ]
@@ -250,7 +251,7 @@ let source_artifacts_action (submission : Api.Openapi.submission) =
         (button
            ~a:
              [ a_class (classes false)
-             ; a_title "View submitted source"
+             ; a_title (I18n.t "submission_view_source")
              ; a_onclick (fun _ ->
                    show_source_artifacts submission.id ;
                    false ) ]

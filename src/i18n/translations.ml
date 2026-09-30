@@ -33,6 +33,9 @@ type translations =
   ; submission_sending: string
   ; submission_processing: string
   ; submission_result: string
+  ; submission_view_results: string
+  ; submission_view_errors: string
+  ; submission_view_source: string
   ; modal_close: string
   ; problem_time_limit: string
   ; problem_memory_limit: string
@@ -84,8 +87,8 @@ type translations =
   ; settings_appearance_title: string
   ; settings_editor_title: string
   ; settings_behavior_title: string
-   ; settings_tab_general: string
-   ; settings_tab_password: string
+  ; settings_tab_general: string
+  ; settings_tab_password: string
   ; settings_tab_yodac: string
   ; settings_tab_users: string
   ; settings_tab_stats: string
@@ -93,19 +96,19 @@ type translations =
   ; settings_line_wrap_label: string
   ; settings_auto_save_label: string
   ; settings_admin_badge: string
-   ; settings_judge_badge: string
-   ; password_change_title: string
-   ; password_change_description: string
-   ; password_current_label: string
-   ; password_new_label: string
-   ; password_confirm_label: string
-   ; password_change_submit: string
-   ; password_validation_required: string
-   ; password_validation_mismatch: string
-   ; password_validation_same: string
-   ; password_notice_updated: string
-   ; password_error_current: string
-   ; password_error_update: string
+  ; settings_judge_badge: string
+  ; password_change_title: string
+  ; password_change_description: string
+  ; password_current_label: string
+  ; password_new_label: string
+  ; password_confirm_label: string
+  ; password_change_submit: string
+  ; password_validation_required: string
+  ; password_validation_mismatch: string
+  ; password_validation_same: string
+  ; password_notice_updated: string
+  ; password_error_current: string
+  ; password_error_update: string
   ; config_meta_version: string
   ; config_meta_updated: string
   ; config_meta_by: string
@@ -261,6 +264,9 @@ let en =
   ; submission_sending= "Sending your solution..."
   ; submission_processing= "Processing your solution... (polling every 2s)"
   ; submission_result= "Result:"
+  ; submission_view_results= "View results"
+  ; submission_view_errors= "View errors"
+  ; submission_view_source= "View submitted source"
   ; modal_close= "Close"
   ; codebar_run= "Run the code"
   ; codebar_confirm_run= "Do you want to run the '%s' code ?"
@@ -318,27 +324,28 @@ let en =
   ; settings_appearance_title= "Appearance"
   ; settings_editor_title= "Editor"
   ; settings_behavior_title= "Behavior"
-   ; settings_tab_general= "General"
-   ; settings_tab_password= "Password"
+  ; settings_tab_general= "General"
+  ; settings_tab_password= "Password"
   ; settings_tab_yodac= "YodaC"
   ; settings_tab_users= "Users"
   ; settings_tab_stats= "Stats"
   ; settings_line_wrap_label= "Line Wrapping"
   ; settings_auto_save_label= "Auto-save"
   ; settings_admin_badge= "Admin Access"
-   ; settings_judge_badge= "Judge Access"
-   ; password_change_title= "Change password"
-   ; password_change_description= "Update the password for your account."
-   ; password_current_label= "Current password"
-   ; password_new_label= "New password"
-   ; password_confirm_label= "Confirm new password"
-   ; password_change_submit= "Change password"
-   ; password_validation_required= "All password fields are required."
-   ; password_validation_mismatch= "The new passwords do not match."
-   ; password_validation_same= "The new password must differ from the current password."
-   ; password_notice_updated= "Password changed successfully."
-   ; password_error_current= "The current password is incorrect."
-   ; password_error_update= "Failed to change password."
+  ; settings_judge_badge= "Judge Access"
+  ; password_change_title= "Change password"
+  ; password_change_description= "Update the password for your account."
+  ; password_current_label= "Current password"
+  ; password_new_label= "New password"
+  ; password_confirm_label= "Confirm new password"
+  ; password_change_submit= "Change password"
+  ; password_validation_required= "All password fields are required."
+  ; password_validation_mismatch= "The new passwords do not match."
+  ; password_validation_same=
+      "The new password must differ from the current password."
+  ; password_notice_updated= "Password changed successfully."
+  ; password_error_current= "The current password is incorrect."
+  ; password_error_update= "Failed to change password."
   ; settings_tab_problems= "Problems"
   ; config_meta_version= "Version: %s"
   ; config_meta_updated= "Updated: %s"
@@ -500,6 +507,9 @@ let fr =
   ; submission_sending= "Envoi de votre solution..."
   ; submission_processing= "Traitement en cours... (sonde toutes les 2s)"
   ; submission_result= "Résultat :"
+  ; submission_view_results= "Voir les résultats"
+  ; submission_view_errors= "Voir les erreurs"
+  ; submission_view_source= "Voir le code soumis"
   ; modal_close= "Fermer"
   ; codebar_run= "Exécuter le code"
   ; codebar_confirm_run= "Voulez-vous exécuter le code '%s' ?"
@@ -558,27 +568,31 @@ let fr =
   ; settings_appearance_title= "Apparence"
   ; settings_editor_title= "Éditeur"
   ; settings_behavior_title= "Comportement"
-   ; settings_tab_general= "Général"
-   ; settings_tab_password= "Mot de passe"
+  ; settings_tab_general= "Général"
+  ; settings_tab_password= "Mot de passe"
   ; settings_tab_yodac= "YodaC"
   ; settings_tab_users= "Utilisateurs"
   ; settings_tab_problems= "Problèmes"
   ; settings_line_wrap_label= "Retour à la ligne"
   ; settings_auto_save_label= "Sauvegarde auto."
   ; settings_admin_badge= "Accès Administrateur"
-   ; settings_judge_badge= "Accès Juge"
-   ; password_change_title= "Changer le mot de passe"
-   ; password_change_description= "Mettez à jour le mot de passe de votre compte."
-   ; password_current_label= "Mot de passe actuel"
-   ; password_new_label= "Nouveau mot de passe"
-   ; password_confirm_label= "Confirmer le nouveau mot de passe"
-   ; password_change_submit= "Changer le mot de passe"
-   ; password_validation_required= "Tous les champs du mot de passe sont requis."
-   ; password_validation_mismatch= "Les nouveaux mots de passe ne correspondent pas."
-   ; password_validation_same= "Le nouveau mot de passe doit être différent de l'ancien."
-   ; password_notice_updated= "Mot de passe modifié avec succès."
-   ; password_error_current= "Le mot de passe actuel est incorrect."
-   ; password_error_update= "Échec du changement de mot de passe."
+  ; settings_judge_badge= "Accès Juge"
+  ; password_change_title= "Changer le mot de passe"
+  ; password_change_description=
+      "Mettez à jour le mot de passe de votre compte."
+  ; password_current_label= "Mot de passe actuel"
+  ; password_new_label= "Nouveau mot de passe"
+  ; password_confirm_label= "Confirmer le nouveau mot de passe"
+  ; password_change_submit= "Changer le mot de passe"
+  ; password_validation_required=
+      "Tous les champs du mot de passe sont requis."
+  ; password_validation_mismatch=
+      "Les nouveaux mots de passe ne correspondent pas."
+  ; password_validation_same=
+      "Le nouveau mot de passe doit être différent de l'ancien."
+  ; password_notice_updated= "Mot de passe modifié avec succès."
+  ; password_error_current= "Le mot de passe actuel est incorrect."
+  ; password_error_update= "Échec du changement de mot de passe."
   ; config_meta_version= "Version : %s"
   ; config_meta_updated= "Mis à jour : %s"
   ; config_meta_by= "Par : %s"
@@ -745,6 +759,9 @@ let es =
   ; submission_sending= "Enviando tu solución..."
   ; submission_processing= "Procesando tu solución... (consultando cada 2s)"
   ; submission_result= "Resultado:"
+  ; submission_view_results= "Ver resultados"
+  ; submission_view_errors= "Ver errores"
+  ; submission_view_source= "Ver código enviado"
   ; modal_close= "Cerrar"
   ; codebar_run= "Ejecutar el código"
   ; codebar_confirm_run= "¿Quieres ejecutar el código '%s' ?"
@@ -803,27 +820,29 @@ let es =
   ; settings_appearance_title= "Apariencia"
   ; settings_editor_title= "Editor"
   ; settings_behavior_title= "Comportamiento"
-   ; settings_tab_general= "General"
-   ; settings_tab_password= "Contraseña"
+  ; settings_tab_general= "General"
+  ; settings_tab_password= "Contraseña"
   ; settings_tab_yodac= "YodaC"
   ; settings_tab_users= "Usuarios"
   ; settings_tab_problems= "Problemas"
   ; settings_line_wrap_label= "Envolver líneas"
   ; settings_auto_save_label= "Guardado automático"
   ; settings_admin_badge= "Acceso de Administrador"
-   ; settings_judge_badge= "Acceso de Juez"
-   ; password_change_title= "Cambiar contraseña"
-   ; password_change_description= "Actualiza la contraseña de tu cuenta."
-   ; password_current_label= "Contraseña actual"
-   ; password_new_label= "Nueva contraseña"
-   ; password_confirm_label= "Confirmar nueva contraseña"
-   ; password_change_submit= "Cambiar contraseña"
-   ; password_validation_required= "Todos los campos de contraseña son obligatorios."
-   ; password_validation_mismatch= "Las nuevas contraseñas no coinciden."
-   ; password_validation_same= "La nueva contraseña debe ser diferente de la actual."
-   ; password_notice_updated= "Contraseña cambiada correctamente."
-   ; password_error_current= "La contraseña actual es incorrecta."
-   ; password_error_update= "No se pudo cambiar la contraseña."
+  ; settings_judge_badge= "Acceso de Juez"
+  ; password_change_title= "Cambiar contraseña"
+  ; password_change_description= "Actualiza la contraseña de tu cuenta."
+  ; password_current_label= "Contraseña actual"
+  ; password_new_label= "Nueva contraseña"
+  ; password_confirm_label= "Confirmar nueva contraseña"
+  ; password_change_submit= "Cambiar contraseña"
+  ; password_validation_required=
+      "Todos los campos de contraseña son obligatorios."
+  ; password_validation_mismatch= "Las nuevas contraseñas no coinciden."
+  ; password_validation_same=
+      "La nueva contraseña debe ser diferente de la actual."
+  ; password_notice_updated= "Contraseña cambiada correctamente."
+  ; password_error_current= "La contraseña actual es incorrecta."
+  ; password_error_update= "No se pudo cambiar la contraseña."
   ; config_meta_version= "Versión: %s"
   ; config_meta_updated= "Actualizado: %s"
   ; config_meta_by= "Por: %s"
@@ -988,6 +1007,9 @@ let pt =
   ; submission_processing=
       "Processando sua solução... (verificando a cada 2s)"
   ; submission_result= "Resultado:"
+  ; submission_view_results= "Ver resultados"
+  ; submission_view_errors= "Ver erros"
+  ; submission_view_source= "Ver código enviado"
   ; modal_close= "Fechar"
   ; codebar_run= "Executar o código"
   ; codebar_confirm_run= "Deseja executar o código '%s' ?"
@@ -1045,27 +1067,28 @@ let pt =
   ; settings_appearance_title= "Aparência"
   ; settings_editor_title= "Editor"
   ; settings_behavior_title= "Comportamento"
-   ; settings_tab_general= "Geral"
-   ; settings_tab_password= "Senha"
+  ; settings_tab_general= "Geral"
+  ; settings_tab_password= "Senha"
   ; settings_tab_yodac= "YodaC"
   ; settings_tab_users= "Utilizadores"
   ; settings_tab_problems= "Problemas"
   ; settings_line_wrap_label= "Quebrar linhas"
   ; settings_auto_save_label= "Guarda de forma automática"
   ; settings_admin_badge= "Acesso de Administrador"
-   ; settings_judge_badge= "Acesso de Juiz"
-   ; password_change_title= "Alterar senha"
-   ; password_change_description= "Atualize a senha da sua conta."
-   ; password_current_label= "Senha atual"
-   ; password_new_label= "Nova senha"
-   ; password_confirm_label= "Confirmar nova senha"
-   ; password_change_submit= "Alterar senha"
-   ; password_validation_required= "Todos os campos de senha são obrigatórios."
-   ; password_validation_mismatch= "As novas senhas não coincidem."
-   ; password_validation_same= "A nova senha deve ser diferente da atual."
-   ; password_notice_updated= "Senha alterada com sucesso."
-   ; password_error_current= "A senha atual está incorreta."
-   ; password_error_update= "Falha ao alterar a senha."
+  ; settings_judge_badge= "Acesso de Juiz"
+  ; password_change_title= "Alterar senha"
+  ; password_change_description= "Atualize a senha da sua conta."
+  ; password_current_label= "Senha atual"
+  ; password_new_label= "Nova senha"
+  ; password_confirm_label= "Confirmar nova senha"
+  ; password_change_submit= "Alterar senha"
+  ; password_validation_required=
+      "Todos os campos de senha são obrigatórios."
+  ; password_validation_mismatch= "As novas senhas não coincidem."
+  ; password_validation_same= "A nova senha deve ser diferente da atual."
+  ; password_notice_updated= "Senha alterada com sucesso."
+  ; password_error_current= "A senha atual está incorreta."
+  ; password_error_update= "Falha ao alterar a senha."
   ; config_meta_version= "Versão: %s"
   ; config_meta_updated= "Atualizado: %s"
   ; config_meta_by= "Por: %s"
@@ -1225,6 +1248,9 @@ let ar =
   ; submission_sending= "جارٍ إرسال حلّك..."
   ; submission_processing= "جارٍ معالجة حلّك... (الاستعلام كل ثانيتين)"
   ; submission_result= "النتيجة:"
+  ; submission_view_results= "عرض النتائج"
+  ; submission_view_errors= "عرض الأخطاء"
+  ; submission_view_source= "عرض المصدر المرسل"
   ; modal_close= "إغلاق"
   ; codebar_run= "تشغيل الكود"
   ; codebar_confirm_run= "هل تريد تشغيل الكود '%s'?"
@@ -1282,27 +1308,27 @@ let ar =
   ; settings_appearance_title= "المظهر"
   ; settings_editor_title= "المحرر"
   ; settings_behavior_title= "السلوك"
-   ; settings_tab_general= "عام"
-   ; settings_tab_password= "كلمة المرور"
+  ; settings_tab_general= "عام"
+  ; settings_tab_password= "كلمة المرور"
   ; settings_tab_yodac= "يوداك"
   ; settings_tab_users= "المستخدمون"
   ; settings_tab_problems= "المشاكل"
   ; settings_line_wrap_label= "تغليف الأسطر"
   ; settings_auto_save_label= "حفظ تلقائي"
   ; settings_admin_badge= "وصول المسؤول"
-   ; settings_judge_badge= "وصول القاضي"
-   ; password_change_title= "تغيير كلمة المرور"
-   ; password_change_description= "حدّث كلمة مرور حسابك."
-   ; password_current_label= "كلمة المرور الحالية"
-   ; password_new_label= "كلمة المرور الجديدة"
-   ; password_confirm_label= "تأكيد كلمة المرور الجديدة"
-   ; password_change_submit= "تغيير كلمة المرور"
-   ; password_validation_required= "جميع حقول كلمة المرور مطلوبة."
-   ; password_validation_mismatch= "كلمتا المرور الجديدتان غير متطابقتين."
-   ; password_validation_same= "يجب أن تختلف كلمة المرور الجديدة عن الحالية."
-   ; password_notice_updated= "تم تغيير كلمة المرور بنجاح."
-   ; password_error_current= "كلمة المرور الحالية غير صحيحة."
-   ; password_error_update= "تعذر تغيير كلمة المرور."
+  ; settings_judge_badge= "وصول القاضي"
+  ; password_change_title= "تغيير كلمة المرور"
+  ; password_change_description= "حدّث كلمة مرور حسابك."
+  ; password_current_label= "كلمة المرور الحالية"
+  ; password_new_label= "كلمة المرور الجديدة"
+  ; password_confirm_label= "تأكيد كلمة المرور الجديدة"
+  ; password_change_submit= "تغيير كلمة المرور"
+  ; password_validation_required= "جميع حقول كلمة المرور مطلوبة."
+  ; password_validation_mismatch= "كلمتا المرور الجديدتان غير متطابقتين."
+  ; password_validation_same= "يجب أن تختلف كلمة المرور الجديدة عن الحالية."
+  ; password_notice_updated= "تم تغيير كلمة المرور بنجاح."
+  ; password_error_current= "كلمة المرور الحالية غير صحيحة."
+  ; password_error_update= "تعذر تغيير كلمة المرور."
   ; config_meta_version= "الإصدار: %s"
   ; config_meta_updated= "المحدّث: %s"
   ; config_meta_by= "بواسطة: %s"
@@ -1463,6 +1489,9 @@ let map : translations -> (string, string) Hashtbl.t =
   add "submission_sending" tr.submission_sending ;
   add "submission_processing" tr.submission_processing ;
   add "submission_result" tr.submission_result ;
+  add "submission_view_results" tr.submission_view_results ;
+  add "submission_view_errors" tr.submission_view_errors ;
+  add "submission_view_source" tr.submission_view_source ;
   add "modal_close" tr.modal_close ;
   add "problem_submit_solution" tr.problem_submit_solution ;
   add "problem_time_limit" tr.problem_time_limit ;
@@ -1514,27 +1543,27 @@ let map : translations -> (string, string) Hashtbl.t =
   add "settings_appearance_title" tr.settings_appearance_title ;
   add "settings_editor_title" tr.settings_editor_title ;
   add "settings_behavior_title" tr.settings_behavior_title ;
-   add "settings_tab_general" tr.settings_tab_general ;
-   add "settings_tab_password" tr.settings_tab_password ;
+  add "settings_tab_general" tr.settings_tab_general ;
+  add "settings_tab_password" tr.settings_tab_password ;
   add "settings_tab_yodac" tr.settings_tab_yodac ;
   add "settings_tab_users" tr.settings_tab_users ;
   add "settings_tab_problems" tr.settings_tab_problems ;
   add "settings_line_wrap_label" tr.settings_line_wrap_label ;
   add "settings_auto_save_label" tr.settings_auto_save_label ;
   add "settings_admin_badge" tr.settings_admin_badge ;
-   add "settings_judge_badge" tr.settings_judge_badge ;
-   add "password_change_title" tr.password_change_title ;
-   add "password_change_description" tr.password_change_description ;
-   add "password_current_label" tr.password_current_label ;
-   add "password_new_label" tr.password_new_label ;
-   add "password_confirm_label" tr.password_confirm_label ;
-   add "password_change_submit" tr.password_change_submit ;
-   add "password_validation_required" tr.password_validation_required ;
-   add "password_validation_mismatch" tr.password_validation_mismatch ;
-   add "password_validation_same" tr.password_validation_same ;
-   add "password_notice_updated" tr.password_notice_updated ;
-   add "password_error_current" tr.password_error_current ;
-   add "password_error_update" tr.password_error_update ;
+  add "settings_judge_badge" tr.settings_judge_badge ;
+  add "password_change_title" tr.password_change_title ;
+  add "password_change_description" tr.password_change_description ;
+  add "password_current_label" tr.password_current_label ;
+  add "password_new_label" tr.password_new_label ;
+  add "password_confirm_label" tr.password_confirm_label ;
+  add "password_change_submit" tr.password_change_submit ;
+  add "password_validation_required" tr.password_validation_required ;
+  add "password_validation_mismatch" tr.password_validation_mismatch ;
+  add "password_validation_same" tr.password_validation_same ;
+  add "password_notice_updated" tr.password_notice_updated ;
+  add "password_error_current" tr.password_error_current ;
+  add "password_error_update" tr.password_error_update ;
   add "config_meta_version" tr.config_meta_version ;
   add "config_meta_updated" tr.config_meta_updated ;
   add "config_meta_by" tr.config_meta_by ;
