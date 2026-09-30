@@ -127,12 +127,21 @@ let action submission_id (submission : Api.Openapi.submission) =
   match availability submission.details with
   | Unavailable -> None
   | Partial | Complete ->
+      let has_compile_error =
+        List.exists
+          (fun (detail : Api.Openapi.submissionDetail) ->
+            detail.status = "compile_error" )
+          submission.details
+      in
       let classes, title =
         match availability submission.details with
         | Complete ->
-            (["btn"; "btn-sm"; "btn-outline-success"], "View results")
+            ( ["btn"; "btn-sm"; "btn-outline-success"]
+            , if has_compile_error then "View errors" else "View results" )
         | Partial ->
-            (["btn"; "btn-sm"; "btn-outline-warning"], "View partial results")
+            ( ["btn"; "btn-sm"; "btn-outline-warning"]
+            , if has_compile_error then "View errors"
+              else "View partial results" )
         | Unavailable -> ([], "")
       in
       Some
