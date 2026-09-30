@@ -39,6 +39,47 @@ let detail_row number (detail : Api.Openapi.submissionDetail) =
       ; td [txt (format_time_ms detail.time_ms)] ]
     @ output_cells )
 
+let compile_error_row (detail : Api.Openapi.submissionDetail) =
+  let output_cells =
+    match detail.output with
+    | None ->
+        [ td [txt "Not available"]
+        ; td [txt "Not available"]
+        ; td [txt "Not available"] ]
+    | Some output ->
+        [ td [pre [txt output.stdout]]
+        ; td [pre [txt output.stderr]]
+        ; td [txt (string_of_int output.return_code)] ]
+  in
+  tr ([td [txt (status_label detail.status)]] @ output_cells)
+
+let is_compile_error (detail : Api.Openapi.submissionDetail) =
+  detail.status = "compile_error"
+
+let details_table details =
+  if List.exists is_compile_error details then
+    table
+      ~a:[a_class ["table"; "table-sm"; "table-striped"]]
+      ( tr
+          [ th [txt "Status"]
+          ; th [txt "Stdout"]
+          ; th [txt "Stderr"]
+          ; th [txt "Return code"] ]
+      :: List.map compile_error_row details )
+  else
+    table
+      ~a:[a_class ["table"; "table-sm"; "table-striped"]]
+      ( tr
+          [ th [txt "Test case"]
+          ; th [txt "Status"]
+          ; th [txt "Time"]
+          ; th [txt "Stdout"]
+          ; th [txt "Stderr"]
+          ; th [txt "Return code"] ]
+      :: List.mapi
+           (fun index detail -> detail_row (index + 1) detail)
+           details )
+
 let details_modal submission_id details =
   let name = "submission-details-" ^ string_of_int submission_id in
   div
@@ -67,21 +108,7 @@ let details_modal submission_id details =
                                   ("#" ^ name) ;
                                 false ) ]
                         [] ]
-                ; div
-                    ~a:[a_class ["modal-body"]]
-                    [ table
-                        ~a:[a_class ["table"; "table-sm"; "table-striped"]]
-                        ( tr
-                            [ th [txt "Test case"]
-                            ; th [txt "Status"]
-                            ; th [txt "Time"]
-                            ; th [txt "Stdout"]
-                            ; th [txt "Stderr"]
-                            ; th [txt "Return code"] ]
-                        :: List.mapi
-                             (fun index detail ->
-                               detail_row (index + 1) detail )
-                             details ) ]
+                ; div ~a:[a_class ["modal-body"]] [details_table details]
                 ; div
                     ~a:[a_class ["modal-footer"]]
                     [ button
@@ -116,7 +143,13 @@ let action submission_id (submission : Api.Openapi.submission) =
              ; a_onclick (fun _ ->
                    show submission_id submission.details ;
                    false ) ]
-           [Icons.table_icon ()] )
+           [ ( if
+                 List.exists
+                   (fun (detail : Api.Openapi.submissionDetail) ->
+                     detail.status = "compile_error" )
+                   submission.details
+               then Icons.exclamation_triangle_fill_icon ()
+               else Icons.table_icon () ) ] )
 
 let source_artifacts_modal submission_id artifacts =
   let name = "submission-source-artifacts-" ^ string_of_int submission_id in
