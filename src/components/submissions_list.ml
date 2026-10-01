@@ -140,7 +140,22 @@ let submission_row (submission : Api.Openapi.submission) problem lang =
               ~a:[a_class ["d-flex"; "justify-content-center"; "gap-1"]]
               action_buttons ] ] )
 
-let load_submissions table more_container contest_id last =
+let load_submissions table more_container loading_container contest_id last =
+  let loading_indicator () =
+    div
+      ~a:[a_class ["d-flex"; "align-items-center"; "justify-content-center"; "gap-2"]]
+      [ span
+          ~a:
+            [ a_class ["spinner-border"; "spinner-border-sm"]
+            ; a_aria "hidden" ["true"] ]
+          []
+      ; span [txt (I18n.t "submissions_loading")] ]
+  in
+  let loading_dom = Tyxml_js.To_dom.of_div loading_container in
+  Dom.appendChild loading_dom
+    (Tyxml_js.To_dom.of_div
+       (div ~a:[a_class ["text-muted"; "text-center"; "py-2"]]
+          [loading_indicator ()])) ;
   Lwt.async (fun () ->
       let url =
         Printf.sprintf "%s/contests/%d/submissions" Api.Helpers.base_url
@@ -240,6 +255,15 @@ let load_submissions table more_container contest_id last =
                   ; a_onclick (fun _ ->
                         if not !loading_more then begin
                           loading_more := true ;
+                          let container_dom = Tyxml_js.To_dom.of_div more_container in
+                          (match Js.Opt.to_option container_dom##.firstChild with
+                          | Some child -> Dom.removeChild container_dom child
+                          | None -> ()) ;
+                          Dom.appendChild container_dom
+                            (Tyxml_js.To_dom.of_div
+                               (div
+                                  ~a:[a_class ["text-muted"; "text-center"]]
+                                  [loading_indicator ()])) ;
                           visible_count :=
                             min (!visible_count + batch_size)
                               (List.length submissions) ;
@@ -261,10 +285,14 @@ let load_submissions table more_container contest_id last =
         load_rows (visible_submissions ())
         >>= fun rows ->
         replace_rows rows ;
+        (match Js.Opt.to_option loading_dom##.firstChild with
+        | Some child -> Dom.removeChild loading_dom child
+        | None -> ()) ;
         update_more_button () ;
         Lwt.return_unit )
 
-let rec sortable_th ((table, more_container, contest_id, last) as x) col =
+let rec sortable_th
+    ((table, more_container, loading_container, contest_id, last) as x) col =
   th
     ~a:
       [ a_style "cursor:pointer"
@@ -299,7 +327,7 @@ let rec sortable_th ((table, more_container, contest_id, last) as x) col =
                       node
                 | None -> () ) ;
             (* reload submissions *)
-             load_submissions table more_container contest_id last ;
+             load_submissions table more_container loading_container contest_id last ;
             false ) ]
     [txt (column_title col); sort_indicator col]
 
@@ -307,7 +335,7 @@ and submission_header x () =
   thead
     ~a:[a_class ["table-light"]]
     [ tr
-        ( [ sortable_th x Col_id
+         ( [ sortable_th x Col_id
           ; sortable_th x Col_problem
           ; sortable_th x Col_language
           ; sortable_th x Col_result
@@ -326,10 +354,12 @@ let content ~contest_id ~last () =
       []
   in
   let more_container = div ~a:[a_class ["px-3"; "pb-3"]] [] in
+  let loading_container = div [] in
   (* add thead *)
   Dom.appendChild
     (Tyxml_js.To_dom.of_table table)
     (Tyxml_js.To_dom.of_thead
-       (submission_header (table, more_container, contest_id, last) ()) ) ;
-  load_submissions table more_container contest_id last ;
-  div ~a:[a_class ["table-responsive"]] [table; more_container]
+       (submission_header
+          (table, more_container, loading_container, contest_id, last) ()) ) ;
+  load_submissions table more_container loading_container contest_id last ;
+  div ~a:[a_class ["table-responsive"]] [loading_container; table; more_container]

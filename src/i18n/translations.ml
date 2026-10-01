@@ -58,6 +58,7 @@ type translations =
   ; submissions_reevaluate: string
   ; submissions_recent_title: string
   ; submissions_show_more: string
+  ; submissions_loading: string
   ; settings_import_zip_description: string
   ; settings_import_zip_button: string
   ; settings_import_zip_card_title: string
@@ -293,7 +294,8 @@ let en =
   ; submissions_col_action= "Action"
   ; submissions_reevaluate= "Re-evaluate"
   ; submissions_recent_title= "Recent Submissions"
-  ; submissions_show_more= "Show more"
+   ; submissions_show_more= "Show more"
+   ; submissions_loading= "Loading submissions..."
   ; contests_title= "Contests"
   ; problems_col_id= "ID"
   ; problems_col_name= "Problem"
@@ -537,7 +539,8 @@ let fr =
   ; submissions_col_action= "Action"
   ; submissions_reevaluate= "Réévaluer"
   ; submissions_recent_title= "Soumissions récentes"
-  ; submissions_show_more= "Afficher plus"
+   ; submissions_show_more= "Afficher plus"
+   ; submissions_loading= "Chargement des soumissions..."
   ; contests_title= "Concours"
   ; problems_col_id= "ID"
   ; problems_col_name= "Problème"
@@ -790,7 +793,8 @@ let es =
   ; submissions_col_action= "Acción"
   ; submissions_reevaluate= "Re-evaluar"
   ; submissions_recent_title= "Envíos recientes"
-  ; submissions_show_more= "Mostrar más"
+   ; submissions_show_more= "Mostrar más"
+   ; submissions_loading= "Cargando envíos..."
   ; contests_title= "Concursos"
   ; problems_col_id= "ID"
   ; problems_col_name= "Problema"
@@ -1039,7 +1043,8 @@ let pt =
   ; submissions_col_action= "Ação"
   ; submissions_reevaluate= "Reavaliar"
   ; submissions_recent_title= "Envios recentes"
-  ; submissions_show_more= "Mostrar mais"
+   ; submissions_show_more= "Mostrar mais"
+   ; submissions_loading= "A carregar envios..."
   ; contests_title= "Concursos"
   ; problems_col_id= "ID"
   ; problems_col_name= "Problema"
@@ -1281,7 +1286,8 @@ let ar =
   ; submissions_col_action= "الإجراء"
   ; submissions_reevaluate= "إعادة تقييم"
   ; submissions_recent_title= "الإرسالات الأخيرة"
-  ; submissions_show_more= "عرض المزيد"
+   ; submissions_show_more= "عرض المزيد"
+   ; submissions_loading= "جارٍ تحميل الإرسالات..."
   ; contests_title= "المسابقات"
   ; problems_col_id= "المعرّف"
   ; problems_col_name= "المشكلة"
@@ -1519,7 +1525,8 @@ let map : translations -> (string, string) Hashtbl.t =
   add "submissions_col_action" tr.submissions_col_action ;
   add "submissions_reevaluate" tr.submissions_reevaluate ;
   add "submissions_recent_title" tr.submissions_recent_title ;
-  add "submissions_show_more" tr.submissions_show_more ;
+   add "submissions_show_more" tr.submissions_show_more ;
+   add "submissions_loading" tr.submissions_loading ;
   add "contests_title" tr.contests_title ;
   add "problems_col_id" tr.problems_col_id ;
   add "problems_col_name" tr.problems_col_name ;
