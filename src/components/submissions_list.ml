@@ -140,7 +140,7 @@ let submission_row (submission : Api.Openapi.submission) problem lang =
               ~a:[a_class ["d-flex"; "justify-content-center"; "gap-1"]]
               action_buttons ] ] )
 
-let load_submissions table contest_id last =
+let load_submissions table more_container contest_id last =
   Lwt.async (fun () ->
       let url =
         Printf.sprintf "%s/contests/%d/submissions" Api.Helpers.base_url
@@ -192,42 +192,79 @@ let load_submissions table contest_id last =
         let submissions =
           submissions |> List.rev
           |> List.sort (compare_submission problems_by_id)
-          |> List.filteri (fun i _ -> i < last)
         in
-        Lwt_list.map_s
-          (fun (sub : Api.Openapi.submission) ->
-            match Hashtbl.find_opt problems_by_id sub.problem_id with
-            | Some p ->
-                let lang = Option.value ~default:"Unknown" sub.language in
-                let row = submission_row sub p.code lang in
-                Lwt.return_some row
-            | None -> Lwt.return_none )
-          submissions
+        let batch_size = max 1 last in
+        let visible_count = ref (min batch_size (List.length submissions)) in
+        let loading_more = ref false in
+        let visible_submissions () =
+          submissions |> List.filteri (fun i _ -> i < !visible_count)
+        in
+        let replace_rows rows =
+          let table_dom = Tyxml_js.To_dom.of_table table in
+          let tbody_dom =
+            table_dom##getElementsByTagName (Js.string "tbody")
+          in
+          ( if tbody_dom##.length > 0 then
+              match Js.Opt.to_option (tbody_dom##item 0) with
+              | Some node -> Dom.removeChild table_dom node
+              | None -> () ) ;
+          let tbody = Dom_html.createTbody Dom_html.document in
+          Dom.appendChild table_dom tbody ;
+          List.iter
+            (fun row ->
+              match row with
+              | Some row -> Dom.appendChild tbody (Tyxml_js.To_dom.of_tr row)
+              | None -> () )
+            rows
+        in
+        let load_rows submissions =
+          Lwt_list.map_s
+            (fun (sub : Api.Openapi.submission) ->
+              match Hashtbl.find_opt problems_by_id sub.problem_id with
+              | Some p ->
+                  let lang = Option.value ~default:"Unknown" sub.language in
+                  Lwt.return_some (submission_row sub p.code lang)
+              | None -> Lwt.return_none)
+            submissions
+        in
+        let rec update_more_button () =
+          let container_dom = Tyxml_js.To_dom.of_div more_container in
+          (match Js.Opt.to_option container_dom##.firstChild with
+          | Some child -> Dom.removeChild container_dom child
+          | None -> ()) ;
+          if !visible_count < List.length submissions then begin
+            let more_button =
+              button
+                ~a:
+                  [ a_class ["btn"; "btn-outline-secondary"; "w-100"]
+                  ; a_onclick (fun _ ->
+                        if not !loading_more then begin
+                          loading_more := true ;
+                          visible_count :=
+                            min (!visible_count + batch_size)
+                              (List.length submissions) ;
+                          Lwt.async (fun () ->
+                              load_rows (visible_submissions ())
+                              >>= fun rows ->
+                              replace_rows rows ;
+                              loading_more := false ;
+                              update_more_button () ;
+                              Lwt.return_unit)
+                        end ;
+                        false) ]
+                [txt (I18n.t "submissions_show_more")]
+            in
+            Dom.appendChild container_dom
+              (Tyxml_js.To_dom.of_button more_button)
+          end
+        in
+        load_rows (visible_submissions ())
         >>= fun rows ->
-        (* Insert rows in the same order as submissions *)
-        let table_dom = Tyxml_js.To_dom.of_table table in
-        (* Remove existing rows *)
-        let tbody_dom =
-          table_dom##getElementsByTagName (Js.string "tbody")
-        in
-        ( if tbody_dom##.length > 0 then
-            match Js.Opt.to_option (tbody_dom##item 0) with
-            | Some node -> Dom.removeChild table_dom node
-            | None -> () ) ;
-        (* Create new tbody *)
-        let new_tbody = Dom_html.createTbody Dom_html.document in
-        Dom.appendChild table_dom new_tbody ;
-        (* Append rows to tbody *)
-        List.iter
-          (fun row ->
-            match row with
-            | Some row ->
-                Dom.appendChild new_tbody (Tyxml_js.To_dom.of_tr row)
-            | None -> () )
-          rows ;
+        replace_rows rows ;
+        update_more_button () ;
         Lwt.return_unit )
 
-let rec sortable_th ((table, contest_id, last) as x) col =
+let rec sortable_th ((table, more_container, contest_id, last) as x) col =
   th
     ~a:
       [ a_style "cursor:pointer"
@@ -262,7 +299,7 @@ let rec sortable_th ((table, contest_id, last) as x) col =
                       node
                 | None -> () ) ;
             (* reload submissions *)
-            load_submissions table contest_id last ;
+             load_submissions table more_container contest_id last ;
             false ) ]
     [txt (column_title col); sort_indicator col]
 
@@ -288,10 +325,11 @@ let content ~contest_id ~last () =
         ]
       []
   in
+  let more_container = div ~a:[a_class ["px-3"; "pb-3"]] [] in
   (* add thead *)
   Dom.appendChild
     (Tyxml_js.To_dom.of_table table)
     (Tyxml_js.To_dom.of_thead
-       (submission_header (table, contest_id, last) ()) ) ;
-  load_submissions table contest_id last ;
-  div ~a:[a_class ["table-responsive"]] [table]
+       (submission_header (table, more_container, contest_id, last) ()) ) ;
+  load_submissions table more_container contest_id last ;
+  div ~a:[a_class ["table-responsive"]] [table; more_container]
