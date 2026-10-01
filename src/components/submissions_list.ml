@@ -140,10 +140,16 @@ let submission_row (submission : Api.Openapi.submission) problem lang =
               ~a:[a_class ["d-flex"; "justify-content-center"; "gap-1"]]
               action_buttons ] ] )
 
-let load_submissions table more_container loading_container contest_id last =
+let load_submissions table more_container loading_container owner_filter
+    contest_id last =
   let loading_indicator () =
     div
-      ~a:[a_class ["d-flex"; "align-items-center"; "justify-content-center"; "gap-2"]]
+      ~a:
+        [ a_class
+            [ "d-flex"
+            ; "align-items-center"
+            ; "justify-content-center"
+            ; "gap-2" ] ]
       [ span
           ~a:
             [ a_class ["spinner-border"; "spinner-border-sm"]
@@ -152,10 +158,14 @@ let load_submissions table more_container loading_container contest_id last =
       ; span [txt (I18n.t "submissions_loading")] ]
   in
   let loading_dom = Tyxml_js.To_dom.of_div loading_container in
+  ( match Js.Opt.to_option loading_dom##.firstChild with
+  | Some child -> Dom.removeChild loading_dom child
+  | None -> () ) ;
   Dom.appendChild loading_dom
     (Tyxml_js.To_dom.of_div
-       (div ~a:[a_class ["text-muted"; "text-center"; "py-2"]]
-          [loading_indicator ()])) ;
+       (div
+          ~a:[a_class ["text-muted"; "text-center"; "py-2"]]
+          [loading_indicator ()] ) ) ;
   Lwt.async (fun () ->
       let url =
         Printf.sprintf "%s/contests/%d/submissions" Api.Helpers.base_url
@@ -164,6 +174,9 @@ let load_submissions table more_container loading_container contest_id last =
       Api.Helpers.fetch_json url
       >>= fun (resp, status) ->
       if status <> 200 then (
+        ( match Js.Opt.to_option loading_dom##.firstChild with
+        | Some child -> Dom.removeChild loading_dom child
+        | None -> () ) ;
         Console.console##log
           (Js.string
              (Printf.sprintf "Failed to fetch submissions: %d" status) ) ;
@@ -206,6 +219,8 @@ let load_submissions table more_container loading_container contest_id last =
           fetched_problems ;
         let submissions =
           submissions |> List.rev
+          |> List.filter (fun (sub : Api.Openapi.submission) ->
+              (not !owner_filter) || sub.owner = Some true )
           |> List.sort (compare_submission problems_by_id)
         in
         let batch_size = max 1 last in
@@ -239,14 +254,14 @@ let load_submissions table more_container loading_container contest_id last =
               | Some p ->
                   let lang = Option.value ~default:"Unknown" sub.language in
                   Lwt.return_some (submission_row sub p.code lang)
-              | None -> Lwt.return_none)
+              | None -> Lwt.return_none )
             submissions
         in
         let rec update_more_button () =
           let container_dom = Tyxml_js.To_dom.of_div more_container in
-          (match Js.Opt.to_option container_dom##.firstChild with
+          ( match Js.Opt.to_option container_dom##.firstChild with
           | Some child -> Dom.removeChild container_dom child
-          | None -> ()) ;
+          | None -> () ) ;
           if !visible_count < List.length submissions then begin
             let more_button =
               button
@@ -255,17 +270,22 @@ let load_submissions table more_container loading_container contest_id last =
                   ; a_onclick (fun _ ->
                         if not !loading_more then begin
                           loading_more := true ;
-                          let container_dom = Tyxml_js.To_dom.of_div more_container in
-                          (match Js.Opt.to_option container_dom##.firstChild with
+                          let container_dom =
+                            Tyxml_js.To_dom.of_div more_container
+                          in
+                          ( match
+                              Js.Opt.to_option container_dom##.firstChild
+                            with
                           | Some child -> Dom.removeChild container_dom child
-                          | None -> ()) ;
+                          | None -> () ) ;
                           Dom.appendChild container_dom
                             (Tyxml_js.To_dom.of_div
                                (div
                                   ~a:[a_class ["text-muted"; "text-center"]]
-                                  [loading_indicator ()])) ;
+                                  [loading_indicator ()] ) ) ;
                           visible_count :=
-                            min (!visible_count + batch_size)
+                            min
+                              (!visible_count + batch_size)
                               (List.length submissions) ;
                           Lwt.async (fun () ->
                               load_rows (visible_submissions ())
@@ -273,9 +293,9 @@ let load_submissions table more_container loading_container contest_id last =
                               replace_rows rows ;
                               loading_more := false ;
                               update_more_button () ;
-                              Lwt.return_unit)
+                              Lwt.return_unit )
                         end ;
-                        false) ]
+                        false ) ]
                 [txt (I18n.t "submissions_show_more")]
             in
             Dom.appendChild container_dom
@@ -285,14 +305,18 @@ let load_submissions table more_container loading_container contest_id last =
         load_rows (visible_submissions ())
         >>= fun rows ->
         replace_rows rows ;
-        (match Js.Opt.to_option loading_dom##.firstChild with
+        ( match Js.Opt.to_option loading_dom##.firstChild with
         | Some child -> Dom.removeChild loading_dom child
-        | None -> ()) ;
-        update_more_button () ;
-        Lwt.return_unit )
+        | None -> () ) ;
+        update_more_button () ; Lwt.return_unit )
 
 let rec sortable_th
-    ((table, more_container, loading_container, contest_id, last) as x) col =
+    ( ( table
+      , more_container
+      , loading_container
+      , owner_filter
+      , contest_id
+      , last ) as x ) col =
   th
     ~a:
       [ a_style "cursor:pointer"
@@ -327,7 +351,8 @@ let rec sortable_th
                       node
                 | None -> () ) ;
             (* reload submissions *)
-             load_submissions table more_container loading_container contest_id last ;
+            load_submissions table more_container loading_container
+              owner_filter contest_id last ;
             false ) ]
     [txt (column_title col); sort_indicator col]
 
@@ -335,7 +360,7 @@ and submission_header x () =
   thead
     ~a:[a_class ["table-light"]]
     [ tr
-         ( [ sortable_th x Col_id
+        ( [ sortable_th x Col_id
           ; sortable_th x Col_problem
           ; sortable_th x Col_language
           ; sortable_th x Col_result
@@ -344,7 +369,8 @@ and submission_header x () =
               ~a:[a_style "cursor:pointer"]
               [txt (I18n.t "submissions_col_action")] ] ) ]
 
-let content ~contest_id ~last () =
+let content ~contest_id ~last owner_filter reload () =
+  let reload_generation = ref 0 in
   let table =
     table
       ~a:
@@ -360,6 +386,20 @@ let content ~contest_id ~last () =
     (Tyxml_js.To_dom.of_table table)
     (Tyxml_js.To_dom.of_thead
        (submission_header
-          (table, more_container, loading_container, contest_id, last) ()) ) ;
-  load_submissions table more_container loading_container contest_id last ;
-  div ~a:[a_class ["table-responsive"]] [loading_container; table; more_container]
+          ( table
+          , more_container
+          , loading_container
+          , owner_filter
+          , contest_id
+          , last )
+          () ) ) ;
+  let do_reload () =
+    incr reload_generation ;
+    load_submissions table more_container loading_container owner_filter
+      contest_id last
+  in
+  do_reload () ;
+  reload := do_reload ;
+  div
+    [ loading_container
+    ; div ~a:[a_class ["table-responsive"]] [table; more_container] ]

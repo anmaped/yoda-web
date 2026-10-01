@@ -59,6 +59,7 @@ type translations =
   ; submissions_recent_title: string
   ; submissions_show_more: string
   ; submissions_loading: string
+  ; submissions_only_mine: string
   ; settings_import_zip_description: string
   ; settings_import_zip_button: string
   ; settings_import_zip_card_title: string
@@ -296,6 +297,7 @@ let en =
   ; submissions_recent_title= "Recent Submissions"
    ; submissions_show_more= "Show more"
    ; submissions_loading= "Loading submissions..."
+   ; submissions_only_mine= "Only my submissions"
   ; contests_title= "Contests"
   ; problems_col_id= "ID"
   ; problems_col_name= "Problem"
@@ -541,6 +543,7 @@ let fr =
   ; submissions_recent_title= "Soumissions récentes"
    ; submissions_show_more= "Afficher plus"
    ; submissions_loading= "Chargement des soumissions..."
+   ; submissions_only_mine= "Uniquement mes soumissions"
   ; contests_title= "Concours"
   ; problems_col_id= "ID"
   ; problems_col_name= "Problème"
@@ -795,6 +798,7 @@ let es =
   ; submissions_recent_title= "Envíos recientes"
    ; submissions_show_more= "Mostrar más"
    ; submissions_loading= "Cargando envíos..."
+   ; submissions_only_mine= "Solo mis envíos"
   ; contests_title= "Concursos"
   ; problems_col_id= "ID"
   ; problems_col_name= "Problema"
@@ -1045,6 +1049,7 @@ let pt =
   ; submissions_recent_title= "Envios recentes"
    ; submissions_show_more= "Mostrar mais"
    ; submissions_loading= "A carregar envios..."
+   ; submissions_only_mine= "Apenas os meus envios"
   ; contests_title= "Concursos"
   ; problems_col_id= "ID"
   ; problems_col_name= "Problema"
@@ -1288,6 +1293,7 @@ let ar =
   ; submissions_recent_title= "الإرسالات الأخيرة"
    ; submissions_show_more= "عرض المزيد"
    ; submissions_loading= "جارٍ تحميل الإرسالات..."
+   ; submissions_only_mine= "إرسالياتي فقط"
   ; contests_title= "المسابقات"
   ; problems_col_id= "المعرّف"
   ; problems_col_name= "المشكلة"
@@ -1527,6 +1533,7 @@ let map : translations -> (string, string) Hashtbl.t =
   add "submissions_recent_title" tr.submissions_recent_title ;
    add "submissions_show_more" tr.submissions_show_more ;
    add "submissions_loading" tr.submissions_loading ;
+   add "submissions_only_mine" tr.submissions_only_mine ;
   add "contests_title" tr.contests_title ;
   add "problems_col_id" tr.problems_col_id ;
   add "problems_col_name" tr.problems_col_name ;
