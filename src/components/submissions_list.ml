@@ -94,9 +94,19 @@ let format_time_ms ms =
   let s = total mod 60 in
   Printf.sprintf "%02d:%02d:%02d" h m s
 
-let submission_row (submission : Api.Openapi.submission) problem lang =
+let submission_row ?(usernames_by_id = None) (submission : Api.Openapi.submission)
+    problem lang =
   let id = submission.id in
-  let owner_id = Option.value ~default:"-" (Option.map string_of_int submission.owner_id) in
+  let owner =
+    match submission.owner_id with
+    | None -> "-"
+    | Some owner_id -> (
+        match usernames_by_id with
+        | Some usernames ->
+            Option.value ~default:(string_of_int owner_id)
+              (Hashtbl.find_opt usernames owner_id)
+        | None -> string_of_int owner_id )
+  in
   let result = status_of_string submission.status in
   let time = format_time_ms submission.time_ms in
   let action_buttons =
@@ -133,7 +143,7 @@ let submission_row (submission : Api.Openapi.submission) problem lang =
   in
   tr
      ( [ td ~a:[a_class ["ps-3"]] [txt (string_of_int id)]
-       ; td [txt owner_id]
+        ; td [txt owner]
       ; td [txt problem]
       ; td [txt lang]
       ; td
@@ -231,6 +241,24 @@ let load_submissions table more_container loading_container owner_filter
               (not !owner_filter) || sub.owner = Some true )
           |> List.sort (compare_submission problems_by_id)
         in
+        let usernames_by_id =
+          if Helpers.is_admin () then Some (Hashtbl.create 16) else None
+        in
+        (match usernames_by_id with
+        | None -> Lwt.return_unit
+        | Some usernames ->
+            Api.Helpers.get_admin_users () >>= fun (users_resp, users_status) ->
+            if users_status = 200 then begin
+              let users =
+                Api.Openapi.AdminUsersGetResponse2.of_yojson users_resp
+              in
+              List.iter
+                (fun (user : Api.Openapi.user) ->
+                  Hashtbl.replace usernames user.id user.username)
+                users
+            end ;
+            Lwt.return_unit)
+        >>= fun () ->
         let batch_size = max 1 last in
         let visible_count = ref (min batch_size (List.length submissions)) in
         let loading_more = ref false in
@@ -261,7 +289,8 @@ let load_submissions table more_container loading_container owner_filter
               match Hashtbl.find_opt problems_by_id sub.problem_id with
               | Some p ->
                   let lang = Option.value ~default:"Unknown" sub.language in
-                  Lwt.return_some (submission_row sub p.code lang)
+                  Lwt.return_some
+                    (submission_row ~usernames_by_id sub p.code lang)
               | None -> Lwt.return_none )
             submissions
         in
