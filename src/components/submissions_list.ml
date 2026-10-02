@@ -7,6 +7,7 @@ open Tyxml_js.Html
 
 type submission_column =
   | Col_id
+  | Col_owner
   | Col_problem
   | Col_language
   | Col_result
@@ -18,6 +19,7 @@ let sort_reverse = ref true
 
 let column_title = function
   | Col_id -> I18n.t "submissions_col_id"
+  | Col_owner -> I18n.t "submissions_col_owner"
   | Col_problem -> I18n.t "submissions_col_problem"
   | Col_language -> I18n.t "submissions_col_language"
   | Col_result -> I18n.t "submissions_col_result"
@@ -33,6 +35,10 @@ let compare_submission problems_by_id (a : Api.Openapi.submission)
   let result =
     match !sort_column with
     | Col_id -> Int.compare a.id b.id
+    | Col_owner ->
+        compare
+          (Option.value ~default:min_int a.owner_id)
+          (Option.value ~default:min_int b.owner_id)
     | Col_problem ->
         String.compare
           ( Hashtbl.find_opt problems_by_id a.problem_id
@@ -90,6 +96,7 @@ let format_time_ms ms =
 
 let submission_row (submission : Api.Openapi.submission) problem lang =
   let id = submission.id in
+  let owner_id = Option.value ~default:"-" (Option.map string_of_int submission.owner_id) in
   let result = status_of_string submission.status in
   let time = format_time_ms submission.time_ms in
   let action_buttons =
@@ -125,7 +132,8 @@ let submission_row (submission : Api.Openapi.submission) problem lang =
     reeval_action @ results_action @ source_action
   in
   tr
-    ( [ td ~a:[a_class ["ps-3"]] [txt (string_of_int id)]
+     ( [ td ~a:[a_class ["ps-3"]] [txt (string_of_int id)]
+       ; td [txt owner_id]
       ; td [txt problem]
       ; td [txt lang]
       ; td
@@ -325,7 +333,8 @@ let rec sortable_th
               (Js.string
                  (Printf.sprintf "Sorting by column: %s"
                     ( match col with
-                    | Col_id -> "ID"
+                     | Col_id -> "ID"
+                     | Col_owner -> "Owner"
                     | Col_problem -> "Problem"
                     | Col_language -> "Language"
                     | Col_result -> "Result"
@@ -360,7 +369,8 @@ and submission_header x () =
   thead
     ~a:[a_class ["table-light"]]
     [ tr
-        ( [ sortable_th x Col_id
+         ( [ sortable_th x Col_id
+           ; sortable_th x Col_owner
           ; sortable_th x Col_problem
           ; sortable_th x Col_language
           ; sortable_th x Col_result

@@ -50,6 +50,7 @@ type translations =
   ; subform_label_source: string
   ; subform_submit: string
   ; submissions_col_id: string
+  ; submissions_col_owner: string
   ; submissions_col_problem: string
   ; submissions_col_language: string
   ; submissions_col_result: string
@@ -288,6 +289,7 @@ let en =
   ; subform_label_source= "Source code:"
   ; subform_submit= "Submit"
   ; submissions_col_id= "#"
+  ; submissions_col_owner= "Owner"
   ; submissions_col_problem= "Problem"
   ; submissions_col_language= "Language"
   ; submissions_col_result= "Result"
@@ -534,6 +536,7 @@ let fr =
   ; subform_label_source= "Code source :"
   ; subform_submit= "Soumettre"
   ; submissions_col_id= "#"
+  ; submissions_col_owner= "Propriétaire"
   ; submissions_col_problem= "Problème"
   ; submissions_col_language= "Langage"
   ; submissions_col_result= "Résultat"
@@ -789,6 +792,7 @@ let es =
   ; subform_label_source= "Código fuente:"
   ; subform_submit= "Enviar"
   ; submissions_col_id= "#"
+  ; submissions_col_owner= "Propietario"
   ; submissions_col_problem= "Problema"
   ; submissions_col_language= "Lenguaje"
   ; submissions_col_result= "Resultado"
@@ -1040,6 +1044,7 @@ let pt =
   ; subform_label_source= "Código fonte:"
   ; subform_submit= "Enviar"
   ; submissions_col_id= "#"
+  ; submissions_col_owner= "Proprietário"
   ; submissions_col_problem= "Problema"
   ; submissions_col_language= "Linguagem"
   ; submissions_col_result= "Resultado"
@@ -1284,6 +1289,7 @@ let ar =
   ; subform_label_source= "الكود المصدري:"
   ; subform_submit= "إرسال"
   ; submissions_col_id= "#"
+  ; submissions_col_owner= "المالك"
   ; submissions_col_problem= "المشكلة"
   ; submissions_col_language= "اللغة"
   ; submissions_col_result= "النتيجة"
@@ -1524,6 +1530,7 @@ let map : translations -> (string, string) Hashtbl.t =
   add "subform_label_source" tr.subform_label_source ;
   add "subform_submit" tr.subform_submit ;
   add "submissions_col_id" tr.submissions_col_id ;
+  add "submissions_col_owner" tr.submissions_col_owner ;
   add "submissions_col_problem" tr.submissions_col_problem ;
   add "submissions_col_language" tr.submissions_col_language ;
   add "submissions_col_result" tr.submissions_col_result ;
