@@ -12,10 +12,14 @@ type submission_column =
   | Col_language
   | Col_result
   | Col_time
+  | Col_date
 
 let sort_column = ref Col_id
 
 let sort_reverse = ref true
+
+let submission_date (submission : Api.Openapi.submission) =
+  Option.value ~default:"-" submission.created_at
 
 let column_title = function
   | Col_id -> I18n.t "submissions_col_id"
@@ -24,6 +28,7 @@ let column_title = function
   | Col_language -> I18n.t "submissions_col_language"
   | Col_result -> I18n.t "submissions_col_result"
   | Col_time -> I18n.t "submissions_col_time"
+  | Col_date -> I18n.t "submissions_col_date"
 
 let sort_indicator col =
   if !sort_column <> col then txt ""
@@ -53,6 +58,7 @@ let compare_submission problems_by_id (a : Api.Openapi.submission)
           (Option.value ~default:"" b.language)
     | Col_result -> String.compare a.status b.status
     | Col_time -> Int.compare a.time_ms b.time_ms
+    | Col_date -> String.compare (submission_date a) (submission_date b)
   in
   if !sort_reverse then -result else result
 
@@ -94,21 +100,22 @@ let format_time_ms ms =
   let s = total mod 60 in
   Printf.sprintf "%02d:%02d:%02d" h m s
 
-let submission_row ?(usernames_by_id = None) (submission : Api.Openapi.submission)
-    problem lang =
+let submission_row ?(usernames_by_id = None)
+    (submission : Api.Openapi.submission) problem lang =
   let id = submission.id in
   let owner =
     match submission.owner_id with
     | None -> "-"
     | Some owner_id -> (
-        match usernames_by_id with
-        | Some usernames ->
-            Option.value ~default:(string_of_int owner_id)
-              (Hashtbl.find_opt usernames owner_id)
-        | None -> string_of_int owner_id )
+      match usernames_by_id with
+      | Some usernames ->
+          Option.value ~default:(string_of_int owner_id)
+            (Hashtbl.find_opt usernames owner_id)
+      | None -> string_of_int owner_id )
   in
   let result = status_of_string submission.status in
   let time = format_time_ms submission.time_ms in
+  let date = submission_date submission in
   let action_buttons =
     let results_action =
       match Submissions_list_details.action id submission with
@@ -142,13 +149,14 @@ let submission_row ?(usernames_by_id = None) (submission : Api.Openapi.submissio
     reeval_action @ results_action @ source_action
   in
   tr
-     ( [ td ~a:[a_class ["ps-3"]] [txt (string_of_int id)]
-        ; td [txt owner]
+    ( [ td ~a:[a_class ["ps-3"]] [txt (string_of_int id)]
+      ; td [txt owner]
       ; td [txt problem]
       ; td [txt lang]
       ; td
           [span ~a:[a_class (badge_class result)] [txt (status_label result)]]
-      ; td [txt time] ]
+      ; td [txt time]
+      ; td [txt date] ]
     @
     if action_buttons = [] then [td []]
     else
@@ -244,20 +252,21 @@ let load_submissions table more_container loading_container owner_filter
         let usernames_by_id =
           if Helpers.is_admin () then Some (Hashtbl.create 16) else None
         in
-        (match usernames_by_id with
-        | None -> Lwt.return_unit
-        | Some usernames ->
-            Api.Helpers.get_admin_users () >>= fun (users_resp, users_status) ->
-            if users_status = 200 then begin
-              let users =
-                Api.Openapi.AdminUsersGetResponse2.of_yojson users_resp
-              in
-              List.iter
-                (fun (user : Api.Openapi.user) ->
-                  Hashtbl.replace usernames user.id user.username)
-                users
-            end ;
-            Lwt.return_unit)
+        ( match usernames_by_id with
+          | None -> Lwt.return_unit
+          | Some usernames ->
+              Api.Helpers.get_admin_users ()
+              >>= fun (users_resp, users_status) ->
+              if users_status = 200 then begin
+                let users =
+                  Api.Openapi.AdminUsersGetResponse2.of_yojson users_resp
+                in
+                List.iter
+                  (fun (user : Api.Openapi.user) ->
+                    Hashtbl.replace usernames user.id user.username )
+                  users
+              end ;
+              Lwt.return_unit )
         >>= fun () ->
         let batch_size = max 1 last in
         let visible_count = ref (min batch_size (List.length submissions)) in
@@ -362,12 +371,13 @@ let rec sortable_th
               (Js.string
                  (Printf.sprintf "Sorting by column: %s"
                     ( match col with
-                     | Col_id -> "ID"
-                     | Col_owner -> "Owner"
+                    | Col_id -> "ID"
+                    | Col_owner -> "Owner"
                     | Col_problem -> "Problem"
                     | Col_language -> "Language"
                     | Col_result -> "Result"
-                    | Col_time -> "Time" ) ) ) ;
+                    | Col_time -> "Time"
+                    | Col_date -> "Date" ) ) ) ;
             if !sort_column = col then sort_reverse := not !sort_reverse
             else begin
               sort_column := col ;
@@ -398,12 +408,13 @@ and submission_header x () =
   thead
     ~a:[a_class ["table-light"]]
     [ tr
-         ( [ sortable_th x Col_id
-           ; sortable_th x Col_owner
+        ( [ sortable_th x Col_id
+          ; sortable_th x Col_owner
           ; sortable_th x Col_problem
           ; sortable_th x Col_language
           ; sortable_th x Col_result
-          ; sortable_th x Col_time ]
+          ; sortable_th x Col_time
+          ; sortable_th x Col_date ]
         @ [ th
               ~a:[a_style "cursor:pointer"]
               [txt (I18n.t "submissions_col_action")] ] ) ]

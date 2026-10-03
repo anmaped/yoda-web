@@ -55,6 +55,7 @@ type translations =
   ; submissions_col_language: string
   ; submissions_col_result: string
   ; submissions_col_time: string
+  ; submissions_col_date: string
   ; submissions_col_action: string
   ; submissions_reevaluate: string
   ; submissions_recent_title: string
@@ -294,6 +295,7 @@ let en =
   ; submissions_col_language= "Language"
   ; submissions_col_result= "Result"
   ; submissions_col_time= "Time"
+  ; submissions_col_date= "Date"
   ; submissions_col_action= "Action"
   ; submissions_reevaluate= "Re-evaluate"
   ; submissions_recent_title= "Recent Submissions"
@@ -541,6 +543,7 @@ let fr =
   ; submissions_col_language= "Langage"
   ; submissions_col_result= "Résultat"
   ; submissions_col_time= "Temps"
+  ; submissions_col_date= "Date"
   ; submissions_col_action= "Action"
   ; submissions_reevaluate= "Réévaluer"
   ; submissions_recent_title= "Soumissions récentes"
@@ -797,6 +800,7 @@ let es =
   ; submissions_col_language= "Lenguaje"
   ; submissions_col_result= "Resultado"
   ; submissions_col_time= "Tiempo"
+  ; submissions_col_date= "Fecha"
   ; submissions_col_action= "Acción"
   ; submissions_reevaluate= "Re-evaluar"
   ; submissions_recent_title= "Envíos recientes"
@@ -1049,6 +1053,7 @@ let pt =
   ; submissions_col_language= "Linguagem"
   ; submissions_col_result= "Resultado"
   ; submissions_col_time= "Tempo"
+  ; submissions_col_date= "Data"
   ; submissions_col_action= "Ação"
   ; submissions_reevaluate= "Reavaliar"
   ; submissions_recent_title= "Envios recentes"
@@ -1294,6 +1299,7 @@ let ar =
   ; submissions_col_language= "اللغة"
   ; submissions_col_result= "النتيجة"
   ; submissions_col_time= "الوقت"
+  ; submissions_col_date= "التاريخ"
   ; submissions_col_action= "الإجراء"
   ; submissions_reevaluate= "إعادة تقييم"
   ; submissions_recent_title= "الإرسالات الأخيرة"
@@ -1535,6 +1541,7 @@ let map : translations -> (string, string) Hashtbl.t =
   add "submissions_col_language" tr.submissions_col_language ;
   add "submissions_col_result" tr.submissions_col_result ;
   add "submissions_col_time" tr.submissions_col_time ;
+  add "submissions_col_date" tr.submissions_col_date ;
   add "submissions_col_action" tr.submissions_col_action ;
   add "submissions_reevaluate" tr.submissions_reevaluate ;
   add "submissions_recent_title" tr.submissions_recent_title ;

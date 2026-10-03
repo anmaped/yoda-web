@@ -1002,12 +1002,13 @@ type submission = {
   time_ms: int;
   memory_kb: int;
   details: submissionDetails;
+  created_at: string option;
   owner: bool option;
   owner_id: int option;
 }
 
-let create_submission ~id ~problem_id ?language ~status ~score ~time_ms ~memory_kb ~details ?owner ?owner_id () : submission =
-  { id; problem_id; language; status; score; time_ms; memory_kb; details; owner; owner_id }
+let create_submission ~id ~problem_id ?language ~status ~score ~time_ms ~memory_kb ~details ?created_at ?owner ?owner_id () : submission =
+  { id; problem_id; language; status; score; time_ms; memory_kb; details; created_at; owner; owner_id }
 
 let submission_of_yojson (x : Yojson.Safe.t) : submission =
   match x with
@@ -1062,6 +1063,11 @@ let submission_of_yojson (x : Yojson.Safe.t) : submission =
       | Some v -> submissionDetails_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submission" "details"
     in
+    let created_at =
+      match assoc "created_at" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
     let owner =
       match assoc "owner" with
       | None | Some `Null -> Option.None
@@ -1072,7 +1078,7 @@ let submission_of_yojson (x : Yojson.Safe.t) : submission =
       | None | Some `Null -> Option.None
       | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
     in
-    { id; problem_id; language; status; score; time_ms; memory_kb; details; owner; owner_id }
+    { id; problem_id; language; status; score; time_ms; memory_kb; details; created_at; owner; owner_id }
   | _ -> Atdml_runtime.Yojson.bad_type "submission" x
 
 let yojson_of_submission (x : submission) : Yojson.Safe.t =
@@ -1085,6 +1091,7 @@ let yojson_of_submission (x : submission) : Yojson.Safe.t =
     [("time_ms", Atdml_runtime.Yojson.yojson_of_int x.time_ms)];
     [("memory_kb", Atdml_runtime.Yojson.yojson_of_int x.memory_kb)];
     [("details", yojson_of_submissionDetails x.details)];
+    (match x.created_at with None -> [] | Some v -> [("created_at", Atdml_runtime.Yojson.yojson_of_string v)]);
     (match x.owner with None -> [] | Some v -> [("owner", Atdml_runtime.Yojson.yojson_of_bool v)]);
     (match x.owner_id with None -> [] | Some v -> [("owner_id", Atdml_runtime.Yojson.yojson_of_int v)]);
   ])
@@ -2646,4 +2653,3 @@ module AdminStatsResponse = struct
   let of_json = adminStatsResponse_of_json
   let to_json = json_of_adminStatsResponse
 end
-
