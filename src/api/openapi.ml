@@ -702,15 +702,71 @@ module User = struct
   let to_json = json_of_user
 end
 
+type oracleConfig = {
+  entrypoint: string;  (** Oracle checker entrypoint filename *)
+  args: string list option;  (** Optional argv list passed to oracle checker *)
+}
+
+let create_oracleConfig ~entrypoint ?args () : oracleConfig =
+  { entrypoint; args }
+
+let oracleConfig_of_yojson (x : Yojson.Safe.t) : oracleConfig =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let entrypoint =
+      match assoc "entrypoint" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "oracleConfig" "entrypoint"
+    in
+    let args =
+      match assoc "args" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some ((Atdml_runtime.Yojson.list_of_yojson Atdml_runtime.Yojson.string_of_yojson) v)
+    in
+    { entrypoint; args }
+  | _ -> Atdml_runtime.Yojson.bad_type "oracleConfig" x
+
+let yojson_of_oracleConfig (x : oracleConfig) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("entrypoint", Atdml_runtime.Yojson.yojson_of_string x.entrypoint)];
+    (match x.args with None -> [] | Some v -> [("args", (Atdml_runtime.Yojson.yojson_of_list Atdml_runtime.Yojson.yojson_of_string) v)]);
+  ])
+
+let oracleConfig_of_json s =
+  oracleConfig_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_oracleConfig x =
+  Yojson.Safe.to_string (yojson_of_oracleConfig x)
+
+module OracleConfig = struct
+  type nonrec t = oracleConfig
+  let create = create_oracleConfig
+  let of_yojson = oracleConfig_of_yojson
+  let to_yojson = yojson_of_oracleConfig
+  let of_json = oracleConfig_of_json
+  let to_json = json_of_oracleConfig
+end
+
 type testCaseCreateRequest = {
   id: int option;
   input: string;
   output: string;
   is_sample: bool;
+  oracle: oracleConfig option;
 }
 
-let create_testCaseCreateRequest ?id ~input ~output ~is_sample () : testCaseCreateRequest =
-  { id; input; output; is_sample }
+let create_testCaseCreateRequest ?id ~input ~output ~is_sample ?oracle () : testCaseCreateRequest =
+  { id; input; output; is_sample; oracle }
 
 let testCaseCreateRequest_of_yojson (x : Yojson.Safe.t) : testCaseCreateRequest =
   match x with
@@ -745,7 +801,12 @@ let testCaseCreateRequest_of_yojson (x : Yojson.Safe.t) : testCaseCreateRequest 
       | Some v -> Atdml_runtime.Yojson.bool_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "testCaseCreateRequest" "is_sample"
     in
-    { id; input; output; is_sample }
+    let oracle =
+      match assoc "oracle" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (oracleConfig_of_yojson v)
+    in
+    { id; input; output; is_sample; oracle }
   | _ -> Atdml_runtime.Yojson.bad_type "testCaseCreateRequest" x
 
 let yojson_of_testCaseCreateRequest (x : testCaseCreateRequest) : Yojson.Safe.t =
@@ -754,6 +815,7 @@ let yojson_of_testCaseCreateRequest (x : testCaseCreateRequest) : Yojson.Safe.t 
     [("input", Atdml_runtime.Yojson.yojson_of_string x.input)];
     [("output", Atdml_runtime.Yojson.yojson_of_string x.output)];
     [("is_sample", Atdml_runtime.Yojson.yojson_of_bool x.is_sample)];
+    (match x.oracle with None -> [] | Some v -> [("oracle", yojson_of_oracleConfig v)]);
   ])
 
 let testCaseCreateRequest_of_json s =
@@ -776,10 +838,11 @@ type testCase = {
   input: string;
   output: string;
   is_sample: bool;
+  oracle: oracleConfig option;
 }
 
-let create_testCase ~id ~input ~output ~is_sample () : testCase =
-  { id; input; output; is_sample }
+let create_testCase ~id ~input ~output ~is_sample ?oracle () : testCase =
+  { id; input; output; is_sample; oracle }
 
 let testCase_of_yojson (x : Yojson.Safe.t) : testCase =
   match x with
@@ -814,7 +877,12 @@ let testCase_of_yojson (x : Yojson.Safe.t) : testCase =
       | Some v -> Atdml_runtime.Yojson.bool_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "testCase" "is_sample"
     in
-    { id; input; output; is_sample }
+    let oracle =
+      match assoc "oracle" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (oracleConfig_of_yojson v)
+    in
+    { id; input; output; is_sample; oracle }
   | _ -> Atdml_runtime.Yojson.bad_type "testCase" x
 
 let yojson_of_testCase (x : testCase) : Yojson.Safe.t =
@@ -823,6 +891,7 @@ let yojson_of_testCase (x : testCase) : Yojson.Safe.t =
     [("input", Atdml_runtime.Yojson.yojson_of_string x.input)];
     [("output", Atdml_runtime.Yojson.yojson_of_string x.output)];
     [("is_sample", Atdml_runtime.Yojson.yojson_of_bool x.is_sample)];
+    (match x.oracle with None -> [] | Some v -> [("oracle", yojson_of_oracleConfig v)]);
   ])
 
 let testCase_of_json s =
@@ -840,14 +909,63 @@ module TestCase = struct
   let to_json = json_of_testCase
 end
 
+type submissionDetailOutputMeta = {
+  stderr_score: int option;
+}
+
+let create_submissionDetailOutputMeta ?stderr_score () : submissionDetailOutputMeta =
+  { stderr_score }
+
+let submissionDetailOutputMeta_of_yojson (x : Yojson.Safe.t) : submissionDetailOutputMeta =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let stderr_score =
+      match assoc "stderr_score" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
+    in
+    { stderr_score }
+  | _ -> Atdml_runtime.Yojson.bad_type "submissionDetailOutputMeta" x
+
+let yojson_of_submissionDetailOutputMeta (x : submissionDetailOutputMeta) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    (match x.stderr_score with None -> [] | Some v -> [("stderr_score", Atdml_runtime.Yojson.yojson_of_int v)]);
+  ])
+
+let submissionDetailOutputMeta_of_json s =
+  submissionDetailOutputMeta_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_submissionDetailOutputMeta x =
+  Yojson.Safe.to_string (yojson_of_submissionDetailOutputMeta x)
+
+module SubmissionDetailOutputMeta = struct
+  type nonrec t = submissionDetailOutputMeta
+  let create = create_submissionDetailOutputMeta
+  let of_yojson = submissionDetailOutputMeta_of_yojson
+  let to_yojson = yojson_of_submissionDetailOutputMeta
+  let of_json = submissionDetailOutputMeta_of_json
+  let to_json = json_of_submissionDetailOutputMeta
+end
+
 type submissionDetailOutput = {
   stdout: string;
   stderr: string;
   return_code: int;
+  meta: submissionDetailOutputMeta option;
 }
 
-let create_submissionDetailOutput ~stdout ~stderr ~return_code () : submissionDetailOutput =
-  { stdout; stderr; return_code }
+let create_submissionDetailOutput ~stdout ~stderr ~return_code ?meta () : submissionDetailOutput =
+  { stdout; stderr; return_code; meta }
 
 let submissionDetailOutput_of_yojson (x : Yojson.Safe.t) : submissionDetailOutput =
   match x with
@@ -877,7 +995,12 @@ let submissionDetailOutput_of_yojson (x : Yojson.Safe.t) : submissionDetailOutpu
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submissionDetailOutput" "return_code"
     in
-    { stdout; stderr; return_code }
+    let meta =
+      match assoc "meta" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (submissionDetailOutputMeta_of_yojson v)
+    in
+    { stdout; stderr; return_code; meta }
   | _ -> Atdml_runtime.Yojson.bad_type "submissionDetailOutput" x
 
 let yojson_of_submissionDetailOutput (x : submissionDetailOutput) : Yojson.Safe.t =
@@ -885,6 +1008,7 @@ let yojson_of_submissionDetailOutput (x : submissionDetailOutput) : Yojson.Safe.
     [("stdout", Atdml_runtime.Yojson.yojson_of_string x.stdout)];
     [("stderr", Atdml_runtime.Yojson.yojson_of_string x.stderr)];
     [("return_code", Atdml_runtime.Yojson.yojson_of_int x.return_code)];
+    (match x.meta with None -> [] | Some v -> [("meta", yojson_of_submissionDetailOutputMeta v)]);
   ])
 
 let submissionDetailOutput_of_json s =
@@ -1002,13 +1126,13 @@ type submission = {
   time_ms: int;
   memory_kb: int;
   details: submissionDetails;
-  created_at: string option;
   owner: bool option;
   owner_id: int option;
+  created_at: string option;
 }
 
-let create_submission ~id ~problem_id ?language ~status ~score ~time_ms ~memory_kb ~details ?created_at ?owner ?owner_id () : submission =
-  { id; problem_id; language; status; score; time_ms; memory_kb; details; created_at; owner; owner_id }
+let create_submission ~id ~problem_id ?language ~status ~score ~time_ms ~memory_kb ~details ?owner ?owner_id ?created_at () : submission =
+  { id; problem_id; language; status; score; time_ms; memory_kb; details; owner; owner_id; created_at }
 
 let submission_of_yojson (x : Yojson.Safe.t) : submission =
   match x with
@@ -1063,11 +1187,6 @@ let submission_of_yojson (x : Yojson.Safe.t) : submission =
       | Some v -> submissionDetails_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submission" "details"
     in
-    let created_at =
-      match assoc "created_at" with
-      | None | Some `Null -> Option.None
-      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
-    in
     let owner =
       match assoc "owner" with
       | None | Some `Null -> Option.None
@@ -1078,7 +1197,12 @@ let submission_of_yojson (x : Yojson.Safe.t) : submission =
       | None | Some `Null -> Option.None
       | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
     in
-    { id; problem_id; language; status; score; time_ms; memory_kb; details; created_at; owner; owner_id }
+    let created_at =
+      match assoc "created_at" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    { id; problem_id; language; status; score; time_ms; memory_kb; details; owner; owner_id; created_at }
   | _ -> Atdml_runtime.Yojson.bad_type "submission" x
 
 let yojson_of_submission (x : submission) : Yojson.Safe.t =
@@ -1091,9 +1215,9 @@ let yojson_of_submission (x : submission) : Yojson.Safe.t =
     [("time_ms", Atdml_runtime.Yojson.yojson_of_int x.time_ms)];
     [("memory_kb", Atdml_runtime.Yojson.yojson_of_int x.memory_kb)];
     [("details", yojson_of_submissionDetails x.details)];
-    (match x.created_at with None -> [] | Some v -> [("created_at", Atdml_runtime.Yojson.yojson_of_string v)]);
     (match x.owner with None -> [] | Some v -> [("owner", Atdml_runtime.Yojson.yojson_of_bool v)]);
     (match x.owner_id with None -> [] | Some v -> [("owner_id", Atdml_runtime.Yojson.yojson_of_int v)]);
+    (match x.created_at with None -> [] | Some v -> [("created_at", Atdml_runtime.Yojson.yojson_of_string v)]);
   ])
 
 let submission_of_json s =
@@ -1936,6 +2060,103 @@ module JudgeContestsIdPutRequest = struct
   let to_json = json_of_judgeContestsIdPutRequest
 end
 
+type job = {
+  submission_id: int;
+  user_id: int;
+  problem_id: int;
+  lang: string;
+  source_code: string;
+  time_limit_ms: int;
+  memory_limit_mb: int;
+  testcases: testCase list;
+}
+
+let create_job ~submission_id ~user_id ~problem_id ~lang ~source_code ~time_limit_ms ~memory_limit_mb ~testcases () : job =
+  { submission_id; user_id; problem_id; lang; source_code; time_limit_ms; memory_limit_mb; testcases }
+
+let job_of_yojson (x : Yojson.Safe.t) : job =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let submission_id =
+      match assoc "submission_id" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "job" "submission_id"
+    in
+    let user_id =
+      match assoc "user_id" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "job" "user_id"
+    in
+    let problem_id =
+      match assoc "problem_id" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "job" "problem_id"
+    in
+    let lang =
+      match assoc "lang" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "job" "lang"
+    in
+    let source_code =
+      match assoc "source_code" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "job" "source_code"
+    in
+    let time_limit_ms =
+      match assoc "time_limit_ms" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "job" "time_limit_ms"
+    in
+    let memory_limit_mb =
+      match assoc "memory_limit_mb" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "job" "memory_limit_mb"
+    in
+    let testcases =
+      match assoc "testcases" with
+      | Some v -> (Atdml_runtime.Yojson.list_of_yojson testCase_of_yojson) v
+      | None -> Atdml_runtime.Yojson.missing_field "job" "testcases"
+    in
+    { submission_id; user_id; problem_id; lang; source_code; time_limit_ms; memory_limit_mb; testcases }
+  | _ -> Atdml_runtime.Yojson.bad_type "job" x
+
+let yojson_of_job (x : job) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("submission_id", Atdml_runtime.Yojson.yojson_of_int x.submission_id)];
+    [("user_id", Atdml_runtime.Yojson.yojson_of_int x.user_id)];
+    [("problem_id", Atdml_runtime.Yojson.yojson_of_int x.problem_id)];
+    [("lang", Atdml_runtime.Yojson.yojson_of_string x.lang)];
+    [("source_code", Atdml_runtime.Yojson.yojson_of_string x.source_code)];
+    [("time_limit_ms", Atdml_runtime.Yojson.yojson_of_int x.time_limit_ms)];
+    [("memory_limit_mb", Atdml_runtime.Yojson.yojson_of_int x.memory_limit_mb)];
+    [("testcases", (Atdml_runtime.Yojson.yojson_of_list yojson_of_testCase) x.testcases)];
+  ])
+
+let job_of_json s =
+  job_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_job x =
+  Yojson.Safe.to_string (yojson_of_job x)
+
+module Job = struct
+  type nonrec t = job
+  let create = create_job
+  let of_yojson = job_of_yojson
+  let to_yojson = yojson_of_job
+  let of_json = job_of_json
+  let to_json = json_of_job
+end
+
 type int64 = int
 
 let create_int64 (x : int) : int64 = x
@@ -2653,3 +2874,4 @@ module AdminStatsResponse = struct
   let of_json = adminStatsResponse_of_json
   let to_json = json_of_adminStatsResponse
 end
+

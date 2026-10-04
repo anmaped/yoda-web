@@ -184,6 +184,21 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
     | Some tc -> Printf.sprintf "edit-testcase-sample-%d" tc.id
     | None -> Printf.sprintf "new-testcase-sample-%d" problem_id
   in
+  let oracle_enabled_id =
+    match testcase with
+    | Some tc -> Printf.sprintf "edit-testcase-oracle-enabled-%d" tc.id
+    | None -> Printf.sprintf "new-testcase-oracle-enabled-%d" problem_id
+  in
+  let oracle_entrypoint_id =
+    match testcase with
+    | Some tc -> Printf.sprintf "edit-testcase-oracle-entrypoint-%d" tc.id
+    | None -> Printf.sprintf "new-testcase-oracle-entrypoint-%d" problem_id
+  in
+  let oracle_args_id =
+    match testcase with
+    | Some tc -> Printf.sprintf "edit-testcase-oracle-args-%d" tc.id
+    | None -> Printf.sprintf "new-testcase-oracle-args-%d" problem_id
+  in
   let default_input =
     match testcase with Some tc -> tc.input | None -> ""
   in
@@ -192,6 +207,19 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
   in
   let default_is_sample =
     match testcase with Some tc -> tc.is_sample | None -> false
+  in
+  let default_oracle =
+    match testcase with Some tc -> tc.oracle | None -> None
+  in
+  let default_oracle_enabled = Option.is_some default_oracle in
+  let oracle_enabled = ref default_oracle_enabled in
+  let default_oracle_entrypoint =
+    match default_oracle with Some oracle -> oracle.entrypoint | None -> ""
+  in
+  let default_oracle_args =
+    match default_oracle with
+    | Some oracle -> String.concat ", " (Option.value ~default:[] oracle.args)
+    | None -> ""
   in
   let get_textarea_value field_id =
     match
@@ -206,6 +234,11 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
     with
     | Some el -> Js.to_bool el##.checked
     | None -> false
+  in
+  let get_input_value field_id =
+    match Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.input with
+    | Some el -> Js.to_string el##.value
+    | None -> ""
   in
   let modal_name =
     match testcase with
@@ -244,14 +277,79 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
             ()
         ; label
             ~a:[a_class ["form-check-label"]; a_label_for sample_id]
-            [txt "Sample"] ] ]
+            [txt "Sample"] ]
+    ; div
+        ~a:[a_class ["border-top"; "mt-3"; "pt-3"]]
+        [ div
+            ~a:[a_class ["form-check"]]
+            [ input
+                ~a:
+                  ( [ a_id oracle_enabled_id
+                    ; a_class ["form-check-input"]
+                    ; a_input_type `Checkbox
+                    ; a_onchange (fun _ ->
+                          oracle_enabled := not !oracle_enabled ;
+                          (match Dom_html.getElementById_coerce
+                                   oracle_entrypoint_id Dom_html.CoerceTo.input with
+                          | Some field -> field##.disabled := Js.bool (not !oracle_enabled)
+                          | None -> ()) ;
+                          (match Dom_html.getElementById_coerce
+                                   oracle_args_id Dom_html.CoerceTo.input with
+                          | Some field -> field##.disabled := Js.bool (not !oracle_enabled)
+                          | None -> ()) ;
+                          false) ]
+                  @ if default_oracle_enabled then [a_checked ()] else [] )
+                ()
+            ; label
+                ~a:[a_class ["form-check-label"]; a_label_for oracle_enabled_id]
+                [txt "Use custom oracle checker"] ]
+        ; div
+            ~a:[a_class ["mt-2"]]
+            [ label ~a:[a_class ["form-label"]] [txt "Oracle entrypoint"]
+            ; input
+                ~a:
+                  [ a_id oracle_entrypoint_id
+                  ; a_class ["form-control"]
+                  ; a_placeholder "checker.py"
+                   ; (if default_oracle_enabled then Unsafe.string_attrib "data-oracle-enabled" "true"
+                      else Unsafe.string_attrib "disabled" "disabled")
+                  ; a_value default_oracle_entrypoint ]
+                () ]
+        ; div
+            ~a:[a_class ["mt-2"]]
+            [ label ~a:[a_class ["form-label"]]
+                [txt "Oracle arguments (comma-separated)"]
+            ; input
+                ~a:
+                  [ a_id oracle_args_id
+                  ; a_class ["form-control"]
+                  ; a_placeholder "arg1, arg2"
+                   ; (if default_oracle_enabled then Unsafe.string_attrib "data-oracle-enabled" "true"
+                      else Unsafe.string_attrib "disabled" "disabled")
+                  ; a_value default_oracle_args ]
+                  () ] ] ]
     (fun () ->
       let input_v = get_textarea_value input_id in
       let output_v = get_textarea_value output_id in
       let is_sample_v = get_checkbox_value sample_id in
+      let oracle_enabled = get_checkbox_value oracle_enabled_id in
+      let oracle_entrypoint = get_input_value oracle_entrypoint_id |> String.trim in
+      let oracle_args =
+        get_input_value oracle_args_id
+        |> String.split_on_char ','
+        |> List.map String.trim
+        |> List.filter (fun arg -> arg <> "")
+      in
+      let oracle =
+        if oracle_enabled && oracle_entrypoint <> "" then
+          Some
+            (Api.Openapi.OracleConfig.create ~entrypoint:oracle_entrypoint
+               ~args:oracle_args ())
+        else None
+      in
       let body =
         Api.Openapi.TestCaseCreateRequest.create ~input:input_v
-          ~output:output_v ~is_sample:is_sample_v ()
+          ~output:output_v ~is_sample:is_sample_v ?oracle ()
         |> Api.Openapi.TestCaseCreateRequest.to_json
       in
       Lwt.async (fun () ->
@@ -1019,15 +1117,30 @@ let problem_card (problem : Api.Openapi.problem) =
                                ; label
                                    ~a:[a_class ["form-label"]]
                                    [txt "Input"]
-                               ; pre
-                                   ~a:
-                                     [ a_class
-                                         [ "bg-light"
-                                         ; "p-2"
-                                         ; "rounded"
-                                         ; "font-monospace" ] ]
-                                   [txt tc.input]
-                               ; label
+                                ; pre
+                                    ~a:
+                                      [ a_class
+                                          [ "bg-light"
+                                          ; "p-2"
+                                          ; "rounded"
+                                          ; "font-monospace" ] ]
+                                    [txt tc.input]
+                                ; ( match tc.oracle with
+                                  | None -> div []
+                                  | Some oracle ->
+                                      div
+                                        ~a:[a_class ["mt-2"; "small"; "text-muted"]]
+                                        [ txt
+                                            (Printf.sprintf
+                                               "Oracle: %s%s"
+                                               oracle.entrypoint
+                                               ( match oracle.args with
+                                               | None -> ""
+                                               | Some args ->
+                                                   " ("
+                                                   ^ String.concat ", " args
+                                                   ^ ")" ) ) ] )
+                                ; label
                                    ~a:[a_class ["form-label"; "mt-2"]]
                                    [txt "Output"]
                                ; pre
