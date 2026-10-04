@@ -138,6 +138,13 @@ let load_testcases problem_id =
         Helpers.trigger_render () ;
         Lwt.return_unit
 
+let refresh_testcases problem_id =
+  Hashtbl.remove !state.testcases problem_id ;
+  load_testcases problem_id
+  >>= fun () ->
+  Helpers.trigger_render () ;
+  Lwt.return_unit
+
 let load_source_artifacts (problem_id : int) =
   match Hashtbl.find_opt !state.source_artifacts problem_id with
   | Some _ -> Lwt.return_unit (* already loaded *)
@@ -358,23 +365,15 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
               Api.Helpers.put_testcase tc.id body
               >>= fun (_resp, status) ->
               if status = 200 || status = 201 || status = 204 then (
-                Hashtbl.remove !state.testcases problem_id ;
-                load_testcases problem_id
-                >>= fun () ->
                 Settings_problems_import.RerenderFlag.set_rerender () ;
-                Helpers.trigger_render () ;
-                Lwt.return_unit )
+                refresh_testcases problem_id )
               else Lwt.return_unit
           | None ->
               Api.Helpers.post_testcase problem_id body
               >>= fun (_resp, status) ->
               if status = 200 || status = 201 then (
-                Hashtbl.remove !state.testcases problem_id ;
-                load_testcases problem_id
-                >>= fun () ->
                 Settings_problems_import.RerenderFlag.set_rerender () ;
-                Helpers.trigger_render () ;
-                Lwt.return_unit )
+                refresh_testcases problem_id )
               else Lwt.return_unit ) ;
       false )
     ()
@@ -1108,9 +1107,9 @@ let problem_card (problem : Api.Openapi.problem) =
                                                      Settings_problems_import
                                                      .RerenderFlag
                                                      .set_rerender () ;
-                                                     Helpers.trigger_render
-                                                       () ;
-                                                     Lwt.return_unit )
+                                                     refresh_testcases
+                                                       (Option.value ~default:0
+                                                          problem.id) )
                                                    else Lwt.return_unit ) ;
                                                false ) ]
                                        [Components.Icons.trash_icon ()] ]
@@ -1269,7 +1268,20 @@ let render_problems_tab () =
   then begin
     Settings_problems_import.RerenderFlag.unset_rerender () ;
     last_loaded := Some cid ;
-    Lwt.async (fun () -> load_problems cid)
+    Lwt.async (fun () ->
+        load_problems cid
+        >>= fun () ->
+        match !state.selected_code with
+        | Some code ->
+            ( match
+                List.find_opt
+                  (fun (p : Api.Openapi.problem) -> p.code = code)
+                  !state.problems
+              with
+            | Some p ->
+                load_testcases (Option.value ~default:0 p.id)
+            | None -> Lwt.return_unit )
+        | None -> Lwt.return_unit )
   end ;
   (* Problem list area *)
   let problem_list () =

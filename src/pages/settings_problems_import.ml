@@ -373,7 +373,11 @@ let import_testcases_from_directory problem_id
                      (Printf.sprintf "Failed to import testcase %s (%d)"
                         input_name status ) ) ;
                 Lwt.return_unit ) )
-        inputs )
+        inputs
+      >>= fun () ->
+      RerenderFlag.set_rerender () ;
+      Helpers.trigger_render () ;
+      Lwt.return_unit )
 
 (* --- UI Card Component --- *)
 
