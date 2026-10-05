@@ -57,6 +57,10 @@ let submit_button ~id ~class_ ~title ~onclick content =
     content
 
 let toolbar ~mobile () =
+  let current_problem_description () =
+    Model.Problem_state.get_current_problem_description ()
+    |> fun desc -> if desc = "" then "unknown_problem" else desc
+  in
   [ div
       ~a:
         [ a_class
@@ -92,13 +96,7 @@ let toolbar ~mobile () =
                            [ txt
                                (I18n.interpolate
                                   (I18n.t "codebar_confirm_run")
-                                  [ Helpers.get_local_variable
-                                      "yoda-state-last-problem-description"
-                                    |> Option.value
-                                         ~default:
-                                           (Js_of_ocaml.Js.string
-                                              "unknown_problem" )
-                                    |> Js_of_ocaml.Js.to_string ] ) ]
+                                  [ current_problem_description () ] ) ]
                            (fun _ -> hide spinner ; false)
                            () ) ;
                       false )
@@ -115,12 +113,7 @@ let toolbar ~mobile () =
                      [ txt
                          (I18n.interpolate
                             (I18n.t "codebar_confirm_save")
-                            [ Helpers.get_local_variable
-                                "yoda-state-last-problem-description"
-                              |> Option.value
-                                   ~default:
-                                     (Js_of_ocaml.Js.string "unknown_problem")
-                              |> Js_of_ocaml.Js.to_string ] ) ]
+                            [ current_problem_description () ] ) ]
                      (fun _ ->
                        hide spinner ;
                        Spinner_modal_update.start () ;

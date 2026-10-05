@@ -62,19 +62,31 @@ let language_for_filename filename =
 
 let get_extension_for_language language =
   let lowercase = String.lowercase_ascii language in
+  let sorted_map =
+    List.sort
+      (fun (_, left_language) (_, right_language) ->
+        compare (String.length right_language) (String.length left_language) )
+      extension_language_map
+  in
   List.find_map
-    (fun (ext, language) -> if lowercase = language then Some ext else None)
-    extension_language_map
+    (fun (ext, mapped_language) ->
+      let mapped_lowercase = String.lowercase_ascii mapped_language in
+      if
+        lowercase = mapped_lowercase
+        || Astring.String.is_infix ~affix:mapped_lowercase lowercase
+      then Some ext
+      else None )
+    sorted_map
 
 let get_fallback_filename_for_problem () =
+  let selected_language =
+    Model.Problem_state.get_selected_problem_language ()
+    |> Option.value
+         ~default:(match !current_languages with hd :: _ -> hd | [] -> "")
+  in
   "main"
   ^
-  (* get extension from current language *)
-  match
-    get_extension_for_language
-      ( Model.Problem_state.get_selected_problem_language ()
-      |> Option.value ~default:"" )
-  with
+  match get_extension_for_language selected_language with
   | Some ext -> ext
   | None -> ""
 
@@ -138,7 +150,7 @@ let save_active_editor_content () =
     | None -> ()
     | Some file ->
         file.content <- get_editor_content () ;
-         persist_current_state ()
+        persist_current_state ()
 
 let schedule_save () =
   if not !suppress_editor_change then (
@@ -147,12 +159,13 @@ let schedule_save () =
       Some
         (Lwt.catch
            (fun () ->
-             Js_of_ocaml_lwt.Lwt_js.sleep 2.0 >>= fun () ->
+             Js_of_ocaml_lwt.Lwt_js.sleep 2.0
+             >>= fun () ->
              save_active_editor_content () ;
-             (** Trigger the saved callback *)
-             (!on_editor_saved) () ;
-             Lwt.return_unit)
-           (fun _ -> Lwt.return_unit)) )
+             (* Trigger the saved callback *)
+             !on_editor_saved () ;
+             Lwt.return_unit )
+           (fun _ -> Lwt.return_unit) ) )
 
 let load_editor_from_active_tab () =
   match List.nth_opt !current_files !current_active_tab with
