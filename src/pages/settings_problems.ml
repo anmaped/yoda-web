@@ -252,7 +252,7 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
   let default_oracle_args =
     match default_oracle with
     | Some oracle ->
-        String.concat ", " (Option.value ~default:[] oracle.args)
+        String.concat "\n" (Option.value ~default:[] oracle.args)
     | None -> ""
   in
   let get_textarea_value field_id =
@@ -335,7 +335,7 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
                           | None -> () ) ;
                           ( match
                               Dom_html.getElementById_coerce oracle_args_id
-                                Dom_html.CoerceTo.input
+                                Dom_html.CoerceTo.textarea
                             with
                           | Some field ->
                               field##.disabled :=
@@ -366,17 +366,18 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
             ~a:[a_class ["mt-2"]]
             [ label
                 ~a:[a_class ["form-label"]]
-                [txt "Oracle arguments (comma-separated)"]
-            ; input
+                [txt "Oracle arguments (one per line)"]
+            ; textarea
                 ~a:
                   [ a_id oracle_args_id
                   ; a_class ["form-control"]
-                  ; a_placeholder "arg1, arg2"
+                  ; a_rows 3
+                  ; a_placeholder "One argument per line"
                   ; ( if default_oracle_enabled then
                         Unsafe.string_attrib "data-oracle-enabled" "true"
                       else Unsafe.string_attrib "disabled" "disabled" )
-                  ; a_value default_oracle_args ]
-                () ] ] ]
+                  ]
+                (txt default_oracle_args) ] ] ]
     (fun () ->
       let input_v = get_textarea_value input_id in
       let output_v = get_textarea_value output_id in
@@ -386,8 +387,8 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
         get_input_value oracle_entrypoint_id |> String.trim
       in
       let oracle_args =
-        get_input_value oracle_args_id
-        |> String.split_on_char ',' |> List.map String.trim
+        get_textarea_value oracle_args_id
+        |> String.split_on_char '\n' |> List.map String.trim
         |> List.filter (fun arg -> arg <> "")
       in
       let oracle =
