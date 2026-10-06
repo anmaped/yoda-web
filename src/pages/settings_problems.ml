@@ -53,6 +53,9 @@ let error_msg : string option ref = ref None
 
 let last_loaded = ref None
 
+let oracle_args_state : (string, string list ref) Hashtbl.t =
+  Hashtbl.create 16
+
 let contest_select =
   select ~a:[a_id "problem-select"; a_class ["form-select"; "w-auto"]] []
 
@@ -232,6 +235,8 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
     | Some tc -> Printf.sprintf "edit-testcase-oracle-args-%d" tc.id
     | None -> Printf.sprintf "new-testcase-oracle-args-%d" problem_id
   in
+  let oracle_args_container_id = oracle_args_id ^ "-list" in
+  let oracle_args_row_id i = oracle_args_id ^ "-row-" ^ string_of_int i in
   let default_input =
     match testcase with Some tc -> tc.input | None -> ""
   in
@@ -251,9 +256,20 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
   in
   let default_oracle_args =
     match default_oracle with
-    | Some oracle ->
-        String.concat "\n" (Option.value ~default:[] oracle.args)
-    | None -> ""
+    | Some oracle -> Option.value ~default:[] oracle.args
+    | None -> []
+  in
+  let modal_name =
+    match testcase with
+    | Some tc -> Printf.sprintf "testcase-modal-%d" tc.id
+    | None -> Printf.sprintf "testcase-modal-new-%d" problem_id
+  in
+  let oracle_args_values =
+    try Hashtbl.find oracle_args_state modal_name
+    with Not_found ->
+      let values = ref default_oracle_args in
+      Hashtbl.add oracle_args_state modal_name values ;
+      values
   in
   let get_textarea_value field_id =
     match
@@ -274,12 +290,24 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
       Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.input
     with
     | Some el -> Js.to_string el##.value
-    | None -> ""
+    | None -> (
+      match
+        Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.textarea
+      with
+      | Some el -> Js.to_string el##.value
+      | None -> "" )
   in
-  let modal_name =
-    match testcase with
-    | Some tc -> Printf.sprintf "testcase-modal-%d" tc.id
-    | None -> Printf.sprintf "testcase-modal-new-%d" problem_id
+  let set_disabled_for_field field_id disabled =
+    match
+      Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.input
+    with
+    | Some field -> field##.disabled := Js.bool disabled
+    | None -> (
+      match
+        Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.textarea
+      with
+      | Some field -> field##.disabled := Js.bool disabled
+      | None -> () )
   in
   Components.Modal_view.make modal_name title
     [ div
@@ -333,15 +361,30 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
                               field##.disabled :=
                                 Js.bool (not !oracle_enabled)
                           | None -> () ) ;
-                          ( match
-                              Dom_html.getElementById_coerce oracle_args_id
-                                Dom_html.CoerceTo.textarea
+                          let rec disable_oracle_arg_rows index =
+                            let field_id =
+                              Printf.sprintf "%s-%d" oracle_args_id index
+                            in
+                            match
+                              Dom_html.getElementById_coerce field_id
+                                Dom_html.CoerceTo.input
                             with
-                          | Some field ->
-                              field##.disabled :=
-                                Js.bool (not !oracle_enabled)
-                          | None -> () ) ;
-                          false ) ]
+                            | Some _ ->
+                                set_disabled_for_field field_id
+                                  (not !oracle_enabled) ;
+                                disable_oracle_arg_rows (index + 1)
+                            | None -> (
+                              match
+                                Dom_html.getElementById_coerce field_id
+                                  Dom_html.CoerceTo.textarea
+                              with
+                              | Some _ ->
+                                  set_disabled_for_field field_id
+                                    (not !oracle_enabled) ;
+                                  disable_oracle_arg_rows (index + 1)
+                              | None -> () )
+                          in
+                          disable_oracle_arg_rows 0 ; false ) ]
                   @ if default_oracle_enabled then [a_checked ()] else [] )
                 ()
             ; label
@@ -364,20 +407,127 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
                 () ]
         ; div
             ~a:[a_class ["mt-2"]]
-            [ label
-                ~a:[a_class ["form-label"]]
-                [txt "Oracle arguments (one per line)"]
-            ; textarea
+            [ label ~a:[a_class ["form-label"]] [txt "Oracle arguments"]
+            ; div
                 ~a:
-                  [ a_id oracle_args_id
-                  ; a_class ["form-control"]
-                  ; a_rows 3
-                  ; a_placeholder "One argument per line"
-                  ; ( if default_oracle_enabled then
-                        Unsafe.string_attrib "data-oracle-enabled" "true"
-                      else Unsafe.string_attrib "disabled" "disabled" )
-                  ]
-                (txt default_oracle_args) ] ] ]
+                  [ a_id oracle_args_container_id
+                  ; a_class ["d-flex"; "flex-column"; "gap-2"] ]
+                (let rows = !oracle_args_values in
+                 List.mapi
+                   (fun i arg_value ->
+                     let field_id =
+                       Printf.sprintf "%s-%d" oracle_args_id i
+                     in
+                     let row_id = oracle_args_row_id i in
+                     div
+                       ~a:[a_id row_id; a_class ["d-flex"; "gap-2"]]
+                       [ textarea
+                           ~a:
+                             [ a_id field_id
+                             ; a_class ["form-control"]
+                             ; a_rows 2
+                             ; a_placeholder "Argument"
+                             ; a_oninput (fun _ ->
+                                   oracle_args_values :=
+                                     List.mapi
+                                       (fun j value ->
+                                         if j = i then
+                                           get_textarea_value field_id
+                                         else value )
+                                       !oracle_args_values ;
+                                   false )
+                             ; ( if default_oracle_enabled then
+                                   Unsafe.string_attrib "data-oracle-enabled"
+                                     "true"
+                                 else
+                                   Unsafe.string_attrib "disabled" "disabled"
+                               ) ]
+                           (txt arg_value)
+                       ; button
+                           ~a:
+                             [ a_class ["btn"; "btn-outline-danger"; "btn-sm"]
+                             ; a_onclick (fun _ ->
+                                   oracle_args_values :=
+                                     List.filteri
+                                       (fun j _ -> j <> i)
+                                       !oracle_args_values ;
+                                   ( match
+                                       Dom_html.getElementById_coerce row_id
+                                         Dom_html.CoerceTo.div
+                                     with
+                                   | Some el ->
+                                       ignore
+                                         (Js.Unsafe.meth_call el "remove" [||])
+                                   | None -> () ) ;
+                                   false ) ]
+                           [txt "Remove"] ] )
+                   rows )
+            ; button
+                ~a:
+                  [ a_class ["btn"; "btn-outline-primary"; "btn-sm"; "mt-2"]
+                  ; a_onclick (fun _ ->
+                        let next_index = List.length !oracle_args_values in
+                        oracle_args_values := !oracle_args_values @ [""] ;
+                        let row_id = oracle_args_row_id next_index in
+                        let field_id =
+                          Printf.sprintf "%s-%d" oracle_args_id next_index
+                        in
+                        let new_row =
+                          div
+                            ~a:[a_id row_id; a_class ["d-flex"; "gap-2"]]
+                            [ textarea
+                                ~a:
+                                  [ a_id field_id
+                                  ; a_class ["form-control"]
+                                  ; a_rows 2
+                                  ; a_placeholder "Argument"
+                                  ; a_oninput (fun _ ->
+                                        oracle_args_values :=
+                                          List.mapi
+                                            (fun j value ->
+                                              if j = next_index then
+                                                get_textarea_value field_id
+                                              else value )
+                                            !oracle_args_values ;
+                                        false )
+                                  ; ( if default_oracle_enabled then
+                                        Unsafe.string_attrib
+                                          "data-oracle-enabled" "true"
+                                      else
+                                        Unsafe.string_attrib "disabled"
+                                          "disabled" ) ]
+                                (txt "")
+                            ; button
+                                ~a:
+                                  [ a_class
+                                      ["btn"; "btn-outline-danger"; "btn-sm"]
+                                  ; a_onclick (fun _ ->
+                                        oracle_args_values :=
+                                          List.filteri
+                                            (fun j _ -> j <> next_index)
+                                            !oracle_args_values ;
+                                        ( match
+                                            Dom_html.getElementById_coerce
+                                              row_id Dom_html.CoerceTo.div
+                                          with
+                                        | Some el ->
+                                            ignore
+                                              (Js.Unsafe.meth_call el
+                                                 "remove" [||] )
+                                        | None -> () ) ;
+                                        false ) ]
+                                [txt "Remove"] ]
+                        in
+                        ( match
+                            Dom_html.getElementById_coerce
+                              oracle_args_container_id Dom_html.CoerceTo.div
+                          with
+                        | Some container ->
+                            Dom.appendChild container
+                              (Tyxml_js.To_dom.of_div new_row)
+                        | None -> () ) ;
+                        false ) ]
+                [txt "Add argument"] ] ] ]
     (fun () ->
       let input_v = get_textarea_value input_id in
       let output_v = get_textarea_value output_id in
@@ -387,8 +537,7 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
         get_input_value oracle_entrypoint_id |> String.trim
       in
       let oracle_args =
-        get_textarea_value oracle_args_id
-        |> String.split_on_char '\n' |> List.map String.trim
+        !oracle_args_values |> List.map String.trim
         |> List.filter (fun arg -> arg <> "")
       in
       let oracle =
