@@ -177,3 +177,13 @@ let update_problem_source contest_id problem_id source_artifacts =
     (Printf.sprintf "%s/contests/%d/problems/%d" base_url contest_id
        problem_id )
     body
+
+let update_problem_object_artifacts contest_id problem_id object_artifacts =
+  let body =
+    Openapi.ProblemUpdateRequest.create ~object_artifacts ()
+    |> Openapi.ProblemUpdateRequest.to_json
+  in
+  put_json
+    (Printf.sprintf "%s/contests/%d/problems/%d" base_url contest_id
+       problem_id )
+    body

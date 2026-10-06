@@ -24,7 +24,8 @@ type problem_state =
   ; search: string
   ; selected_code: string option
   ; difficulty_filter: difficulty option
-  ; source_artifacts: (int, Api.Openapi.sourceArtifact list) Hashtbl.t }
+  ; source_artifacts: (int, Api.Openapi.sourceArtifact list) Hashtbl.t
+  ; object_artifacts: (int, Api.Openapi.objectArtifact list) Hashtbl.t }
 
 type edit_mode =
   | Create of Api.Openapi.problem
@@ -41,7 +42,8 @@ let state : problem_state ref =
     ; search= ""
     ; selected_code= None
     ; difficulty_filter= None
-    ; source_artifacts= Hashtbl.create 16 }
+    ; source_artifacts= Hashtbl.create 16
+    ; object_artifacts= Hashtbl.create 16 }
 
 let edit_mode : edit_mode ref = ref None_
 
@@ -112,6 +114,7 @@ let load_problems contest_id =
     in
     state := {!state with problems; contest_id= Some contest_id} ;
     Hashtbl.clear !state.testcases ;
+    Hashtbl.clear !state.object_artifacts ;
     loading := false ;
     error_msg := None ;
     Helpers.trigger_render () ;
@@ -141,9 +144,7 @@ let load_testcases problem_id =
 let refresh_testcases problem_id =
   Hashtbl.remove !state.testcases problem_id ;
   load_testcases problem_id
-  >>= fun () ->
-  Helpers.trigger_render () ;
-  Lwt.return_unit
+  >>= fun () -> Helpers.trigger_render () ; Lwt.return_unit
 
 let load_source_artifacts (problem_id : int) =
   match Hashtbl.find_opt !state.source_artifacts problem_id with
@@ -168,6 +169,31 @@ let load_source_artifacts (problem_id : int) =
 
 let get_source_artifacts_for_problem problem_id =
   try Hashtbl.find !state.source_artifacts problem_id with Not_found -> []
+
+let load_object_artifacts (problem_id : int) =
+  match Hashtbl.find_opt !state.object_artifacts problem_id with
+  | Some _ -> Lwt.return_unit (* already loaded *)
+  | None ->
+      Api.Helpers.get_problem problem_id
+      >>= fun (resp, status) ->
+      if status <> 200 then (
+        Hashtbl.add !state.object_artifacts problem_id [] ;
+        Lwt.return_unit )
+      else
+        let object_artifacts =
+          match resp with
+          | `Assoc fields -> (
+            match List.assoc_opt "object_artifacts" fields with
+            | Some v -> Api.Openapi.objectArtifacts_of_yojson v
+            | None -> [] )
+          | _ -> []
+        in
+        Hashtbl.add !state.object_artifacts problem_id object_artifacts ;
+        Helpers.trigger_render () ;
+        Lwt.return_unit
+
+let get_object_artifacts_for_problem problem_id =
+  try Hashtbl.find !state.object_artifacts problem_id with Not_found -> []
 
 let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
     =
@@ -225,7 +251,8 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
   in
   let default_oracle_args =
     match default_oracle with
-    | Some oracle -> String.concat ", " (Option.value ~default:[] oracle.args)
+    | Some oracle ->
+        String.concat ", " (Option.value ~default:[] oracle.args)
     | None -> ""
   in
   let get_textarea_value field_id =
@@ -243,7 +270,9 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
     | None -> false
   in
   let get_input_value field_id =
-    match Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.input with
+    match
+      Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.input
+    with
     | Some el -> Js.to_string el##.value
     | None -> ""
   in
@@ -296,19 +325,29 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
                     ; a_input_type `Checkbox
                     ; a_onchange (fun _ ->
                           oracle_enabled := not !oracle_enabled ;
-                          (match Dom_html.getElementById_coerce
-                                   oracle_entrypoint_id Dom_html.CoerceTo.input with
-                          | Some field -> field##.disabled := Js.bool (not !oracle_enabled)
-                          | None -> ()) ;
-                          (match Dom_html.getElementById_coerce
-                                   oracle_args_id Dom_html.CoerceTo.input with
-                          | Some field -> field##.disabled := Js.bool (not !oracle_enabled)
-                          | None -> ()) ;
-                          false) ]
+                          ( match
+                              Dom_html.getElementById_coerce
+                                oracle_entrypoint_id Dom_html.CoerceTo.input
+                            with
+                          | Some field ->
+                              field##.disabled :=
+                                Js.bool (not !oracle_enabled)
+                          | None -> () ) ;
+                          ( match
+                              Dom_html.getElementById_coerce oracle_args_id
+                                Dom_html.CoerceTo.input
+                            with
+                          | Some field ->
+                              field##.disabled :=
+                                Js.bool (not !oracle_enabled)
+                          | None -> () ) ;
+                          false ) ]
                   @ if default_oracle_enabled then [a_checked ()] else [] )
                 ()
             ; label
-                ~a:[a_class ["form-check-label"]; a_label_for oracle_enabled_id]
+                ~a:
+                  [ a_class ["form-check-label"]
+                  ; a_label_for oracle_enabled_id ]
                 [txt "Use custom oracle checker"] ]
         ; div
             ~a:[a_class ["mt-2"]]
@@ -318,40 +357,44 @@ let open_testcase_modal ~problem_id ~(testcase : Api.Openapi.testCase option)
                   [ a_id oracle_entrypoint_id
                   ; a_class ["form-control"]
                   ; a_placeholder "checker.py"
-                   ; (if default_oracle_enabled then Unsafe.string_attrib "data-oracle-enabled" "true"
-                      else Unsafe.string_attrib "disabled" "disabled")
+                  ; ( if default_oracle_enabled then
+                        Unsafe.string_attrib "data-oracle-enabled" "true"
+                      else Unsafe.string_attrib "disabled" "disabled" )
                   ; a_value default_oracle_entrypoint ]
                 () ]
         ; div
             ~a:[a_class ["mt-2"]]
-            [ label ~a:[a_class ["form-label"]]
+            [ label
+                ~a:[a_class ["form-label"]]
                 [txt "Oracle arguments (comma-separated)"]
             ; input
                 ~a:
                   [ a_id oracle_args_id
                   ; a_class ["form-control"]
                   ; a_placeholder "arg1, arg2"
-                   ; (if default_oracle_enabled then Unsafe.string_attrib "data-oracle-enabled" "true"
-                      else Unsafe.string_attrib "disabled" "disabled")
+                  ; ( if default_oracle_enabled then
+                        Unsafe.string_attrib "data-oracle-enabled" "true"
+                      else Unsafe.string_attrib "disabled" "disabled" )
                   ; a_value default_oracle_args ]
-                  () ] ] ]
+                () ] ] ]
     (fun () ->
       let input_v = get_textarea_value input_id in
       let output_v = get_textarea_value output_id in
       let is_sample_v = get_checkbox_value sample_id in
       let oracle_enabled = get_checkbox_value oracle_enabled_id in
-      let oracle_entrypoint = get_input_value oracle_entrypoint_id |> String.trim in
+      let oracle_entrypoint =
+        get_input_value oracle_entrypoint_id |> String.trim
+      in
       let oracle_args =
         get_input_value oracle_args_id
-        |> String.split_on_char ','
-        |> List.map String.trim
+        |> String.split_on_char ',' |> List.map String.trim
         |> List.filter (fun arg -> arg <> "")
       in
       let oracle =
         if oracle_enabled && oracle_entrypoint <> "" then
           Some
             (Api.Openapi.OracleConfig.create ~entrypoint:oracle_entrypoint
-               ~args:oracle_args ())
+               ~args:oracle_args () )
         else None
       in
       let body =
@@ -449,6 +492,9 @@ let problem_input_spec_input_id = "problem-input-spec-input"
 
 let problem_output_spec_input_id = "problem-output-spec-input"
 
+let object_artifact_input_id problem_id =
+  Printf.sprintf "object-artifact-input-%d" problem_id
+
 let close_problem_modal () =
   edit_mode := None_ ;
   Helpers.remove_first_element_from_app ("#" ^ problem_modal_id) ;
@@ -465,6 +511,31 @@ let get_textarea_value field_id =
   with
   | Some el -> Js.to_string el##.value
   | None -> ""
+
+let read_file_as_data_url (file : File.file Js.t) : string Lwt.t =
+  let waiter, wakener = Lwt.wait () in
+  let reader =
+    Js.Unsafe.new_obj (Js.Unsafe.pure_js_expr "FileReader") [||]
+  in
+  let on_success =
+    Js.wrap_callback (fun _ ->
+        let result = Js.to_string (Js.Unsafe.get reader "result") in
+        Lwt.wakeup_later wakener result )
+  in
+  let on_error =
+    Js.wrap_callback (fun _ ->
+        Lwt.wakeup_later_exn wakener (Failure "file_read_error") )
+  in
+  Js.Unsafe.set reader "onload" (Js.Unsafe.inject on_success) ;
+  Js.Unsafe.set reader "onerror" (Js.Unsafe.inject on_error) ;
+  ignore
+    (Js.Unsafe.meth_call reader "readAsDataURL" [|Js.Unsafe.inject file|]) ;
+  waiter
+
+let base64_from_data_url data_url =
+  match String.split_on_char ',' data_url with
+  | _ :: rest -> String.concat "," rest
+  | [] -> data_url
 
 let parse_languages raw_value =
   raw_value |> String.split_on_char ',' |> List.map String.trim
@@ -519,10 +590,13 @@ let submit_problem_modal ~mode ~default_time_limit_ms
             match problem.id with
             | None -> Lwt.return (`Null, 400)
             | Some problem_id ->
+                let object_artifacts =
+                  get_object_artifacts_for_problem problem_id
+                in
                 let body =
                   Api.Openapi.ProblemUpdateRequest.create ~code ~title
                     ~description ~input_spec ~output_spec ~languages
-                    ~time_limit_ms ~memory_limit_mb ()
+                    ~time_limit_ms ~memory_limit_mb ~object_artifacts ()
                   |> Api.Openapi.ProblemUpdateRequest.to_json
                 in
                 Api.Helpers.put_problem problem_id body )
@@ -760,6 +834,13 @@ let problem_card (problem : Api.Openapi.problem) =
            (Option.value ~default:0 problem.id) )
     with Not_found -> None
   in
+  let object_artifacts =
+    try
+      Some
+        (Hashtbl.find !state.object_artifacts
+           (Option.value ~default:0 problem.id) )
+    with Not_found -> None
+  in
   let a_class_list =
     ["card"; "mb-2"; "border"; "border-secondary-subtle"; "problem-card"]
     @ if is_selected then ["shadow-sm"] else []
@@ -843,6 +924,9 @@ let problem_card (problem : Api.Openapi.problem) =
                                   (Option.value ~default:0 problem.id)
                                 >>= fun () ->
                                 load_source_artifacts
+                                  (Option.value ~default:0 problem.id)
+                                >>= fun () ->
+                                load_object_artifacts
                                   (Option.value ~default:0 problem.id)
                                 >>= fun () ->
                                 Helpers.trigger_render () ; Lwt.return () ) ;
@@ -1024,8 +1108,8 @@ let problem_card (problem : Api.Openapi.problem) =
                                           element##click
                                       | None -> () ) ;
                                       false ) ]
-                                [ Components.Icons.folder_upload_icon ()
-                                ; txt "Import tests" ] ] ) ]
+                              [ Components.Icons.folder_upload_icon ()
+                              ; txt "Import tests" ] ] ) ]
                  in
                  [ label
                      ~a:[a_class ["form-label"; "fw-bold"]]
@@ -1108,38 +1192,41 @@ let problem_card (problem : Api.Openapi.problem) =
                                                      .RerenderFlag
                                                      .set_rerender () ;
                                                      refresh_testcases
-                                                       (Option.value ~default:0
-                                                          problem.id) )
+                                                       (Option.value
+                                                          ~default:0
+                                                          problem.id ) )
                                                    else Lwt.return_unit ) ;
                                                false ) ]
                                        [Components.Icons.trash_icon ()] ]
                                ; label
                                    ~a:[a_class ["form-label"]]
                                    [txt "Input"]
-                                ; pre
-                                    ~a:
-                                      [ a_class
-                                          [ "bg-light"
-                                          ; "p-2"
-                                          ; "rounded"
-                                          ; "font-monospace" ] ]
-                                    [txt tc.input]
-                                ; ( match tc.oracle with
-                                  | None -> div []
-                                  | Some oracle ->
-                                      div
-                                        ~a:[a_class ["mt-2"; "small"; "text-muted"]]
-                                        [ txt
-                                            (Printf.sprintf
-                                               "Oracle: %s%s"
-                                               oracle.entrypoint
-                                               ( match oracle.args with
-                                               | None -> ""
-                                               | Some args ->
-                                                   " ("
-                                                   ^ String.concat ", " args
-                                                   ^ ")" ) ) ] )
-                                ; label
+                               ; pre
+                                   ~a:
+                                     [ a_class
+                                         [ "bg-light"
+                                         ; "p-2"
+                                         ; "rounded"
+                                         ; "font-monospace" ] ]
+                                   [txt tc.input]
+                               ; ( match tc.oracle with
+                                 | None -> div []
+                                 | Some oracle ->
+                                     div
+                                       ~a:
+                                         [ a_class
+                                             ["mt-2"; "small"; "text-muted"]
+                                         ]
+                                       [ txt
+                                           (Printf.sprintf "Oracle: %s%s"
+                                              oracle.entrypoint
+                                              ( match oracle.args with
+                                              | None -> ""
+                                              | Some args ->
+                                                  " ("
+                                                  ^ String.concat ", " args
+                                                  ^ ")" ) ) ] )
+                               ; label
                                    ~a:[a_class ["form-label"; "mt-2"]]
                                    [txt "Output"]
                                ; pre
@@ -1237,6 +1324,146 @@ let problem_card (problem : Api.Openapi.problem) =
                       in
                       div artifact_rows
                   | None -> p ~a:[a_class ["text-muted"]] [txt "Loading..."]
+                  ) ]
+            ; div
+                [ label
+                    ~a:[a_class ["form-label"; "fw-bold"; "mt-3"]]
+                    [txt "Object Artifacts"]
+                ; (let upload_input_id =
+                     object_artifact_input_id
+                       (Option.value ~default:0 problem.id)
+                   in
+                   let on_upload_click () =
+                     match
+                       Dom_html.getElementById_coerce upload_input_id
+                         Dom_html.CoerceTo.input
+                     with
+                     | Some element -> (
+                       match Js.Opt.to_option element##.files with
+                       | Some files when files##.length > 0 ->
+                           let file =
+                             Js.Opt.get
+                               (files##item 0)
+                               (fun () -> raise Not_found)
+                           in
+                           let file_name = Js.to_string file##.name in
+                           Lwt.async (fun () ->
+                               read_file_as_data_url file
+                               >>= fun data_url ->
+                               let content = base64_from_data_url data_url in
+                               let artifact =
+                                 Api.Openapi.ObjectArtifact.create
+                                   ~filename:file_name ~content ()
+                               in
+                               let body =
+                                 Api.Openapi.ProblemUpdateRequest.create
+                                   ~object_artifacts:[artifact] ()
+                                 |> Api.Openapi.ProblemUpdateRequest.to_json
+                               in
+                               Api.Helpers.put_problem
+                                 (Option.value ~default:0 problem.id)
+                                 body
+                               >>= fun (_resp, status) ->
+                               if
+                                 status = 200 || status = 201 || status = 204
+                               then (
+                                 let existing =
+                                   match object_artifacts with
+                                   | Some arts -> arts
+                                   | None -> []
+                                 in
+                                 Hashtbl.replace !state.object_artifacts
+                                   (Option.value ~default:0 problem.id)
+                                   (existing @ [artifact]) ;
+                                 Helpers.trigger_render () ;
+                                 Lwt.return_unit )
+                               else Lwt.return_unit ) ;
+                           element##.value := Js.string "" ;
+                           false
+                       | _ -> false )
+                     | None -> false
+                   in
+                   div
+                     ~a:[a_class ["d-flex"; "gap-2"; "align-items-center"]]
+                     [ input
+                         ~a:
+                           [ a_id upload_input_id
+                           ; a_input_type `File
+                           ; a_class ["form-control"; "w-auto"] ]
+                         ()
+                     ; button
+                         ~a:
+                           [ a_class ["btn"; "btn-sm"; "btn-primary"]
+                           ; a_onclick (fun _ -> on_upload_click ()) ]
+                         [txt "Upload object artifact"] ] )
+                ; ( match object_artifacts with
+                  | Some [] ->
+                      p
+                        ~a:[a_class ["text-muted"]]
+                        [txt "No object artifacts defined"]
+                  | Some arts ->
+                      let object_rows =
+                        List.map
+                          (fun (art : Api.Openapi.objectArtifact) ->
+                            div
+                              ~a:
+                                [ a_class
+                                    [ "d-flex"
+                                    ; "justify-content-between"
+                                    ; "align-items-center"
+                                    ; "mb-2"
+                                    ; "border"
+                                    ; "rounded"
+                                    ; "p-3" ] ]
+                              [ div
+                                  ~a:[a_class ["flex-grow-1"]]
+                                  [ span
+                                      ~a:[a_class ["fw-bold"]]
+                                      [txt art.filename]
+                                  ; br ()
+                                  ; small
+                                      ~a:[a_class ["text-muted"]]
+                                      [ txt
+                                          ( "Size: "
+                                          ^ string_of_int
+                                              (String.length art.content)
+                                          ^ " chars" ) ] ]
+                              ; div
+                                  ~a:[a_class ["d-flex"; "gap-1"]]
+                                  [ button
+                                      ~a:
+                                        [ a_class
+                                            [ "btn"
+                                            ; "btn-sm"
+                                            ; "btn-outline-secondary" ]
+                                        ; a_onclick (fun _ ->
+                                              Console.console##log
+                                                (Js.string
+                                                   (Printf.sprintf
+                                                      "View object \
+                                                       artifact: %s"
+                                                      art.filename ) ) ;
+                                              false ) ]
+                                      [Components.Icons.list_ul_icon ()]
+                                  ; button
+                                      ~a:
+                                        [ a_class
+                                            [ "btn"
+                                            ; "btn-sm"
+                                            ; "btn-outline-danger" ]
+                                        ; a_onclick (fun _ ->
+                                              Console.console##log
+                                                (Js.string
+                                                   (Printf.sprintf
+                                                      "Delete object \
+                                                       artifact: %s"
+                                                      art.filename ) ) ;
+                                              false ) ]
+                                      [Components.Icons.trash_icon ()] ] ] )
+                          arts
+                      in
+                      div object_rows
+                  | None -> p ~a:[a_class ["text-muted"]] [txt "Loading..."]
                   ) ] ]
         else div [] ) ]
 
@@ -1272,15 +1499,17 @@ let render_problems_tab () =
         load_problems cid
         >>= fun () ->
         match !state.selected_code with
-        | Some code ->
-            ( match
-                List.find_opt
-                  (fun (p : Api.Openapi.problem) -> p.code = code)
-                  !state.problems
-              with
-            | Some p ->
-                load_testcases (Option.value ~default:0 p.id)
-            | None -> Lwt.return_unit )
+        | Some code -> (
+          match
+            List.find_opt
+              (fun (p : Api.Openapi.problem) -> p.code = code)
+              !state.problems
+          with
+          | Some p ->
+              load_testcases (Option.value ~default:0 p.id)
+              >>= fun () ->
+              load_object_artifacts (Option.value ~default:0 p.id)
+          | None -> Lwt.return_unit )
         | None -> Lwt.return_unit )
   end ;
   (* Problem list area *)
