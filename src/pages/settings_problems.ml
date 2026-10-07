@@ -1439,7 +1439,7 @@ let problem_card (problem : Api.Openapi.problem) =
                                           ( "Size: "
                                           ^ string_of_int
                                               (String.length art.content)
-                                          ^ " chars" ) ] ]
+                                          ^ " bytes" ) ] ]
                               ; div
                                   ~a:[a_class ["d-flex"; "gap-1"]]
                                   [ button
@@ -1503,7 +1503,8 @@ let problem_card (problem : Api.Openapi.problem) =
                                let content = base64_from_data_url data_url in
                                let artifact =
                                  Api.Openapi.ObjectArtifact.create
-                                   ~filename:file_name ~content ()
+                                   ~filename:file_name ~content
+                                   ~size:(String.length content) ()
                                in
                                let body =
                                  Api.Openapi.ProblemUpdateRequest.create
@@ -1576,8 +1577,10 @@ let problem_card (problem : Api.Openapi.problem) =
                                       [ txt
                                           ( "Size: "
                                           ^ string_of_int
-                                              (String.length art.content)
-                                          ^ " chars" ) ] ]
+                                              (Option.value art.size
+                                                 ~default:
+                                                   (String.length art.content) )
+                                          ^ " bytes" ) ] ]
                               ; div
                                   ~a:[a_class ["d-flex"; "gap-1"]]
                                   [ button
@@ -1730,8 +1733,12 @@ let render_problems_tab () =
                       ; description= ""
                       ; input_spec= ""
                       ; output_spec= ""
+                      ; open_at= None
+                      ; close_at= None
+                      ; is_force_closed= None
                       ; languages= []
-                      ; source_artifacts= None } ;
+                      ; source_artifacts= None
+                      ; object_artifacts= None } ;
                   make_problem_modal () |> Helpers.add_element_to_app ;
                   false ) ]
           [ Components.Icons.plus_lg_icon ~a:["me-2"] ()
