@@ -136,7 +136,8 @@ let make () =
                         ; status_p_tyxml
                         ; div
                             ~a:[a_class ["mt-3"; "text-start"]]
-                            [ h6 ~a:[a_class ["text-muted"]] [txt "History"]
+                             [ h6 ~a:[a_class ["text-muted"]]
+                                 [txt (I18n.t "submission_history")]
                             ; div
                                 ~a:
                                   [ a_class ["border"; "rounded"; "bg-light"]

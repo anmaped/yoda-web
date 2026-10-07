@@ -13,15 +13,6 @@ let availability (details : Api.Openapi.submissionDetails) =
   | details when List.for_all output_available details -> Complete
   | _ -> Partial
 
-let status_label status =
-  match status with
-  | "accepted" -> "Accepted"
-  | "wrong_answer" -> "Wrong Answer"
-  | "runtime_error" -> "Runtime Error"
-  | "time_limit_exceeded" -> "Time Limit Exceeded"
-  | "compilation_error" -> "Compilation Error"
-  | value -> value
-
 let format_time_ms ms = Printf.sprintf "%d ms" ms
 
 let detail_row number (detail : Api.Openapi.submissionDetail) =
@@ -35,7 +26,7 @@ let detail_row number (detail : Api.Openapi.submissionDetail) =
   in
   tr
     ( [ td [txt (string_of_int number)]
-      ; td [txt (status_label detail.status)]
+      ; td [txt (I18n.submission_status detail.status)]
       ; td [txt (format_time_ms detail.time_ms)] ]
     @ output_cells )
 
@@ -51,7 +42,7 @@ let compile_error_row (detail : Api.Openapi.submissionDetail) =
         ; td [pre [txt output.stderr]]
         ; td [txt (string_of_int output.return_code)] ]
   in
-  tr ([td [txt (status_label detail.status)]] @ output_cells)
+  tr ([td [txt (I18n.submission_status detail.status)]] @ output_cells)
 
 let is_compile_error (detail : Api.Openapi.submissionDetail) =
   detail.status = "compile_error"

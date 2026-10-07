@@ -80,14 +80,6 @@ let status_of_string = function
   | "compilation_error" -> CompilationError
   | s -> Other s
 
-let status_label = function
-  | Accepted -> "Accepted"
-  | WrongAnswer -> "Wrong Answer"
-  | RuntimeError -> "Runtime Error"
-  | TimeLimitExceeded -> "Time Limit Exceeded"
-  | CompilationError -> "Compilation Error"
-  | Other s -> s
-
 let badge_class = function
   | Accepted -> ["badge"; "text-bg-success"]
   | WrongAnswer -> ["badge"; "text-bg-danger"]
@@ -154,7 +146,8 @@ let submission_row ?(usernames_by_id = None)
       ; td [txt problem]
       ; td [txt lang]
       ; td
-          [span ~a:[a_class (badge_class result)] [txt (status_label result)]]
+          [ span ~a:[a_class (badge_class result)]
+              [txt (I18n.submission_status submission.status)] ]
       ; td [txt time]
       ; td [txt date] ]
     @

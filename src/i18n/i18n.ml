@@ -58,6 +58,22 @@ let t key =
   try Hashtbl.find (Translations.map tr) key
   with Not_found -> failwith ("Translation key not found: " ^ key)
 
+let submission_status status =
+  match String.lowercase_ascii status with
+  | "accepted" -> t "submission_status_accepted"
+  | "wrong_answer" -> t "submission_status_wrong_answer"
+  | "runtime_error" -> t "submission_status_runtime_error"
+  | "time_limit_exceeded" -> t "submission_status_time_limit_exceeded"
+  | "memory_limit_exceeded" -> t "submission_status_memory_limit_exceeded"
+  | "compilation_error" | "compile_error" ->
+      t "submission_status_compilation_error"
+  | "presentation_error" -> t "submission_status_presentation_error"
+  | "internal_error" -> t "submission_status_internal_error"
+  | "queued" -> t "submission_status_queued"
+  | "pending" -> t "submission_status_pending"
+  | "running" -> t "submission_status_running"
+  | _ -> status
+
 let interpolate template values =
   let buf = Buffer.create (String.length template) in
   let i = ref 0 in

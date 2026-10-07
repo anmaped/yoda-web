@@ -33,6 +33,30 @@ type translations =
   ; submission_sending: string
   ; submission_problem_check_failed: string
   ; submission_problem_force_closed: string
+  ; submission_no_problem: string
+  ; submission_no_language: string
+  ; submission_empty_editor: string
+  ; submission_preparing: string
+  ; submission_history: string
+  ; submission_cannot_submit: string
+  ; submission_sending_language: string
+  ; submission_failed_http: string
+  ; submission_created: string
+  ; submission_queued: string
+  ; submission_status_polling: string
+  ; submission_done: string
+  ; submission_final_verdict: string
+  ; submission_status_accepted: string
+  ; submission_status_wrong_answer: string
+  ; submission_status_runtime_error: string
+  ; submission_status_time_limit_exceeded: string
+  ; submission_status_memory_limit_exceeded: string
+  ; submission_status_compilation_error: string
+  ; submission_status_presentation_error: string
+  ; submission_status_internal_error: string
+  ; submission_status_pending: string
+  ; submission_status_queued: string
+  ; submission_status_running: string
   ; submission_processing: string
   ; submission_result: string
   ; submission_view_results: string
@@ -274,6 +298,31 @@ let en =
       "Cannot submit: failed to check problem status (HTTP %s)"
   ; submission_problem_force_closed=
       "Cannot submit: this problem is force closed"
+  ; submission_no_problem= "No selected problem found"
+  ; submission_no_language=
+      "No language selected or allowed for this problem"
+  ; submission_empty_editor= "Editor is empty, nothing to submit"
+  ; submission_preparing= "Preparing submission..."
+  ; submission_history= "History"
+  ; submission_cannot_submit= "Cannot submit: %s"
+  ; submission_sending_language= "Sending your %s solution..."
+  ; submission_failed_http= "Submission failed with HTTP status %s"
+  ; submission_created= "Submission #%s created. Waiting for judge..."
+  ; submission_queued= "Submission queued..."
+  ; submission_status_polling= "Status: %s (polling every 1s)"
+  ; submission_done= "Done: %s"
+  ; submission_final_verdict= "Final verdict: %s"
+  ; submission_status_accepted= "Accepted"
+  ; submission_status_wrong_answer= "Wrong answer"
+  ; submission_status_runtime_error= "Runtime error"
+  ; submission_status_time_limit_exceeded= "Time limit exceeded"
+  ; submission_status_memory_limit_exceeded= "Memory limit exceeded"
+  ; submission_status_compilation_error= "Compilation error"
+  ; submission_status_presentation_error= "Presentation error"
+  ; submission_status_internal_error= "Internal error"
+  ; submission_status_pending= "Pending"
+  ; submission_status_queued= "Queued"
+  ; submission_status_running= "Running"
   ; submission_processing= "Processing your solution... (polling every 2s)"
   ; submission_result= "Result:"
   ; submission_view_results= "View results"
@@ -528,6 +577,32 @@ let fr =
        %s)"
   ; submission_problem_force_closed=
       "Envoi impossible : ce problème a été fermé manuellement"
+  ; submission_no_problem= "Aucun problème sélectionné"
+  ; submission_no_language=
+      "Aucun langage sélectionné ou autorisé pour ce problème"
+  ; submission_empty_editor= "L'éditeur est vide, rien à soumettre"
+  ; submission_preparing= "Préparation de la soumission..."
+  ; submission_history= "Historique"
+  ; submission_cannot_submit= "Envoi impossible : %s"
+  ; submission_sending_language= "Envoi de votre solution en %s..."
+  ; submission_failed_http= "Échec de la soumission (HTTP %s)"
+  ; submission_created= "Soumission nº %s créée. En attente du juge..."
+  ; submission_queued= "Soumission en file d'attente..."
+  ; submission_status_polling=
+      "Statut : %s (vérification toutes les secondes)"
+  ; submission_done= "Terminé : %s"
+  ; submission_final_verdict= "Verdict final : %s"
+  ; submission_status_accepted= "Accepté"
+  ; submission_status_wrong_answer= "Mauvaise réponse"
+  ; submission_status_runtime_error= "Erreur d'exécution"
+  ; submission_status_time_limit_exceeded= "Temps limite dépassé"
+  ; submission_status_memory_limit_exceeded= "Mémoire limite dépassée"
+  ; submission_status_compilation_error= "Erreur de compilation"
+  ; submission_status_presentation_error= "Erreur de présentation"
+  ; submission_status_internal_error= "Erreur interne"
+  ; submission_status_pending= "En attente"
+  ; submission_status_queued= "En file d'attente"
+  ; submission_status_running= "En cours"
   ; submission_processing= "Traitement en cours... (sonde toutes les 2s)"
   ; submission_result= "Résultat :"
   ; submission_view_results= "Voir les résultats"
@@ -791,6 +866,31 @@ let es =
        (HTTP %s)"
   ; submission_problem_force_closed=
       "No se puede enviar: este problema se ha cerrado manualmente"
+  ; submission_no_problem= "No se ha seleccionado ningún problema"
+  ; submission_no_language=
+      "No se ha seleccionado un lenguaje permitido para este problema"
+  ; submission_empty_editor= "El editor está vacío; no hay nada que enviar"
+  ; submission_preparing= "Preparando el envío..."
+  ; submission_history= "Historial"
+  ; submission_cannot_submit= "No se puede enviar: %s"
+  ; submission_sending_language= "Enviando tu solución en %s..."
+  ; submission_failed_http= "Error al enviar la solución (HTTP %s)"
+  ; submission_created= "Envío n.º %s creado. Esperando al juez..."
+  ; submission_queued= "Envío en cola..."
+  ; submission_status_polling= "Estado: %s (consultando cada segundo)"
+  ; submission_done= "Finalizado: %s"
+  ; submission_final_verdict= "Veredicto final: %s"
+  ; submission_status_accepted= "Aceptado"
+  ; submission_status_wrong_answer= "Respuesta incorrecta"
+  ; submission_status_runtime_error= "Error de ejecución"
+  ; submission_status_time_limit_exceeded= "Tiempo límite excedido"
+  ; submission_status_memory_limit_exceeded= "Límite de memoria excedido"
+  ; submission_status_compilation_error= "Error de compilación"
+  ; submission_status_presentation_error= "Error de presentación"
+  ; submission_status_internal_error= "Error interno"
+  ; submission_status_pending= "Pendiente"
+  ; submission_status_queued= "En cola"
+  ; submission_status_running= "En ejecución"
   ; submission_processing= "Procesando tu solución... (consultando cada 2s)"
   ; submission_result= "Resultado:"
   ; submission_view_results= "Ver resultados"
@@ -1049,6 +1149,31 @@ let pt =
        problema (HTTP %s)"
   ; submission_problem_force_closed=
       "Não é possível submeter: este problema foi fechado manualmente"
+  ; submission_no_problem= "Nenhum problema selecionado"
+  ; submission_no_language=
+      "Nenhuma linguagem selecionada ou permitida para este problema"
+  ; submission_empty_editor= "O editor está vazio; não há nada para submeter"
+  ; submission_preparing= "A preparar a submissão..."
+  ; submission_history= "Histórico"
+  ; submission_cannot_submit= "Não é possível submeter: %s"
+  ; submission_sending_language= "A enviar a sua solução em %s..."
+  ; submission_failed_http= "Falha na submissão (HTTP %s)"
+  ; submission_created= "Submissão n.º %s criada. A aguardar avaliação..."
+  ; submission_queued= "Submissão em fila de espera..."
+  ; submission_status_polling= "Estado: %s (verificação a cada segundo)"
+  ; submission_done= "Concluído: %s"
+  ; submission_final_verdict= "Veredito final: %s"
+  ; submission_status_accepted= "Aceite"
+  ; submission_status_wrong_answer= "Resposta errada"
+  ; submission_status_runtime_error= "Erro de execução"
+  ; submission_status_time_limit_exceeded= "Tempo limite excedido"
+  ; submission_status_memory_limit_exceeded= "Limite de memória excedido"
+  ; submission_status_compilation_error= "Erro de compilação"
+  ; submission_status_presentation_error= "Erro de apresentação"
+  ; submission_status_internal_error= "Erro interno"
+  ; submission_status_pending= "Pendente"
+  ; submission_status_queued= "Em fila de espera"
+  ; submission_status_running= "Em execução"
   ; submission_processing=
       "Processando sua solução... (verificando a cada 2s)"
   ; submission_result= "Resultado:"
@@ -1301,6 +1426,30 @@ let ar =
       "تعذّر الإرسال: فشل التحقق من حالة المسألة (HTTP %s)"
   ; submission_problem_force_closed=
       "تعذّر الإرسال: تم إغلاق هذه المسألة يدويًا"
+  ; submission_no_problem= "لم يتم اختيار مسألة"
+  ; submission_no_language= "لم يتم اختيار لغة مسموح بها لهذه المسألة"
+  ; submission_empty_editor= "المحرر فارغ، لا يوجد ما يمكن إرساله"
+  ; submission_preparing= "جارٍ تحضير الإرسال..."
+  ; submission_history= "السجل"
+  ; submission_cannot_submit= "تعذّر الإرسال: %s"
+  ; submission_sending_language= "جارٍ إرسال حلّك بلغة %s..."
+  ; submission_failed_http= "فشل إرسال الحل (HTTP %s)"
+  ; submission_created= "تم إنشاء الإرسال رقم %s. في انتظار التقييم..."
+  ; submission_queued= "الإرسال في قائمة الانتظار..."
+  ; submission_status_polling= "الحالة: %s (يُتحقق منها كل ثانية)"
+  ; submission_done= "اكتمل: %s"
+  ; submission_final_verdict= "النتيجة النهائية: %s"
+  ; submission_status_accepted= "مقبول"
+  ; submission_status_wrong_answer= "إجابة خاطئة"
+  ; submission_status_runtime_error= "خطأ أثناء التشغيل"
+  ; submission_status_time_limit_exceeded= "تجاوز الحد الزمني"
+  ; submission_status_memory_limit_exceeded= "تجاوز حد الذاكرة"
+  ; submission_status_compilation_error= "خطأ في الترجمة"
+  ; submission_status_presentation_error= "خطأ في التنسيق"
+  ; submission_status_internal_error= "خطأ داخلي"
+  ; submission_status_pending= "قيد الانتظار"
+  ; submission_status_queued= "في قائمة الانتظار"
+  ; submission_status_running= "قيد التشغيل"
   ; submission_processing= "جارٍ معالجة حلّك... (الاستعلام كل ثانيتين)"
   ; submission_result= "النتيجة:"
   ; submission_view_results= "عرض النتائج"
@@ -1550,6 +1699,34 @@ let map : translations -> (string, string) Hashtbl.t =
   add "submission_sending" tr.submission_sending ;
   add "submission_problem_check_failed" tr.submission_problem_check_failed ;
   add "submission_problem_force_closed" tr.submission_problem_force_closed ;
+  add "submission_no_problem" tr.submission_no_problem ;
+  add "submission_no_language" tr.submission_no_language ;
+  add "submission_empty_editor" tr.submission_empty_editor ;
+  add "submission_preparing" tr.submission_preparing ;
+  add "submission_history" tr.submission_history ;
+  add "submission_cannot_submit" tr.submission_cannot_submit ;
+  add "submission_sending_language" tr.submission_sending_language ;
+  add "submission_failed_http" tr.submission_failed_http ;
+  add "submission_created" tr.submission_created ;
+  add "submission_queued" tr.submission_queued ;
+  add "submission_status_polling" tr.submission_status_polling ;
+  add "submission_done" tr.submission_done ;
+  add "submission_final_verdict" tr.submission_final_verdict ;
+  add "submission_status_accepted" tr.submission_status_accepted ;
+  add "submission_status_wrong_answer" tr.submission_status_wrong_answer ;
+  add "submission_status_runtime_error" tr.submission_status_runtime_error ;
+  add "submission_status_time_limit_exceeded"
+    tr.submission_status_time_limit_exceeded ;
+  add "submission_status_memory_limit_exceeded"
+    tr.submission_status_memory_limit_exceeded ;
+  add "submission_status_compilation_error"
+    tr.submission_status_compilation_error ;
+  add "submission_status_presentation_error"
+    tr.submission_status_presentation_error ;
+  add "submission_status_internal_error" tr.submission_status_internal_error ;
+  add "submission_status_pending" tr.submission_status_pending ;
+  add "submission_status_queued" tr.submission_status_queued ;
+  add "submission_status_running" tr.submission_status_running ;
   add "submission_processing" tr.submission_processing ;
   add "submission_result" tr.submission_result ;
   add "submission_view_results" tr.submission_view_results ;
