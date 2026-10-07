@@ -647,6 +647,10 @@ let problem_output_spec_input_id = "problem-output-spec-input"
 let object_artifact_input_id problem_id =
   Printf.sprintf "object-artifact-input-%d" problem_id
 
+let problem_open_at_input_id = "problem-open-at-input"
+
+let problem_close_at_input_id = "problem-close-at-input"
+
 let close_problem_modal () =
   edit_mode := None_ ;
   Helpers.remove_first_element_from_app ("#" ^ problem_modal_id) ;
@@ -668,6 +672,36 @@ let get_checkbox_value field_id =
   match Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.input with
   | Some el -> Js.to_bool el##.checked
   | None -> false
+
+let datetime_local_input_value_of_string value =
+  let value = String.trim value in
+  if value = "" then ""
+  else if String.length value >= 16 && value.[10] = 'T' then
+    String.sub value 0 16
+  else if String.length value >= 16 && value.[10] = ' ' then
+    String.sub value 0 10 ^ "T" ^ String.sub value 11 5
+  else value
+
+let datetime_local_to_api_value value =
+  let value = String.trim value in
+  if value = "" then None
+  else
+    let js_date =
+      Js.Unsafe.new_obj
+        (Js.Unsafe.pure_js_expr "Date")
+        [|Js.Unsafe.inject (Js.string value)|]
+    in
+    let time_ms =
+      Js.float_of_number (Js.Unsafe.meth_call js_date "getTime" [||])
+    in
+    if classify_float time_ms = FP_nan then None
+    else
+      let iso_full =
+        Js.to_string (Js.Unsafe.meth_call js_date "toISOString" [||])
+      in
+      if String.length iso_full >= 20 then
+        Some (String.sub iso_full 0 19 ^ "Z")
+      else Some iso_full
 
 let read_file_as_data_url (file : File.file Js.t) : string Lwt.t =
   let waiter, wakener = Lwt.wait () in
@@ -702,6 +736,12 @@ let submit_problem_modal ~mode ~default_time_limit_ms
     ~default_memory_limit_mb () =
   let code = get_input_value problem_code_input_id |> String.trim in
   let title = get_input_value problem_title_input_id |> String.trim in
+  let open_at =
+    get_input_value problem_open_at_input_id |> datetime_local_to_api_value
+  in
+  let close_at =
+    get_input_value problem_close_at_input_id |> datetime_local_to_api_value
+  in
   let time_limit_ms =
     get_input_value problem_time_limit_input_id
     |> int_of_string_opt
@@ -750,8 +790,9 @@ let submit_problem_modal ~mode ~default_time_limit_ms
             | Some problem_id ->
                 let body =
                   Api.Openapi.ProblemUpdateRequest.create ~code ~title
-                    ~description ~input_spec ~output_spec ~languages
-                    ~time_limit_ms ~memory_limit_mb ~is_force_closed ()
+                    ~description ~input_spec ~output_spec ~languages ?open_at
+                    ?close_at ~time_limit_ms ~memory_limit_mb
+                    ~is_force_closed ()
                   |> Api.Openapi.ProblemUpdateRequest.to_json
                 in
                 Api.Helpers.put_problem problem_id body )
@@ -780,6 +821,8 @@ let make_problem_modal () =
           , title_t
           , time_limit_ms
           , memory_limit_mb
+          , open_at
+          , close_at
           , description
           , input_spec
           , output_spec
@@ -791,12 +834,14 @@ let make_problem_modal () =
             , p.title
             , p.time_limit_ms
             , p.memory_limit_mb
+            , Option.value ~default:"" p.open_at
+            , Option.value ~default:"" p.close_at
             , p.description
             , p.input_spec
             , p.output_spec
             , String.concat ", " p.languages
             , Option.value ~default:false p.is_force_closed )
-        | None_ -> ("", "", 0, 0, "", "", "", "", false)
+        | None_ -> ("", "", 0, 0, "", "", "", "", "", "", false)
       in
       div
         ~a:[a_id problem_modal_id]
@@ -855,6 +900,44 @@ let make_problem_modal () =
                                       ; a_placeholder "Add Two Numbers"
                                       ; a_value title_t ]
                                     () ]
+                            ; ( if is_create then div []
+                                else
+                                  div
+                                    ~a:[a_class ["col-12"]]
+                                    [ div
+                                        ~a:[a_class ["row"; "g-3"]]
+                                        [ div
+                                            ~a:[a_class ["col-md-6"]]
+                                            [ label
+                                                ~a:[a_class ["form-label"]]
+                                                [txt "Begin date and time"]
+                                            ; input
+                                                ~a:
+                                                  [ a_id
+                                                      problem_open_at_input_id
+                                                  ; a_class ["form-control"]
+                                                  ; Unsafe.string_attrib
+                                                      "type" "datetime-local"
+                                                  ; a_value
+                                                      (datetime_local_input_value_of_string
+                                                         open_at ) ]
+                                                () ]
+                                        ; div
+                                            ~a:[a_class ["col-md-6"]]
+                                            [ label
+                                                ~a:[a_class ["form-label"]]
+                                                [txt "End date and time"]
+                                            ; input
+                                                ~a:
+                                                  [ a_id
+                                                      problem_close_at_input_id
+                                                  ; a_class ["form-control"]
+                                                  ; Unsafe.string_attrib
+                                                      "type" "datetime-local"
+                                                  ; a_value
+                                                      (datetime_local_input_value_of_string
+                                                         close_at ) ]
+                                                () ] ] ] )
                             ; (* Limits row *)
                               div
                                 ~a:[a_class ["col-md-6"]]
