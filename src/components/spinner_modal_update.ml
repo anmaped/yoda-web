@@ -152,24 +152,38 @@ let submit_and_poll () =
       Spinner_modal.update_text ~kind:"error" ("Cannot submit: " ^ msg) ;
       Lwt.return_unit
   | Ok ctx -> (
-      Spinner_modal.update_text ~kind:"info"
-        (Printf.sprintf "Sending your %s solution..." ctx.language) ;
-      submit_solution ctx
-      >>= function
-      | Error code ->
-          Spinner_modal.update_text ~kind:"error"
-            (Printf.sprintf "Submission failed with HTTP status %d" code) ;
-          Lwt.return_unit
-      | Ok submission_id ->
-          Spinner_modal.update_text ~kind:"info"
-            (Printf.sprintf "Submission #%d created. Waiting for judge..."
-               submission_id ) ;
-          poll_until_terminal ctx submission_id
-          >>= fun final_status ->
-          Spinner_modal.update_title ("Done: " ^ final_status) ;
-          Spinner_modal.update_text
-            ~kind:(modal_kind_of_submission_status final_status)
-            ("Final verdict: " ^ final_status) ;
-          Lwt.return_unit )
+       Api.Helpers.get_problem ctx.problem_id
+       >>= fun (resp, status) ->
+       if status <> 200 then (
+         Spinner_modal.update_text ~kind:"error"
+            (I18n.interpolate (I18n.t "submission_problem_check_failed")
+               [string_of_int status] ) ;
+         Lwt.return_unit )
+       else if
+         (Api.Openapi.Problem.of_yojson resp).is_force_closed = Some true
+       then (
+         Spinner_modal.update_text ~kind:"error"
+            (I18n.t "submission_problem_force_closed") ;
+         Lwt.return_unit )
+       else (
+         Spinner_modal.update_text ~kind:"info"
+           (Printf.sprintf "Sending your %s solution..." ctx.language) ;
+         submit_solution ctx
+         >>= function
+         | Error code ->
+             Spinner_modal.update_text ~kind:"error"
+               (Printf.sprintf "Submission failed with HTTP status %d" code) ;
+             Lwt.return_unit
+         | Ok submission_id ->
+             Spinner_modal.update_text ~kind:"info"
+               (Printf.sprintf "Submission #%d created. Waiting for judge..."
+                  submission_id ) ;
+             poll_until_terminal ctx submission_id
+             >>= fun final_status ->
+             Spinner_modal.update_title ("Done: " ^ final_status) ;
+             Spinner_modal.update_text
+               ~kind:(modal_kind_of_submission_status final_status)
+               ("Final verdict: " ^ final_status) ;
+             Lwt.return_unit ) )
 
 let start () = Lwt.async submit_and_poll

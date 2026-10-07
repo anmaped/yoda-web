@@ -31,6 +31,8 @@ type translations =
   ; modal_confirm: string
   ; modal_confirm_action: string
   ; submission_sending: string
+  ; submission_problem_check_failed: string
+  ; submission_problem_force_closed: string
   ; submission_processing: string
   ; submission_result: string
   ; submission_view_results: string
@@ -208,6 +210,7 @@ type translations =
   ; problems_time_limit_label: string
   ; problems_memory_limit_label: string
   ; problems_languages_label: string
+  ; problems_force_closed_label: string
   ; problems_description_label: string
   ; problems_input_spec_label: string
   ; problems_output_spec_label: string
@@ -267,6 +270,10 @@ let en =
   ; codebar_evaluate_save= "Evaluate and save all your work"
   ; modal_confirm_action= "Confirm action"
   ; submission_sending= "Sending your solution..."
+  ; submission_problem_check_failed=
+      "Cannot submit: failed to check problem status (HTTP %s)"
+  ; submission_problem_force_closed=
+      "Cannot submit: this problem is force closed"
   ; submission_processing= "Processing your solution... (polling every 2s)"
   ; submission_result= "Result:"
   ; submission_view_results= "View results"
@@ -299,9 +306,9 @@ let en =
   ; submissions_col_action= "Action"
   ; submissions_reevaluate= "Re-evaluate"
   ; submissions_recent_title= "Recent Submissions"
-   ; submissions_show_more= "Show more"
-   ; submissions_loading= "Loading submissions..."
-   ; submissions_only_mine= "Only my submissions"
+  ; submissions_show_more= "Show more"
+  ; submissions_loading= "Loading submissions..."
+  ; submissions_only_mine= "Only my submissions"
   ; contests_title= "Contests"
   ; problems_col_id= "ID"
   ; problems_col_name= "Problem"
@@ -455,6 +462,7 @@ let en =
   ; problems_time_limit_label= "Time Limit (ms)"
   ; problems_memory_limit_label= "Memory Limit (MB)"
   ; problems_languages_label= "Languages"
+  ; problems_force_closed_label= "Force closed"
   ; problems_description_label= "Description"
   ; problems_input_spec_label= "Input Specification"
   ; problems_output_spec_label= "Output Specification"
@@ -515,6 +523,11 @@ let fr =
   ; codebar_evaluate_save= "Évaluer et sauvegarder tout votre travail"
   ; modal_confirm_action= "Confirmer l'action"
   ; submission_sending= "Envoi de votre solution..."
+  ; submission_problem_check_failed=
+      "Envoi impossible : vérification du statut du problème échouée (HTTP \
+       %s)"
+  ; submission_problem_force_closed=
+      "Envoi impossible : ce problème a été fermé manuellement"
   ; submission_processing= "Traitement en cours... (sonde toutes les 2s)"
   ; submission_result= "Résultat :"
   ; submission_view_results= "Voir les résultats"
@@ -547,9 +560,9 @@ let fr =
   ; submissions_col_action= "Action"
   ; submissions_reevaluate= "Réévaluer"
   ; submissions_recent_title= "Soumissions récentes"
-   ; submissions_show_more= "Afficher plus"
-   ; submissions_loading= "Chargement des soumissions..."
-   ; submissions_only_mine= "Uniquement mes soumissions"
+  ; submissions_show_more= "Afficher plus"
+  ; submissions_loading= "Chargement des soumissions..."
+  ; submissions_only_mine= "Uniquement mes soumissions"
   ; contests_title= "Concours"
   ; problems_col_id= "ID"
   ; problems_col_name= "Problème"
@@ -713,6 +726,7 @@ let fr =
   ; problems_time_limit_label= "Limite de temps (ms)"
   ; problems_memory_limit_label= "Limite de mémoire (MB)"
   ; problems_languages_label= "Langages"
+  ; problems_force_closed_label= "Fermeture forcée"
   ; problems_description_label= "Description"
   ; problems_input_spec_label= "Spécification d'entrée"
   ; problems_output_spec_label= "Spécification de sortie"
@@ -772,6 +786,11 @@ let es =
   ; codebar_evaluate_save= "Evaluar y guardar todo tu trabajo"
   ; modal_confirm_action= "Confirmar acción"
   ; submission_sending= "Enviando tu solución..."
+  ; submission_problem_check_failed=
+      "No se puede enviar: no se pudo comprobar el estado del problema \
+       (HTTP %s)"
+  ; submission_problem_force_closed=
+      "No se puede enviar: este problema se ha cerrado manualmente"
   ; submission_processing= "Procesando tu solución... (consultando cada 2s)"
   ; submission_result= "Resultado:"
   ; submission_view_results= "Ver resultados"
@@ -804,9 +823,9 @@ let es =
   ; submissions_col_action= "Acción"
   ; submissions_reevaluate= "Re-evaluar"
   ; submissions_recent_title= "Envíos recientes"
-   ; submissions_show_more= "Mostrar más"
-   ; submissions_loading= "Cargando envíos..."
-   ; submissions_only_mine= "Solo mis envíos"
+  ; submissions_show_more= "Mostrar más"
+  ; submissions_loading= "Cargando envíos..."
+  ; submissions_only_mine= "Solo mis envíos"
   ; contests_title= "Concursos"
   ; problems_col_id= "ID"
   ; problems_col_name= "Problema"
@@ -965,6 +984,7 @@ let es =
   ; problems_time_limit_label= "Límite de tiempo (ms)"
   ; problems_memory_limit_label= "Límite de memoria (MB)"
   ; problems_languages_label= "Idiomas"
+  ; problems_force_closed_label= "Cierre forzado"
   ; problems_description_label= "Descripción"
   ; problems_input_spec_label= "Especificación de entrada"
   ; problems_output_spec_label= "Especificación de salida"
@@ -1024,6 +1044,11 @@ let pt =
   ; codebar_evaluate_save= "Avaliar e guardar todo o seu trabalho"
   ; modal_confirm_action= "Confirmar ação"
   ; submission_sending= "Enviando sua solução..."
+  ; submission_problem_check_failed=
+      "Não é possível submeter: não foi possível verificar o estado do \
+       problema (HTTP %s)"
+  ; submission_problem_force_closed=
+      "Não é possível submeter: este problema foi fechado manualmente"
   ; submission_processing=
       "Processando sua solução... (verificando a cada 2s)"
   ; submission_result= "Resultado:"
@@ -1057,9 +1082,9 @@ let pt =
   ; submissions_col_action= "Ação"
   ; submissions_reevaluate= "Reavaliar"
   ; submissions_recent_title= "Envios recentes"
-   ; submissions_show_more= "Mostrar mais"
-   ; submissions_loading= "A carregar envios..."
-   ; submissions_only_mine= "Apenas os meus envios"
+  ; submissions_show_more= "Mostrar mais"
+  ; submissions_loading= "A carregar envios..."
+  ; submissions_only_mine= "Apenas os meus envios"
   ; contests_title= "Concursos"
   ; problems_col_id= "ID"
   ; problems_col_name= "Problema"
@@ -1215,6 +1240,7 @@ let pt =
   ; problems_time_limit_label= "Limite de tempo (ms)"
   ; problems_memory_limit_label= "Limite de memória (MB)"
   ; problems_languages_label= "Idiomas"
+  ; problems_force_closed_label= "Fecho forçado"
   ; problems_description_label= "Descrição"
   ; problems_input_spec_label= "Especificação de entrada"
   ; problems_output_spec_label= "Especificação de saída"
@@ -1271,6 +1297,10 @@ let ar =
   ; codebar_evaluate_save= "تقييم وحفظ كل عملك"
   ; modal_confirm_action= "تأكيد الإجراء"
   ; submission_sending= "جارٍ إرسال حلّك..."
+  ; submission_problem_check_failed=
+      "تعذّر الإرسال: فشل التحقق من حالة المسألة (HTTP %s)"
+  ; submission_problem_force_closed=
+      "تعذّر الإرسال: تم إغلاق هذه المسألة يدويًا"
   ; submission_processing= "جارٍ معالجة حلّك... (الاستعلام كل ثانيتين)"
   ; submission_result= "النتيجة:"
   ; submission_view_results= "عرض النتائج"
@@ -1303,9 +1333,9 @@ let ar =
   ; submissions_col_action= "الإجراء"
   ; submissions_reevaluate= "إعادة تقييم"
   ; submissions_recent_title= "الإرسالات الأخيرة"
-   ; submissions_show_more= "عرض المزيد"
-   ; submissions_loading= "جارٍ تحميل الإرسالات..."
-   ; submissions_only_mine= "إرسالياتي فقط"
+  ; submissions_show_more= "عرض المزيد"
+  ; submissions_loading= "جارٍ تحميل الإرسالات..."
+  ; submissions_only_mine= "إرسالياتي فقط"
   ; contests_title= "المسابقات"
   ; problems_col_id= "المعرّف"
   ; problems_col_name= "المشكلة"
@@ -1456,6 +1486,7 @@ let ar =
   ; problems_time_limit_label= "الحد الزمني (مللي ثانية)"
   ; problems_memory_limit_label= "حد الذاكرة (ميغابايت)"
   ; problems_languages_label= "اللغات"
+  ; problems_force_closed_label= "إغلاق إجباري"
   ; problems_description_label= "الوصف"
   ; problems_input_spec_label= "مواصفات الإدخال"
   ; problems_output_spec_label= "مواصفات الإخراج"
@@ -1517,6 +1548,8 @@ let map : translations -> (string, string) Hashtbl.t =
   add "modal_confirm" tr.modal_confirm ;
   add "modal_confirm_action" tr.modal_confirm_action ;
   add "submission_sending" tr.submission_sending ;
+  add "submission_problem_check_failed" tr.submission_problem_check_failed ;
+  add "submission_problem_force_closed" tr.submission_problem_force_closed ;
   add "submission_processing" tr.submission_processing ;
   add "submission_result" tr.submission_result ;
   add "submission_view_results" tr.submission_view_results ;
@@ -1545,9 +1578,9 @@ let map : translations -> (string, string) Hashtbl.t =
   add "submissions_col_action" tr.submissions_col_action ;
   add "submissions_reevaluate" tr.submissions_reevaluate ;
   add "submissions_recent_title" tr.submissions_recent_title ;
-   add "submissions_show_more" tr.submissions_show_more ;
-   add "submissions_loading" tr.submissions_loading ;
-   add "submissions_only_mine" tr.submissions_only_mine ;
+  add "submissions_show_more" tr.submissions_show_more ;
+  add "submissions_loading" tr.submissions_loading ;
+  add "submissions_only_mine" tr.submissions_only_mine ;
   add "contests_title" tr.contests_title ;
   add "problems_col_id" tr.problems_col_id ;
   add "problems_col_name" tr.problems_col_name ;
@@ -1696,6 +1729,7 @@ let map : translations -> (string, string) Hashtbl.t =
   add "problems_time_limit_label" tr.problems_time_limit_label ;
   add "problems_memory_limit_label" tr.problems_memory_limit_label ;
   add "problems_languages_label" tr.problems_languages_label ;
+  add "problems_force_closed_label" tr.problems_force_closed_label ;
   add "problems_description_label" tr.problems_description_label ;
   add "problems_input_spec_label" tr.problems_input_spec_label ;
   add "problems_output_spec_label" tr.problems_output_spec_label ;

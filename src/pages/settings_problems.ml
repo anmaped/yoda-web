@@ -1000,7 +1000,8 @@ let make_problem_modal () =
                                      [ input ~a:force_closed_attrs ()
                                      ; label
                                          ~a:[a_class ["form-check-label"]]
-                                         [txt "Force closed"] ] ) ]
+                                         [txt (I18n.t "problems_force_closed_label")]
+                                    ] ) ]
                             ; (* Description *)
                               div
                                 ~a:[a_class ["col-12"]]
