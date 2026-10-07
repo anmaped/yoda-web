@@ -636,6 +636,8 @@ let problem_memory_limit_input_id = "problem-memory-limit-input"
 
 let problem_languages_input_id = "problem-languages-input"
 
+let problem_force_closed_input_id = "problem-force-closed-input"
+
 let problem_description_input_id = "problem-description-input"
 
 let problem_input_spec_input_id = "problem-input-spec-input"
@@ -661,6 +663,11 @@ let get_textarea_value field_id =
   with
   | Some el -> Js.to_string el##.value
   | None -> ""
+
+let get_checkbox_value field_id =
+  match Dom_html.getElementById_coerce field_id Dom_html.CoerceTo.input with
+  | Some el -> Js.to_bool el##.checked
+  | None -> false
 
 let read_file_as_data_url (file : File.file Js.t) : string Lwt.t =
   let waiter, wakener = Lwt.wait () in
@@ -711,6 +718,7 @@ let submit_problem_modal ~mode ~default_time_limit_ms
   let description = get_textarea_value problem_description_input_id in
   let input_spec = get_textarea_value problem_input_spec_input_id in
   let output_spec = get_textarea_value problem_output_spec_input_id in
+  let is_force_closed = get_checkbox_value problem_force_closed_input_id in
   if code = "" || title = "" then (
     error_msg :=
       Some
@@ -740,13 +748,10 @@ let submit_problem_modal ~mode ~default_time_limit_ms
             match problem.id with
             | None -> Lwt.return (`Null, 400)
             | Some problem_id ->
-                let object_artifacts =
-                  get_object_artifacts_for_problem problem_id
-                in
                 let body =
                   Api.Openapi.ProblemUpdateRequest.create ~code ~title
                     ~description ~input_spec ~output_spec ~languages
-                    ~time_limit_ms ~memory_limit_mb ~object_artifacts ()
+                    ~time_limit_ms ~memory_limit_mb ~is_force_closed ()
                   |> Api.Openapi.ProblemUpdateRequest.to_json
                 in
                 Api.Helpers.put_problem problem_id body )
@@ -778,7 +783,8 @@ let make_problem_modal () =
           , description
           , input_spec
           , output_spec
-          , languages ) =
+          , languages
+          , is_force_closed ) =
         match mode with
         | Create p | Edit p ->
             ( p.code
@@ -788,8 +794,9 @@ let make_problem_modal () =
             , p.description
             , p.input_spec
             , p.output_spec
-            , String.concat ", " p.languages )
-        | None_ -> ("", "", 0, 0, "", "", "", "")
+            , String.concat ", " p.languages
+            , Option.value ~default:false p.is_force_closed )
+        | None_ -> ("", "", 0, 0, "", "", "", "", false)
       in
       div
         ~a:[a_id problem_modal_id]
@@ -893,6 +900,24 @@ let make_problem_modal () =
                                       ; a_placeholder "python, java, cpp"
                                       ; a_value languages ]
                                     () ]
+                            ; (* Force closed *)
+                              div
+                                ~a:[a_class ["col-12"]]
+                                [ (let force_closed_attrs =
+                                     [ a_id problem_force_closed_input_id
+                                     ; a_input_type `Checkbox
+                                     ; a_class ["form-check-input"] ]
+                                     @
+                                     if is_force_closed then [a_checked ()]
+                                     else []
+                                   in
+                                   div
+                                     ~a:
+                                       [a_class ["form-check"; "form-switch"]]
+                                     [ input ~a:force_closed_attrs ()
+                                     ; label
+                                         ~a:[a_class ["form-check-label"]]
+                                         [txt "Force closed"] ] ) ]
                             ; (* Description *)
                               div
                                 ~a:[a_class ["col-12"]]
@@ -1735,7 +1760,7 @@ let render_problems_tab () =
                       ; output_spec= ""
                       ; open_at= None
                       ; close_at= None
-                      ; is_force_closed= None
+                      ; is_force_closed= Some false
                       ; languages= []
                       ; source_artifacts= None
                       ; object_artifacts= None } ;
