@@ -20,6 +20,17 @@ let get_base_url () : string =
 
 let base_url = get_base_url ()
 
+let get_maintenance_status () =
+  XmlHttpRequest.perform_raw_url (base_url ^ "/status")
+  >>= fun resp ->
+  if resp.code <> 200 && resp.code <> 503 then
+    failwith "Failed to fetch service status" ;
+  let status = Openapi.Status.of_json resp.content in
+  match status.status with
+  | Openapi.Maintenance -> Lwt.return (Some status.message)
+  | Openapi.Ok when resp.code = 200 -> Lwt.return None
+  | Openapi.Ok -> failwith "Invalid service status response"
+
 let headers () =
   let token = Js.to_string (External_lib.Helpers.auth_token ()) in
   let h = [("Content-Type", "application/json")] in
@@ -84,8 +95,8 @@ let post_auth_password ~current_password ~new_password () =
   in
   post_json
     (base_url ^ "/auth/password")
-    (Openapi.AuthPasswordPostRequest.to_yojson request
-     |> Yojson.Safe.to_string)
+    ( Openapi.AuthPasswordPostRequest.to_yojson request
+    |> Yojson.Safe.to_string )
 
 let get_admin_users () = fetch_json (base_url ^ "/admin/users")
 

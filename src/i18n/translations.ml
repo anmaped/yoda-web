@@ -9,6 +9,12 @@ type translations =
   ; login_session_expired: string
   ; login_footer: string
   ; sidebar_app_name: string
+  ; status_checking_title: string
+  ; status_checking_description: string
+  ; status_maintenance_title: string
+  ; status_maintenance_description: string
+  ; status_unavailable_title: string
+  ; status_unavailable_description: string
   ; tabbar_actions_label: string
   ; tabbar_download_title: string
   ; tabbar_copy: string
@@ -271,6 +277,16 @@ let en =
   ; login_session_expired= "Your session expired. Please sign in again."
   ; login_footer= "© The Yoda Team 2026"
   ; sidebar_app_name= "YodaApp"
+  ; status_checking_title= "Yoda is checking the service status"
+  ; status_checking_description= "Checking if the service is ready..."
+  ; status_maintenance_title= "Yoda is under maintenance"
+  ; status_maintenance_description=
+      "The service is temporarily closed for maintenance. This page will \
+       update automatically when Yoda is ready."
+  ; status_unavailable_title= "Yoda cannot reach the service status"
+  ; status_unavailable_description=
+      "Yoda could not check the service status. This page will update \
+       automatically when Yoda is ready."
   ; tabbar_actions_label= "Code actions"
   ; tabbar_download_title= "Download all files as ZIP"
   ; tabbar_copy= "Copy"
@@ -549,6 +565,17 @@ let fr =
       "Votre session a expiré. Veuillez vous reconnecter."
   ; login_footer= "© L'équipe Yoda 2026"
   ; sidebar_app_name= "YodaApp"
+  ; status_checking_title= "Yoda vérifie l'état du service"
+  ; status_checking_description=
+      "Vérification de la disponibilité du service..."
+  ; status_maintenance_title= "Yoda est en maintenance"
+  ; status_maintenance_description=
+      "Le service est temporairement fermé pour maintenance. Cette page se \
+       mettra à jour automatiquement dès que Yoda sera prêt."
+  ; status_unavailable_title= "Yoda ne peut pas accéder à l'état du service"
+  ; status_unavailable_description=
+      "Yoda n'a pas pu vérifier l'état du service. Cette page se mettra à \
+       jour automatiquement dès que Yoda sera prêt."
   ; tabbar_actions_label= "Actions du code"
   ; tabbar_download_title= "Télécharger tous les fichiers en ZIP"
   ; tabbar_copy= "Copier"
@@ -838,6 +865,16 @@ let es =
   ; login_session_expired= "Tu sesión ha expirado. Vuelve a iniciar sesión."
   ; login_footer= "© El equipo Yoda 2026"
   ; sidebar_app_name= "YodaApp"
+  ; status_checking_title= "Yoda está comprobando el estado del servicio"
+  ; status_checking_description= "Comprobando si el servicio está listo..."
+  ; status_maintenance_title= "Yoda está en mantenimiento"
+  ; status_maintenance_description=
+      "El servicio está cerrado temporalmente por mantenimiento. Esta \
+       página se actualizará automáticamente cuando Yoda esté listo."
+  ; status_unavailable_title= "Yoda no puede acceder al estado del servicio"
+  ; status_unavailable_description=
+      "Yoda no pudo comprobar el estado del servicio. Esta página se \
+       actualizará automáticamente cuando Yoda esté listo."
   ; tabbar_actions_label= "Acciones del código"
   ; tabbar_download_title= "Descargar todos los archivos como ZIP"
   ; tabbar_copy= "Copiar"
@@ -1121,6 +1158,16 @@ let pt =
   ; login_session_expired= "Sua sessão expirou. Faça login novamente."
   ; login_footer= "© A equipe Yoda 2026"
   ; sidebar_app_name= "YodaApp"
+  ; status_checking_title= "Yoda está a verificar o estado do serviço"
+  ; status_checking_description= "A verificar se o serviço está pronto..."
+  ; status_maintenance_title= "Yoda está em manutenção"
+  ; status_maintenance_description=
+      "O serviço está temporariamente fechado para manutenção. Esta página \
+       será atualizada automaticamente quando Yoda estiver pronto."
+  ; status_unavailable_title= "Yoda não consegue aceder ao estado do serviço"
+  ; status_unavailable_description=
+      "Yoda não conseguiu verificar o estado do serviço. Esta página será \
+       atualizada automaticamente quando Yoda estiver pronto."
   ; tabbar_actions_label= "Ações de código"
   ; tabbar_download_title= "Baixar todos os arquivos em ZIP"
   ; tabbar_copy= "Copiar"
@@ -1402,6 +1449,16 @@ let ar =
   ; login_session_expired= "انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى."
   ; login_footer= "© فريق يودا 2026"
   ; sidebar_app_name= "YodaApp"
+  ; status_checking_title= "يودا يتحقق من حالة الخدمة"
+  ; status_checking_description= "جارٍ التحقق من جاهزية الخدمة..."
+  ; status_maintenance_title= "يودا قيد الصيانة"
+  ; status_maintenance_description=
+      "الخدمة مغلقة مؤقتًا للصيانة. ستتحدث هذه الصفحة تلقائيًا عندما يصبح \
+       يودا جاهزًا."
+  ; status_unavailable_title= "تعذر على يودا الوصول إلى حالة الخدمة"
+  ; status_unavailable_description=
+      "تعذر على يودا التحقق من حالة الخدمة. ستتحدث هذه الصفحة تلقائيًا عندما \
+       يصبح يودا جاهزًا."
   ; tabbar_actions_label= "إجراءات الكود"
   ; tabbar_download_title= "تنزيل كل الملفات بتنسيق ZIP"
   ; tabbar_copy= "نسخ"
@@ -1675,6 +1732,12 @@ let map : translations -> (string, string) Hashtbl.t =
   add "login_session_expired" tr.login_session_expired ;
   add "login_footer" tr.login_footer ;
   add "sidebar_app_name" tr.sidebar_app_name ;
+  add "status_checking_title" tr.status_checking_title ;
+  add "status_checking_description" tr.status_checking_description ;
+  add "status_maintenance_title" tr.status_maintenance_title ;
+  add "status_maintenance_description" tr.status_maintenance_description ;
+  add "status_unavailable_title" tr.status_unavailable_title ;
+  add "status_unavailable_description" tr.status_unavailable_description ;
   add "tabbar_actions_label" tr.tabbar_actions_label ;
   add "tabbar_download_title" tr.tabbar_download_title ;
   add "tabbar_copy" tr.tabbar_copy ;
