@@ -1,43 +1,6 @@
 open Js_of_ocaml
 open Js_of_ocaml_tyxml
 
-type service_status =
-  | Checking
-  | Available
-  | Maintenance of string
-  | Unavailable
-
-let service_status = ref Checking
-
-let status_interval_seconds = 15.0
-
-let status_page status =
-  let open Tyxml_js.Html in
-  let title, description =
-    match status with
-    | Checking -> ("status_checking_title", "status_checking_description")
-    | Maintenance _ ->
-        ("status_maintenance_title", "status_maintenance_description")
-    | Unavailable ->
-        ("status_unavailable_title", "status_unavailable_description")
-    | Available -> assert false
-  in
-  let description =
-    match status with
-    | Maintenance message when String.trim message <> "" -> message
-    | _ -> I18n.t description
-  in
-  div
-    ~a:[a_class ["service-status"; "w-100"]]
-    [ div
-        ~a:[a_class ["service-status-card"; "text-center"]]
-        [ img ~src:Blobs.yoda_logo_url ~alt:"Yoda"
-            ~a:[a_class ["service-status-logo"; "mb-4"]]
-            ()
-        ; h1 ~a:[a_class ["h2"; "mb-3"]] [txt (I18n.t title)]
-        ; p ~a:[a_class ["text-body-secondary"; "mb-0"]] [txt description] ]
-    ]
-
 let hash_of_url (url : string) =
   match Astring.String.cut ~sep:"#" url with
   | Some (_, hash_suffix) when hash_suffix <> "" -> "#" ^ hash_suffix
@@ -70,7 +33,8 @@ let () =
         Pages.Settings.save_referrer () ;
         (* Determine the page to render based on hash *)
         let page =
-          if !service_status <> Available then [status_page !service_status]
+          if not (Components.Service_status.is_available ()) then
+            [Components.Service_status.render ()]
           else
             match hash with
             | "#logout" ->
@@ -186,19 +150,6 @@ let () =
                Js._false ) )
           Js._false
       in
-      render_page () ;
-      let rec check_status () =
-        Lwt.catch
-          (fun () ->
-            Api.Helpers.get_maintenance_status ()
-            >|= function
-            | Some message -> Maintenance message
-            | None -> Available )
-          (fun _ -> Lwt.return Unavailable)
-        >>= fun status ->
-        if status <> !service_status then (
-          service_status := status ;
-          render_page () ) ;
-        Js_of_ocaml_lwt.Lwt_js.sleep status_interval_seconds >>= check_status
-      in
-      Lwt.async check_status ; Lwt.return_unit )
+      (*render_page () ;*)
+      Components.Service_status.start ~on_change:render_page () ;
+      Lwt.return_unit )

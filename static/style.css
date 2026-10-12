@@ -3,6 +3,8 @@ body {
   height: 100%;
 }
 
+/* Service status styles */
+
 .service-status {
   min-height: 100vh;
   display: grid;
@@ -24,6 +26,38 @@ body {
   width: min(11rem, 100%);
   height: auto;
   margin-inline: auto;
+}
+
+.service-status-retry {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--bs-border-color-translucent);
+}
+
+.service-status-countdown {
+  color: var(--bs-secondary-color);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.service-status-progress {
+  height: 0.35rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bs-secondary-bg);
+}
+
+.service-status-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bs-primary);
+  transition: width 0.3s linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .service-status-progress-fill {
+    transition: none;
+  }
 }
 
 /* login and form styles */
@@ -177,7 +211,7 @@ body {
   animation: problem-selection-pulse 0.8s ease-in-out infinite alternate;
 }
 
-.problem-list-item-unselected > td {
+.problem-list-item-unselected>td {
   animation: problem-selection-pulse 0.8s ease-in-out infinite alternate;
 }
 
@@ -192,6 +226,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .contest-list-item,
   .problem-list-item-unselected {
     animation: none;
