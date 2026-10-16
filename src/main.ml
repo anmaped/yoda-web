@@ -63,6 +63,7 @@ let () =
                 ignore Components.Editor.editor##refresh ;
                 []
             | "#submissions" -> Pages.Submissions.render ()
+            | "#judge-board" -> Pages.Judge_board.render ()
             | p when Astring.String.is_prefix ~affix:"#show-problem-" p ->
                 let parts = Astring.String.cuts ~sep:"-" p in
                 let problem_id = List.nth parts 2 in

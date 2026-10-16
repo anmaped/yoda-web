@@ -3,6 +3,33 @@ body {
   height: 100%;
 }
 
+/* Judge board styles */
+
+.judge-board {
+  min-width: 0;
+}
+
+.judge-distance-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 18rem;
+  background: var(--bs-tertiary-bg);
+  border-radius: 0.5rem;
+}
+
+.judge-distance-line {
+  fill: none;
+  stroke: var(--bs-primary);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.judge-distance-dot {
+  fill: var(--bs-primary);
+  cursor: pointer;
+}
+
 /* Service status styles */
 
 .service-status {

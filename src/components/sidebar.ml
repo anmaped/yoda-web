@@ -130,6 +130,14 @@ let sidebar ?(only_icons = false) ?(horizontal = false) () =
                 (Icons.table_icon ())
                 (if only_icons then "S" else I18n.t "sidebar_submissions") ]
         ; (* Switch Contest *)
+          (if Helpers.is_judge_or_admin () then
+             li
+               ~a:[a_class ["nav-item"]]
+               [ nav_link "#judge-board" "Judge board"
+                   (Icons.table_icon ())
+                   (if only_icons then "J" else "Judge board") ]
+           else li [])
+        ; (* Switch Contest *)
           li
             ~a:[a_class ["nav-item"]]
             [ nav_link "#contests"
