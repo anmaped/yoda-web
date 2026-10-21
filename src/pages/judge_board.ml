@@ -21,6 +21,13 @@ let selected_user : int option ref = ref None
 
 let usernames : (int, string) Hashtbl.t = Hashtbl.create 32
 
+let problem_codes : (int, string) Hashtbl.t = Hashtbl.create 32
+
+let problem_code id =
+  Option.value
+    ~default:("Problem #" ^ string_of_int id)
+    (Hashtbl.find_opt problem_codes id)
+
 let files : file_entry list ref = ref []
 
 let evaluations : evaluation list ref = ref []
@@ -31,22 +38,13 @@ let analyzing = ref false
 
 let evaluating : (int * string) option ref = ref None
 
+let reevaluating : int option ref = ref None
+
+let reevaluation_notice = ref ""
+
 let generation = ref 0
 
 let message = ref ""
-
-let endpoint = ref ""
-
-let model = ref ""
-
-let api_key = ref ""
-
-let prompt =
-  ref
-    "Review this source file as a judging aid. Describe notable patterns \
-     and possible signs of generated code, with uncertainty; never claim to \
-     prove authorship. Consider the number of attempts supplied. Respond \
-     concisely with evidence and caveats."
 
 type metric =
   { key: string
@@ -171,6 +169,8 @@ let select_user user_id =
   evaluations := [] ;
   analyzing := false ;
   evaluating := None ;
+  reevaluating := None ;
+  reevaluation_notice := "" ;
   message := ""
 
 let user_selector ~on_select () =
@@ -226,6 +226,8 @@ let load ~on_loaded contest_id =
   files := [] ;
   evaluations := [] ;
   evaluating := None ;
+  reevaluating := None ;
+  reevaluation_notice := "" ;
   let url =
     Printf.sprintf "%s/contests/%d/submissions" Api.Helpers.base_url
       contest_id
@@ -235,17 +237,28 @@ let load ~on_loaded contest_id =
         (fun () ->
           Api.Helpers.fetch_json url
           >>= fun (json, code) ->
-          ( if code <> 200 then Lwt.return []
+          ( if code <> 200 then Lwt.return ([], [])
             else
-              Lwt.catch
-                (fun () ->
-                  Api.Helpers.get_admin_users ()
-                  >|= fun (users_json, users_code) ->
-                  if users_code = 200 then
-                    Api.Openapi.AdminUsersGetResponse2.of_yojson users_json
-                  else [] )
-                (fun _ -> Lwt.return []) )
-          >>= fun users ->
+              Lwt.both
+                (Lwt.catch
+                   (fun () ->
+                     Api.Helpers.get_admin_users ()
+                     >|= fun (users_json, users_code) ->
+                     if users_code = 200 then
+                       Api.Openapi.AdminUsersGetResponse2.of_yojson
+                         users_json
+                     else [] )
+                   (fun _ -> Lwt.return []) )
+                (Lwt.catch
+                   (fun () ->
+                     Api.Helpers.get_problems contest_id
+                     >|= fun (problems_json, problems_code) ->
+                     if problems_code = 200 then
+                       Api.Openapi.ContestsContestsidProblemsGetResponse2
+                       .of_yojson problems_json
+                     else [] )
+                   (fun _ -> Lwt.return []) ) )
+          >>= fun (users, problems) ->
           if !contest = contest_id && !generation = request_generation then (
             if code = 200 then (
               submissions := Api.Openapi.Submissions.of_yojson json ;
@@ -254,6 +267,13 @@ let load ~on_loaded contest_id =
                 (fun (user : Api.Openapi.user) ->
                   Hashtbl.replace usernames user.id user.username )
                 users ;
+              Hashtbl.clear problem_codes ;
+              List.iter
+                (fun (problem : Api.Openapi.problem) ->
+                  Option.iter
+                    (fun id -> Hashtbl.replace problem_codes id problem.code)
+                    problem.id )
+                problems ;
               ( match !selected_user with
               | Some id
                 when (not
@@ -383,82 +403,120 @@ let attempts entry =
     0 (visible_submissions ())
 
 let evaluate entry =
-  let key = (entry.submission.id, entry.filename) in
-  let request_generation = !generation in
-  if !evaluating = None then (
-    evaluating := Some key ;
+  match Settings_llm.configuration () with
+  | None -> ()
+  | Some config when !evaluating = None ->
+      let key = (entry.submission.id, entry.filename) in
+      let request_generation = !generation in
+      evaluating := Some key ;
+      refresh () ;
+      Lwt.async (fun () ->
+          let body =
+            `Assoc
+              [ ("model", `String config.model)
+              ; ( "messages"
+                , `List
+                    [ `Assoc
+                        [ ("role", `String "system")
+                        ; ("content", `String config.prompt) ]
+                    ; `Assoc
+                        [ ("role", `String "user")
+                        ; ( "content"
+                          , `String
+                              (Printf.sprintf
+                                 "Problem %s, submission %d, file %s, \
+                                  attempts so far %d, judge verdict %s. \
+                                  Source:\n\
+                                  %s"
+                                 (problem_code entry.submission.problem_id)
+                                 entry.submission.id entry.filename
+                                 (attempts entry) entry.submission.status
+                                 entry.content ) ) ] ] ) ]
+            |> Yojson.Safe.to_string
+          in
+          Lwt.catch
+            (fun () ->
+              XmlHttpRequest.perform_raw_url ~override_method:`POST
+                ~headers:
+                  [ ("Content-Type", "application/json")
+                  ; ("Authorization", "Bearer " ^ config.api_key) ]
+                ~contents:(`String body) config.endpoint
+              >>= fun response ->
+              let text, error =
+                if response.code < 200 || response.code >= 300 then
+                  ( Printf.sprintf "Provider returned HTTP %d." response.code
+                  , true )
+                else
+                  try
+                    let json = Yojson.Safe.from_string response.content in
+                    Yojson.Safe.Util.(json |> member "choices" |> to_list)
+                    |> List.hd
+                    |> Yojson.Safe.Util.member "message"
+                    |> Yojson.Safe.Util.member "content"
+                    |> Yojson.Safe.Util.to_string
+                    |> fun content -> (content, false)
+                  with _ ->
+                    ( "Provider response did not include message content."
+                    , true )
+              in
+              if !evaluating = Some key && !generation = request_generation
+              then (
+                evaluations :=
+                  {entry; response= text; error}
+                  :: List.filter
+                       (fun result ->
+                         (result.entry.submission.id, result.entry.filename)
+                         <> key )
+                       !evaluations ;
+                evaluating := None ;
+                refresh () ) ;
+              Lwt.return_unit )
+            (fun _ ->
+              if !evaluating = Some key && !generation = request_generation
+              then (
+                evaluations :=
+                  { entry
+                  ; response=
+                      "Request failed. Check endpoint, CORS policy, and \
+                       network access."
+                  ; error= true }
+                  :: !evaluations ;
+                evaluating := None ;
+                refresh () ) ;
+              Lwt.return_unit ) )
+  | Some _ -> ()
+
+let request_reevaluation submission_id =
+  if Helpers.is_judge_or_admin () && !reevaluating = None then (
+    reevaluating := Some submission_id ;
+    reevaluation_notice := "" ;
     refresh () ;
     Lwt.async (fun () ->
-        let body =
-          `Assoc
-            [ ("model", `String !model)
-            ; ( "messages"
-              , `List
-                  [ `Assoc
-                      [ ("role", `String "system")
-                      ; ("content", `String !prompt) ]
-                  ; `Assoc
-                      [ ("role", `String "user")
-                      ; ( "content"
-                        , `String
-                            (Printf.sprintf
-                               "Problem %d, submission %d, file %s, \
-                                attempts so far %d, judge verdict %s. \
-                                Source:\n\
-                                %s"
-                               entry.submission.problem_id
-                               entry.submission.id entry.filename
-                               (attempts entry) entry.submission.status
-                               entry.content ) ) ] ] ) ]
-          |> Yojson.Safe.to_string
-        in
         Lwt.catch
           (fun () ->
-            XmlHttpRequest.perform_raw_url ~override_method:`POST
-              ~headers:
-                [ ("Content-Type", "application/json")
-                ; ("Authorization", "Bearer " ^ !api_key) ]
-              ~contents:(`String body) !endpoint
-            >>= fun response ->
-            let text, error =
-              if response.code < 200 || response.code >= 300 then
-                ( Printf.sprintf "Provider returned HTTP %d." response.code
-                , true )
-              else
-                try
-                  let json = Yojson.Safe.from_string response.content in
-                  Yojson.Safe.Util.(json |> member "choices" |> to_list)
-                  |> List.hd
-                  |> Yojson.Safe.Util.member "message"
-                  |> Yojson.Safe.Util.member "content"
-                  |> Yojson.Safe.Util.to_string
-                  |> fun content -> (content, false)
-                with _ ->
-                  ("Provider response did not include message content.", true)
-            in
-            if !evaluating = Some key && !generation = request_generation
-            then (
-              evaluations :=
-                {entry; response= text; error}
-                :: List.filter
-                     (fun result ->
-                       (result.entry.submission.id, result.entry.filename)
-                       <> key )
-                     !evaluations ;
-              evaluating := None ;
+            Api.Helpers.re_evaluate_submission submission_id
+            >>= fun (_, status) ->
+            if !reevaluating = Some submission_id then (
+              reevaluation_notice :=
+                if status >= 200 && status < 300 then
+                  Printf.sprintf
+                    "Re-evaluation requested for submission #%d. Refresh to \
+                     see the updated verdict."
+                    submission_id
+                else
+                  Printf.sprintf
+                    "Re-evaluation of submission #%d failed (HTTP %d)."
+                    submission_id status ;
+              reevaluating := None ;
               refresh () ) ;
             Lwt.return_unit )
           (fun _ ->
-            if !evaluating = Some key && !generation = request_generation
-            then (
-              evaluations :=
-                { entry
-                ; response=
-                    "Request failed. Check endpoint, CORS policy, and \
-                     network access."
-                ; error= true }
-                :: !evaluations ;
-              evaluating := None ;
+            if !reevaluating = Some submission_id then (
+              reevaluation_notice :=
+                Printf.sprintf
+                  "Could not request re-evaluation of submission #%d."
+                  submission_id ;
+              reevaluating := None ;
               refresh () ) ;
             Lwt.return_unit ) ) )
 
@@ -513,9 +571,7 @@ let histogram ?(show_users = false) ~title submissions =
                   ; "align-items-center"
                   ; "gap-2"
                   ; "mb-2" ] ]
-            [ span
-                ~a:[a_style "min-width:5rem"]
-                [txt ("Problem " ^ string_of_int id)]
+            [ span ~a:[a_style "min-width:5rem"] [txt (problem_code id)]
             ; div
                 ~a:[a_class ["progress"; "flex-grow-1"]]
                 [ div
@@ -565,7 +621,7 @@ let distance_plot () =
     in
     div
       ~a:[a_class ["mb-4"]]
-      [ h3 ~a:[a_class ["h6"]] [txt ("Problem " ^ string_of_int problem_id)]
+      [ h3 ~a:[a_class ["h6"]] [txt (problem_code problem_id)]
       ; ( if n = 0 then
             p
               ~a:[a_class ["text-muted"]]
@@ -638,27 +694,6 @@ let distance_plot () =
     if problem_ids = [] then [p [txt "No submissions in this view."]]
     else List.map plot_problem problem_ids )
 
-let text_input title value typ =
-  label
-    ~a:[a_class ["d-block"; "mb-2"]]
-    [ span [txt title]
-    ; input
-        ~a:
-          [ a_class ["form-control"]
-          ; a_input_type typ
-          ; a_value !value
-          ; a_oninput (fun event ->
-                let target =
-                  Js.Opt.get event##.target (fun () -> assert false)
-                in
-                let input =
-                  Js.Opt.get (Dom_html.CoerceTo.input target) (fun () ->
-                      assert false )
-                in
-                value := Js.to_string input##.value ;
-                false ) ]
-        () ]
-
 let metric_selector ~on_select () =
   label
     ~a:[a_class ["d-block"; "mb-3"]]
@@ -703,51 +738,23 @@ let metric_selector ~on_select () =
            metrics ) ]
 
 let results_table () =
-  let ready =
-    !endpoint <> "" && !model <> "" && !api_key <> "" && !prompt <> ""
-  in
+  let ready = Option.is_some (Settings_llm.configuration ()) in
   let rows =
     List.sort (fun a b -> Int.compare b.submission.id a.submission.id) !files
   in
   div
     ~a:[a_class ["card"; "p-3"; "mb-3"]]
     [ h2 ~a:[a_class ["h5"]] [txt "LLM evaluation"]
+    ; ( if !reevaluation_notice = "" then div []
+        else
+          p
+            ~a:[a_class ["alert"; "alert-info"]; a_aria "live" ["polite"]]
+            [txt !reevaluation_notice] )
     ; p
         ~a:[a_class ["text-muted"]]
-        [ txt
-            "Optional judging aid, not an authorship detector. Source code \
-             and attempt metadata are sent to your chosen provider only \
-             when you click Evaluate. Keys are kept in memory, never saved. \
-             Browser access requires provider CORS support; use a trusted \
-             server proxy otherwise." ]
-    ; div
-        ~a:[a_class ["row"]]
-        [ div
-            ~a:[a_class ["col-md-5"]]
-            [ text_input "OpenAI-compatible chat completions URL" endpoint
-                `Text ]
-        ; div ~a:[a_class ["col-md-3"]] [text_input "Model" model `Text]
-        ; div
-            ~a:[a_class ["col-md-4"]]
-            [text_input "API key" api_key `Password] ]
-    ; label
-        ~a:[a_class ["d-block"; "mb-3"]]
-        [ span [txt "Evaluation prompt"]
-        ; textarea
-            ~a:
-              [ a_class ["form-control"]
-              ; a_rows 4
-              ; a_oninput (fun event ->
-                    let target =
-                      Js.Opt.get event##.target (fun () -> assert false)
-                    in
-                    let field =
-                      Js.Opt.get (Dom_html.CoerceTo.textarea target)
-                        (fun () -> assert false )
-                    in
-                    prompt := Js.to_string field##.value ;
-                    false ) ]
-            (txt !prompt) ]
+        [ txt "Configure the provider and prompt in "
+        ; a ~a:[a_href "#settings-llm"] [txt "LLM settings"]
+        ; txt ". Evaluation sends code only when requested." ]
     ; div
         ~a:[a_class ["table-responsive"]]
         [ table
@@ -758,7 +765,6 @@ let results_table () =
                      [ th [txt "User"]
                      ; th [txt "Submission / file"]
                      ; th [txt "Problem"]
-                     ; th [txt "Attempts"]
                      ; th [txt "Distance"]
                      ; th [txt "Judge verdict"]
                      ; th [txt "LLM evaluation"]
@@ -766,7 +772,7 @@ let results_table () =
             ( if rows = [] then
                 [ tr
                     [ td
-                        ~a:[a_colspan 8]
+                        ~a:[a_colspan 7]
                         [txt "Analyze source files to populate this table."]
                     ] ]
               else
@@ -792,8 +798,7 @@ let results_table () =
                           [ txt
                               (Printf.sprintf "#%d / %s" entry.submission.id
                                  entry.filename ) ]
-                      ; td [txt (string_of_int entry.submission.problem_id)]
-                      ; td [txt (string_of_int (attempts entry))]
+                      ; td [txt (problem_code entry.submission.problem_id)]
                       ; td
                           [ txt
                               ( match
@@ -826,16 +831,41 @@ let results_table () =
                                           [ "btn"
                                           ; "btn-sm"
                                           ; "btn-outline-primary" ]
+                                      ; a_title "Evaluate with LLM"
+                                      ; a_aria "label" ["Evaluate with LLM"]
                                       ; a_onclick (fun _ ->
                                             evaluate entry ; false ) ]
                                     @
                                     if (not ready) || !evaluating <> None
                                     then [a_disabled ()]
                                     else [] )
-                                  [ txt
-                                      ( if !evaluating = Some key then
-                                          "Evaluating..."
-                                        else "Evaluate" ) ]
+                                  [Components.Icons.robot_icon ()]
+                              :: button
+                                   ~a:
+                                     ( [ a_class
+                                           [ "btn"
+                                           ; "btn-sm"
+                                           ; "btn-outline-warning" ]
+                                       ; a_title
+                                           (I18n.t "submissions_reevaluate")
+                                       ; a_aria "label"
+                                           [I18n.t "submissions_reevaluate"]
+                                       ; a_onclick (fun _ ->
+                                             request_reevaluation
+                                               entry.submission.id ;
+                                             false ) ]
+                                     @
+                                     if !reevaluating <> None then
+                                       [a_disabled ()]
+                                     else [] )
+                                   [ Components.Icons.reeval_icon
+                                       ~a:
+                                         ( if
+                                             !reevaluating
+                                             = Some entry.submission.id
+                                           then ["spin"]
+                                           else [] )
+                                       () ]
                               :: Option.to_list
                                    (Components.Submissions_list_details
                                     .source_artifacts_action entry.submission )
@@ -852,6 +882,7 @@ let content contest_id =
     evaluating := None ;
     selected_user := None ;
     Hashtbl.clear usernames ;
+    Hashtbl.clear problem_codes ;
     message := "" ;
     load ~on_loaded:(fun () -> analyze contest_id) contest_id ) ;
   main
@@ -951,7 +982,7 @@ let content contest_id =
 
 let render () =
   if not (Helpers.is_judge_or_admin ()) then (
-    api_key := "" ;
+    Settings_llm.clear_api_key () ;
     [ div
         ~a:[a_class ["panel"; "p-4"]]
         [h1 [txt "Judge board"]; p [txt "Judge or admin access required."]]

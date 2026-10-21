@@ -18,7 +18,7 @@ let key_settings_referrer = "yoda-settings-referrer"
 let key_language = "yoda-language"
 
 (* Tab state *)
-type tab = Settings | Password | Config | Stats | Users | Problems
+type tab = Settings | Password | Config | Stats | Users | Problems | Llm
 
 let tab_label = function
   | Settings -> I18n.t "settings_tab_general"
@@ -27,6 +27,7 @@ let tab_label = function
   | Stats -> I18n.t "settings_tab_stats"
   | Users -> I18n.t "settings_tab_users"
   | Problems -> I18n.t "settings_tab_problems"
+  | Llm -> I18n.t "settings_llm_evaluation"
 
 let active_tab : tab ref = ref Settings
 
@@ -331,11 +332,13 @@ let render_tabs () =
             [ a
                 ~a:
                   [ a_class
-                      ("nav-link"
-                      :: (if !active_tab = Password then ["active"] else []))
+                      ( "nav-link"
+                      :: (if !active_tab = Password then ["active"] else [])
+                      )
                   ; a_href "#settings-password"
                   ; a_onclick (fun _ ->
-                        Helpers.navigate_to "#settings-password" ; false) ]
+                        Helpers.navigate_to "#settings-password" ;
+                        false ) ]
                 [txt (tab_label Password)] ]
         ; ( if Helpers.is_admin () then
               li
@@ -382,7 +385,7 @@ let render_tabs () =
                             false ) ]
                     [txt (tab_label Users)] ]
             else li [] )
-        ; ( if Helpers.is_admin () || Helpers.is_judge () then
+        ; ( if Helpers.is_judge_or_admin () then
               li
                 ~a:[a_class ["nav-item"]]
                 [ a
@@ -397,6 +400,21 @@ let render_tabs () =
                             Helpers.navigate_to "#settings-problems" ;
                             false ) ]
                     [txt (tab_label Problems)] ]
+            else li [] )
+        ; ( if Helpers.is_judge_or_admin () then
+              li
+                ~a:[a_class ["nav-item"]]
+                [ a
+                    ~a:
+                      [ a_class
+                          ( "nav-link"
+                          :: (if !active_tab = Llm then ["active"] else [])
+                          )
+                      ; a_href "#settings-llm"
+                      ; a_onclick (fun _ ->
+                            Helpers.navigate_to "#settings-llm" ;
+                            false ) ]
+                    [txt (tab_label Llm)] ]
             else li [] ) ] ]
 
 (* render *)
@@ -438,12 +456,12 @@ let render ?(tab = "general") () =
                     [Components.Icons.x_close_icon ()] ]
             ; render_tabs ()
             ; ( match tab with
-               | "general" ->
-                   active_tab := Settings ;
-                   render_settings_tab ()
-               | "password" ->
-                   active_tab := Password ;
-                   Settings_password.render_password_tab ()
+              | "general" ->
+                  active_tab := Settings ;
+                  render_settings_tab ()
+              | "password" ->
+                  active_tab := Password ;
+                  Settings_password.render_password_tab ()
               | "yodac" ->
                   active_tab := Config ;
                   Settings_yodac.render_config_tab ()
@@ -456,4 +474,7 @@ let render ?(tab = "general") () =
               | "problems" ->
                   active_tab := Problems ;
                   Settings_problems.render_problems_tab ()
+              | "llm" when Helpers.is_judge_or_admin () ->
+                  active_tab := Llm ;
+                  Settings_llm.render_tab ()
               | _ -> failwith "Invalid tab" ) ] ] ]

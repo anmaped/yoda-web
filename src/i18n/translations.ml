@@ -132,6 +132,7 @@ type translations =
   ; settings_tab_users: string
   ; settings_tab_stats: string
   ; settings_tab_problems: string
+  ; settings_llm_evaluation: string
   ; settings_line_wrap_label: string
   ; settings_auto_save_label: string
   ; settings_admin_badge: string
@@ -433,6 +434,7 @@ let en =
   ; password_error_current= "The current password is incorrect."
   ; password_error_update= "Failed to change password."
   ; settings_tab_problems= "Problems"
+  ; settings_llm_evaluation= "LLM evaluation"
   ; config_meta_version= "Version: %s"
   ; config_meta_updated= "Updated: %s"
   ; config_meta_by= "By: %s"
@@ -708,6 +710,7 @@ let fr =
   ; settings_tab_yodac= "YodaC"
   ; settings_tab_users= "Utilisateurs"
   ; settings_tab_problems= "Problèmes"
+  ; settings_llm_evaluation= "Évaluation par LLM"
   ; settings_line_wrap_label= "Retour à la ligne"
   ; settings_auto_save_label= "Sauvegarde auto."
   ; settings_admin_badge= "Accès Administrateur"
@@ -1009,6 +1012,7 @@ let es =
   ; settings_tab_yodac= "YodaC"
   ; settings_tab_users= "Usuarios"
   ; settings_tab_problems= "Problemas"
+  ; settings_llm_evaluation= "Evaluación por LLM"
   ; settings_line_wrap_label= "Envolver líneas"
   ; settings_auto_save_label= "Guardado automático"
   ; settings_admin_badge= "Acceso de Administrador"
@@ -1305,6 +1309,7 @@ let pt =
   ; settings_tab_yodac= "YodaC"
   ; settings_tab_users= "Utilizadores"
   ; settings_tab_problems= "Problemas"
+  ; settings_llm_evaluation= "Avaliação por LLM"
   ; settings_line_wrap_label= "Quebrar linhas"
   ; settings_auto_save_label= "Guarda de forma automática"
   ; settings_admin_badge= "Acesso de Administrador"
@@ -1592,6 +1597,7 @@ let ar =
   ; settings_tab_yodac= "يوداك"
   ; settings_tab_users= "المستخدمون"
   ; settings_tab_problems= "المشاكل"
+  ; settings_llm_evaluation= "تقييم النموذج اللغوي"
   ; settings_line_wrap_label= "تغليف الأسطر"
   ; settings_auto_save_label= "حفظ تلقائي"
   ; settings_admin_badge= "وصول المسؤول"
@@ -1871,6 +1877,7 @@ let map : translations -> (string, string) Hashtbl.t =
   add "settings_tab_yodac" tr.settings_tab_yodac ;
   add "settings_tab_users" tr.settings_tab_users ;
   add "settings_tab_problems" tr.settings_tab_problems ;
+  add "settings_llm_evaluation" tr.settings_llm_evaluation ;
   add "settings_line_wrap_label" tr.settings_line_wrap_label ;
   add "settings_auto_save_label" tr.settings_auto_save_label ;
   add "settings_admin_badge" tr.settings_admin_badge ;

@@ -12,6 +12,7 @@
   judge_board
   codeboard
   settings
+  settings_llm
   settings_password
   settings_user
   settings_yodac
