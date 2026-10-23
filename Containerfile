@@ -8,8 +8,9 @@ COPY default.conf /etc/nginx/conf.d/default.conf
 COPY static/index.html /usr/share/nginx/html/
 COPY _build/default/src/main.bc.js /usr/share/nginx/html/${VERSION}.js
 COPY entrypoint.sh /docker-entrypoint.d/01-encrypt-url.sh
-#replace main.bc.js by versioned main.bc.js (force cache refresh on client side when new version is deployed)
-RUN sed -i "s|main.bc.js|${VERSION}.js|g" /usr/share/nginx/html/index.html
+#replace __YODAW_SCRIPT__ by versioned .js (force cache refresh on client side when new version is deployed)
+RUN sed -i -e "s|__YODAW_SCRIPT__|${VERSION}.js|g" \
+    -e "s|__YODAW_VERSION__|${VERSION}|g" /usr/share/nginx/html/index.html
 
 RUN chmod +x /docker-entrypoint.d/01-encrypt-url.sh \
   && echo "${VERSION}" > /usr/share/nginx/html/version

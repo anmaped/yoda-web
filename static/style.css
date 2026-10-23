@@ -3,6 +3,29 @@ body {
   height: 100%;
 }
 
+/* Sidebar styles */
+
+.sidebar-about-version {
+  width: fit-content;
+  margin: 0.35rem auto 0;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 999px;
+  background: var(--bs-body-bg);
+  color: var(--bs-secondary-color);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.sidebar-about:hover .sidebar-about-version,
+.sidebar-about:focus-visible .sidebar-about-version {
+  color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
 /* Judge board styles */
 
 .judge-board {

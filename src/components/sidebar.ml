@@ -2,6 +2,22 @@ open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 
+let ui_version =
+  match
+    Js.Opt.to_option
+      (Dom_html.document##querySelector
+         (Js.string "meta[name='ui-version']") )
+  with
+  | None -> ""
+  | Some meta ->
+      let version =
+        Js.Opt.case
+          (meta##getAttribute (Js.string "content"))
+          (fun () -> "")
+          Js.to_string
+      in
+      if version = "__UI_VERSION__" then "dev" else version
+
 let nav_to path =
   Dom_html.window##.history##pushState
     Js.null (Js.string "")
@@ -161,15 +177,29 @@ let sidebar ?(only_icons = false) ?(horizontal = false) () =
     ; a
         ~a:
           [ a_href "#about"
-          ; a_class ["position-fixed"; "bottom-0"; "start-0"; "m-3"; "z-3"]
+          ; a_class
+              [ "sidebar-about"
+              ; "position-fixed"
+              ; "bottom-0"
+              ; "start-0"
+              ; "m-3"
+              ; "z-3"
+              ; "text-decoration-none" ]
           ; Unsafe.string_attrib "data-bs-toggle" "tooltip"
           ; Unsafe.string_attrib "data-bs-placement" "right"
           ; Unsafe.string_attrib "data-bs-original-title" "About" ]
         [ img ~src:Blobs.yoda_logo_url ~alt:"Yoda Logo"
             ~a:
-              [ a_class ["yoda-logo"; "mx-auto"]
+              [ a_class ["yoda-logo"; "d-block"; "mx-auto"]
               ; a_width (if only_icons then 0 else 128) ]
             ()
+        ; ( if ui_version <> "" && not only_icons then
+              span
+                ~a:
+                  [ a_class
+                      ["sidebar-about-version"; "d-block"; "text-center"] ]
+                [txt ("yoda-w-" ^ ui_version)]
+            else span [] )
         ; span ~a:[a_class ["visually-hidden"]] [txt "About"] ] ]
 
 let sidebar ?(mobile = false) ?(wide = true) () =
