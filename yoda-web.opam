@@ -5,7 +5,7 @@ synopsis: "Frontend for Yoda server"
 description: "A small frontend built with js_of_ocaml, Tyxml_js and Lwt."
 authors: ["The Yoda Team"]
 maintainer: "The Yoda Team"
-license: "MIT"
+license: "GPL-3.0-only"
 build: [ ["dune" "build" "-p" "%{name}%" "-j" "4"] ]
 depends: [
   "ocaml" {>= "4.08"}
