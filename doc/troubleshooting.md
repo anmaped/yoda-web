@@ -43,6 +43,17 @@ curl -i http://localhost:8001/status
 - Mixed-content error: an HTTPS page cannot call an HTTP API in a typical
   browser. Use an HTTPS API endpoint or a suitable same-origin proxy.
 
+## nginx `/llm/` Proxy
+
+Set `LLM_ROUTING_URL` to the OpenAI-compatible provider origin with a trailing
+slash (for example, `https://api.openai.com/`). The browser uses the default
+`/llm/v1/chat/completions` endpoint in LLM settings and fetches models from
+`/llm/v1/models`. nginx strips `/llm/` and forwards both requests, including
+the API key's `Authorization` header. The upstream must be reachable from the
+container. A 404 usually indicates the upstream URL has the wrong path or a
+missing trailing slash; 502/504 indicates an upstream connection or TLS issue.
+Without `LLM_ROUTING_URL`, use a direct provider endpoint that supports CORS.
+
 ## nginx `/api` Proxy
 
 For development, setting `API_ROUTING_URL` adds an nginx proxy for `/api`.

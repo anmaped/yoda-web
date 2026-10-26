@@ -1,6 +1,8 @@
 open Js_of_ocaml
+open Js_of_ocaml_lwt
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
+open Lwt.Infix
 
 type config =
   {endpoint: string; model: string; api_key: string; prompt: string}
@@ -15,11 +17,19 @@ let key_prompt = "yoda-settings-llm-prompt"
 
 let storage_key key = key ^ "-" ^ Helpers.get_username ()
 
-let endpoint = ref ""
+let endpoint = ref "/llm/v1/chat/completions"
 
 let model = ref ""
 
 let api_key = ref ""
+
+let models = ref []
+
+let models_loading = ref false
+
+let models_error = ref ""
+
+let loaded_for = ref None
 
 let prompt =
   ref
@@ -45,13 +55,80 @@ let configuration () =
     Some
       {endpoint= !endpoint; model= !model; api_key= !api_key; prompt= !prompt}
 
+let models_url url =
+  let url = String.trim url in
+  let url =
+    if Astring.String.is_suffix ~affix:"/" url then
+      String.sub url 0 (String.length url - 1)
+    else url
+  in
+  let suffix = "/chat/completions" in
+  if Astring.String.is_suffix ~affix:suffix url then
+    Some
+      (String.sub url 0 (String.length url - String.length suffix) ^ "/models")
+  else None
+
+let load_models () =
+  let requested_endpoint = !endpoint and key = !api_key in
+  if
+    requested_endpoint <> "" && key <> ""
+    && !loaded_for <> Some (requested_endpoint, key)
+  then (
+    loaded_for := Some (requested_endpoint, key) ;
+    models_loading := true ;
+    models_error := "" ;
+    match models_url requested_endpoint with
+    | None ->
+        models_loading := false ;
+        models_error := "Endpoint must end in /chat/completions."
+    | Some url ->
+        Lwt.async (fun () ->
+            Lwt.catch
+              (fun () ->
+                XmlHttpRequest.perform_raw_url
+                  ~headers:[("Authorization", "Bearer " ^ key)] url
+                >>= fun response ->
+                if !endpoint = requested_endpoint && !api_key = key then (
+                  if response.code < 200 || response.code >= 300 then
+                    models_error :=
+                      Printf.sprintf "Provider returned HTTP %d."
+                        response.code
+                  else (
+                    let available =
+                      Yojson.Safe.from_string response.content
+                      |> Yojson.Safe.Util.member "data"
+                      |> Yojson.Safe.Util.to_list
+                      |> List.map (fun item ->
+                             Yojson.Safe.Util.
+                               (item |> member "id" |> to_string) )
+                      |> List.sort_uniq String.compare
+                    in
+                    models := available ;
+                    if not (List.mem !model available) then (
+                      model := "" ;
+                      Helpers.set_local_variable (storage_key key_model) "" ) ;
+                    models_error :=
+                      if available = [] then "Provider returned no models."
+                      else "" ) ;
+                  models_loading := false ;
+                  Helpers.trigger_render () ) ;
+                Lwt.return_unit )
+              (fun _ ->
+                if !endpoint = requested_endpoint && !api_key = key then (
+                  models_loading := false ;
+                  models_error :=
+                    "Could not load models. Check the endpoint, API key and \
+                     provider CORS support." ;
+                  Helpers.trigger_render () ) ;
+                Lwt.return_unit ) ) )
+
 let text_input title key value typ =
   label
     ~a:[a_class ["d-block"; "mb-2"]]
     [ span [txt title]
     ; input
         ~a:
-          [ a_class ["form-control"]
+          ( [ a_class ["form-control"]
           ; a_input_type typ
           ; a_value !value
           ; a_oninput (fun event ->
@@ -64,21 +141,30 @@ let text_input title key value typ =
                 in
                 value := Js.to_string input##.value ;
                 Helpers.set_local_variable (storage_key key) !value ;
+                models := [] ;
+                models_loading := false ;
+                models_error := "" ;
+                loaded_for := None ;
+                model := "" ;
+                Helpers.set_local_variable (storage_key key_model) "" ;
                 false ) ]
+          @ [a_onchange (fun _ -> Helpers.trigger_render () ; false)] )
         () ]
 
 let render_tab () =
+  load_models () ;
   Settings_helpers.section_card
     (I18n.t "settings_llm_evaluation")
     [ p
         ~a:[a_class ["text-muted"]]
         [ txt
             "Optional judging aid, not an authorship detector. Source code \
-             and attempt metadata are sent to your chosen provider only \
-             when you click Evaluate on the Judge board. Settings, \
-             including your API key, are saved in this browser's local \
-             storage. Use a trusted device. Browser access requires \
-             provider CORS support; use a trusted server proxy otherwise." ]
+              and attempt metadata are sent to your chosen provider only \
+              when you click Evaluate on the Judge board. Settings, \
+              including your API key, are saved in this browser's local \
+              storage. Use a trusted device. The default /llm/ endpoint \
+              requires an nginx LLM_ROUTING_URL; direct provider URLs require \
+              provider CORS support." ]
     ; div
         ~a:[a_class ["row"]]
         [ div
@@ -86,11 +172,55 @@ let render_tab () =
             [ text_input "OpenAI-compatible chat completions URL"
                 key_endpoint endpoint `Text ]
         ; div
-            ~a:[a_class ["col-md-3"]]
-            [text_input "Model" key_model model `Text]
-        ; div
-            ~a:[a_class ["col-md-4"]]
+            ~a:[a_class ["col-md-5"]]
             [text_input "API key" key_api_key api_key `Password] ]
+    ; div
+        ~a:[a_class ["mb-3"]]
+        [ label ~a:[a_class ["form-label"]] [txt "Model"]
+        ; select
+            ~a:
+              ( [ a_class ["form-select"]
+                ; a_onchange (fun event ->
+                      let target =
+                        Js.Opt.get
+                          (Dom_html.CoerceTo.select
+                             (Js.Opt.get event##.target (fun () ->
+                                  assert false ) ) )
+                          (fun () -> assert false)
+                      in
+                      model := Js.to_string target##.value ;
+                      Helpers.set_local_variable (storage_key key_model)
+                        !model ;
+                      false ) ]
+              @ if !models = [] then [a_disabled ()] else [] )
+            ( option ~a:[a_value ""] (txt "Select a model")
+            :: List.map
+                 (fun id ->
+                   option
+                     ~a:
+                       ( [a_value id]
+                       @ if id = !model then [a_selected ()] else [] )
+                     (txt id) )
+                 !models )
+        ; ( if !endpoint = "" || !api_key = "" then
+              small
+                ~a:[a_class ["text-muted"]]
+                [txt "Enter an endpoint and API key to load models."]
+            else if !models_loading then
+              small ~a:[a_class ["text-muted"]] [txt "Loading models..."]
+            else if !models_error <> "" then
+              div
+                [ small ~a:[a_class ["text-danger"]] [txt !models_error]
+                ; button
+                    ~a:
+                      [ a_button_type `Button
+                      ; a_class ["btn"; "btn-outline-secondary"; "btn-sm"]
+                      ; a_onclick (fun _ ->
+                            loaded_for := None ;
+                            Helpers.trigger_render () ;
+                            false ) ]
+                    [txt "Retry"] ]
+            else small [] ) ]
     ; label
         ~a:[a_class ["d-block"; "mb-3"]]
         [ span [txt "Evaluation prompt"]

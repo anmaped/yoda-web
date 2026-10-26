@@ -40,6 +40,7 @@ The container accepts these settings:
 | --- | --- |
 | `BASE_API_URL` | API origin or same-origin path used by browser requests; the frontend falls back to `http://localhost:8001` if unset. |
 | `API_ROUTING_URL` | Optional nginx proxy target for `/api` requests during development; unset disables the proxy. |
+| `LLM_ROUTING_URL` | Optional nginx upstream URL for same-origin `/llm/` requests; unset disables the proxy. |
 
 `BASE_API_URL` is obfuscated in the generated HTML, **not encrypted**. Do not put credentials or secrets in it.
 
@@ -52,6 +53,14 @@ podman run --rm -p 8080:80 -e BASE_API_URL="http://localhost:8080/api" -e API_RO
 ```
 
 Open <http://localhost:8080>. Browser requests to `/api` go through the container's nginx proxy to the remote API.
+
+For an OpenAI-compatible provider, set `LLM_ROUTING_URL` to its upstream origin with a trailing slash, such as `https://api.openai.com/`. The LLM settings default to `/llm/v1/chat/completions`; model discovery uses `/llm/v1/models`. nginx replaces `/llm/` with the upstream URL's path and forwards the browser's `Authorization` header. For example, `/llm/v1/models` becomes `https://api.openai.com/v1/models`. The upstream must be reachable from the container. Configure the provider API key in LLM settings, not in `LLM_ROUTING_URL`.
+
+```sh
+docker run --rm -p 8080:80 -e BASE_API_URL=http://localhost:8001 -e LLM_ROUTING_URL=https://api.openai.com/ ghcr.io/anmaped/yoda-web:latest
+```
+
+Without `LLM_ROUTING_URL`, the default `/llm/` endpoint will not work; enter a directly reachable provider URL in LLM settings instead (which requires provider CORS support).
 
 If the Yoda Web cannot reach the API, see the [troubleshooting guide](doc/troubleshooting.md).
 

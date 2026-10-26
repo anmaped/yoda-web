@@ -11,3 +11,8 @@ if [ -n "$API_ROUTING_URL" ]; then
   sed -i "s|^\}|    # API routing\n    location /api {\n        proxy_pass ${API_ROUTING_URL};\n    }\n}|" /tmp/nginx.conf
   mv /tmp/nginx.conf /etc/nginx/conf.d/default.conf
 fi
+
+# Proxy browser LLM requests through nginx to avoid provider CORS restrictions.
+if [ -n "$LLM_ROUTING_URL" ]; then
+  sed -i "s|^\}|    # LLM routing\n    location /llm/ {\n        proxy_pass ${LLM_ROUTING_URL};\n        proxy_ssl_server_name on;\n    }\n}|" /etc/nginx/conf.d/default.conf
+fi
