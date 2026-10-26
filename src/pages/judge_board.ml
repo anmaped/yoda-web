@@ -520,13 +520,50 @@ let request_reevaluation submission_id =
               refresh () ) ;
             Lwt.return_unit ) ) )
 
+let status_rank = function
+  | "accepted" -> 0
+  | "wrong_answer" -> 1
+  | "time_limit_exceeded" -> 2
+  | "memory_limit_exceeded" -> 3
+  | "runtime_error" -> 4
+  | "compilation_error" | "compile_error" -> 5
+  | "presentation_error" -> 6
+  | "internal_error" -> 7
+  | "running" -> 8
+  | "queued" -> 9
+  | "pending" -> 10
+  | _ -> 11
+
+let status_color = function
+  | "accepted" -> "accepted"
+  | "wrong_answer" -> "wrong-answer"
+  | "time_limit_exceeded" -> "time-limit"
+  | "memory_limit_exceeded" -> "memory-limit"
+  | "runtime_error" -> "runtime-error"
+  | "compilation_error" | "compile_error" -> "compilation-error"
+  | "presentation_error" -> "presentation-error"
+  | "internal_error" -> "internal-error"
+  | "running" -> "running"
+  | "queued" -> "queued"
+  | "pending" -> "pending"
+  | _ -> "other"
+
 let histogram ?(show_users = false) ~title submissions =
   let counts = Hashtbl.create 16 in
   let users_by_problem = Hashtbl.create 16 in
   List.iter
     (fun (sub : Api.Openapi.submission) ->
-      Hashtbl.replace counts sub.problem_id
-        (1 + Option.value ~default:0 (Hashtbl.find_opt counts sub.problem_id)) ;
+      let statuses =
+        match Hashtbl.find_opt counts sub.problem_id with
+        | Some statuses -> statuses
+        | None ->
+            let statuses = Hashtbl.create 8 in
+            Hashtbl.add counts sub.problem_id statuses ;
+            statuses
+      in
+      let status = sub.status in
+      Hashtbl.replace statuses status
+        (1 + Option.value ~default:0 (Hashtbl.find_opt statuses status)) ;
       match sub.owner_id with
       | None -> ()
       | Some user_id ->
@@ -538,10 +575,24 @@ let histogram ?(show_users = false) ~title submissions =
             (IntSet.add user_id users) )
     submissions ;
   let rows =
-    Hashtbl.fold (fun id count acc -> (id, count) :: acc) counts []
-    |> List.sort (fun (a, _) (b, _) -> Int.compare a b)
+    Hashtbl.fold
+      (fun id statuses acc ->
+        let breakdown =
+          Hashtbl.fold
+            (fun status count xs -> (status, count) :: xs)
+            statuses []
+          |> List.sort (fun (a, _) (b, _) ->
+              let order = Int.compare (status_rank a) (status_rank b) in
+              if order = 0 then String.compare a b else order )
+        in
+        let total =
+          List.fold_left (fun n (_, count) -> n + count) 0 breakdown
+        in
+        (id, total, breakdown) :: acc )
+      counts []
+    |> List.sort (fun (a, _, _) (b, _, _) -> Int.compare a b)
   in
-  let peak = List.fold_left (fun n (_, count) -> max n count) 1 rows in
+  let peak = List.fold_left (fun n (_, count, _) -> max n count) 1 rows in
   let unique_users =
     submissions
     |> List.filter_map (fun (sub : Api.Openapi.submission) -> sub.owner_id)
@@ -550,7 +601,13 @@ let histogram ?(show_users = false) ~title submissions =
   in
   div
     ~a:[a_class ["card"; "p-3"; "mb-3"]]
-    ( [h2 ~a:[a_class ["h5"]] [txt title]]
+    ( [ h2 ~a:[a_class ["h5"]] [txt title]
+      ; p
+          ~a:[a_class ["text-muted"; "small"]]
+          [ txt
+              "Bar length compares submission totals across problems; \
+               colors show judge verdicts. Counts include every submission, \
+               not just each user's latest verdict." ] ]
     @ ( if show_users then
           [ p
               ~a:[a_class ["text-muted"]]
@@ -562,31 +619,66 @@ let histogram ?(show_users = false) ~title submissions =
     if rows = [] then [p [txt "No submissions available."]]
     else
       List.map
-        (fun (id, count) ->
+        (fun (id, count, breakdown) ->
           div
-            ~a:
-              [ a_class
-                  [ "d-flex"
-                  ; "flex-wrap"
-                  ; "align-items-center"
-                  ; "gap-2"
-                  ; "mb-2" ] ]
-            [ span ~a:[a_style "min-width:5rem"] [txt (problem_code id)]
+            ~a:[a_class ["judge-status-row"]]
+            [ div
+                ~a:
+                  [ a_class
+                      [ "d-flex"
+                      ; "flex-wrap"
+                      ; "justify-content-between"
+                      ; "gap-2" ] ]
+                [ strong [txt (problem_code id)]
+                ; span
+                    ~a:[a_class ["text-muted"; "small"]]
+                    [ txt
+                        ( if show_users then
+                            Printf.sprintf "%d submissions from %d users"
+                              count
+                              ( Hashtbl.find_opt users_by_problem id
+                              |> Option.value ~default:IntSet.empty
+                              |> IntSet.cardinal )
+                          else Printf.sprintf "%d submissions" count ) ] ]
             ; div
-                ~a:[a_class ["progress"; "flex-grow-1"]]
-                [ div
-                    ~a:
-                      [ a_class ["progress-bar"]
-                      ; a_style
-                          (Printf.sprintf "width:%.1f%%"
-                             (100. *. float count /. float peak) ) ]
-                    [] ]
-            ; span
-                [ txt
-                    (Printf.sprintf "%d submissions from %d users" count
-                       ( Hashtbl.find_opt users_by_problem id
-                       |> Option.value ~default:IntSet.empty
-                       |> IntSet.cardinal ) ) ] ] )
+                ~a:
+                  [ a_class ["judge-status-bar"]
+                  ; a_aria "label"
+                      [ Printf.sprintf "%s: %d submissions" (problem_code id)
+                          count ] ]
+                (List.map
+                   (fun (status, amount) ->
+                     div
+                       ~a:
+                         [ a_class
+                             [ "judge-status-segment"
+                             ; "judge-status-" ^ status_color status ]
+                         ; a_style
+                             (Printf.sprintf "width:%.4f%%"
+                                (100. *. float amount /. float peak) )
+                         ; a_title
+                             (Printf.sprintf "%s: %d"
+                                (I18n.submission_status status)
+                                amount ) ]
+                       [] )
+                   breakdown )
+            ; div
+                ~a:[a_class ["judge-status-breakdown"]]
+                (List.map
+                   (fun (status, amount) ->
+                     span
+                       ~a:[a_class ["judge-status-item"]]
+                       [ span
+                           ~a:
+                             [ a_class
+                                 [ "judge-status-swatch"
+                                 ; "judge-status-" ^ status_color status ] ]
+                           []
+                       ; txt
+                           (Printf.sprintf "%s %d"
+                              (I18n.submission_status status)
+                              amount ) ] )
+                   breakdown ) ] )
         rows )
 
 let distance_plot () =
@@ -942,7 +1034,9 @@ let content contest_id =
         ; ( if !loading then div []
             else
               histogram ~show_users:true
-                ~title:"Contest overview: submissions per problem"
+                ~title:
+                  ( "Verdicts for Each Problem in Contest "
+                  ^ string_of_int contest_id )
                 !submissions )
         ; ( if !loading then div []
             else
@@ -974,9 +1068,9 @@ let content contest_id =
                     | Some id ->
                         [ histogram
                             ~title:
-                              ( Option.value ~default:"User"
-                                  (Hashtbl.find_opt usernames id)
-                              ^ ": submissions per problem" )
+                              ( "Verdicts per Problem for "
+                              ^ Option.value ~default:"User"
+                                  (Hashtbl.find_opt usernames id) )
                             (visible_submissions ()) ] )
                 @ [distance_plot (); results_table ()] ) ) ] ]
 

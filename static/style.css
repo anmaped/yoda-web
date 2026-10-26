@@ -32,6 +32,59 @@ body {
   min-width: 0;
 }
 
+.judge-status-row {
+  padding: 0.8rem 0;
+  border-top: 1px solid var(--bs-border-color-translucent);
+}
+
+.judge-status-bar {
+  display: flex;
+  height: 1rem;
+  margin: 0.6rem 0;
+  overflow: hidden;
+  border-radius: 0.3rem;
+  background: var(--bs-tertiary-bg);
+}
+
+.judge-status-segment {
+  flex: none;
+  height: 100%;
+}
+
+.judge-status-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+.judge-status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.judge-status-swatch {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  flex: none;
+  border-radius: 0.15rem;
+}
+
+.judge-status-accepted { background: #198754; }
+.judge-status-wrong-answer { background: #dc3545; }
+.judge-status-time-limit { background: #fd7e14; }
+.judge-status-memory-limit { background: #d63384; }
+.judge-status-runtime-error { background: #6f42c1; }
+.judge-status-compilation-error { background: #0d6efd; }
+.judge-status-presentation-error { background: #20a39e; }
+.judge-status-internal-error { background: #6c757d; }
+.judge-status-running { background: #ffc107; }
+.judge-status-queued { background: #adb5bd; }
+.judge-status-pending { background: #8c76ad; }
+.judge-status-other { background: #495057; }
+
 .judge-distance-chart {
   display: block;
   width: 100%;
