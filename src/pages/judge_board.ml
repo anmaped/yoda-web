@@ -8,8 +8,7 @@ type file_entry =
   { submission: Api.Openapi.submission
   ; filename: string
   ; content: string
-  ; distance: int option
-  ; relative_distance: float option }
+  ; distances: (string * (int * float) option) list }
 
 type evaluation = {entry: file_entry; response: string; error: bool}
 
@@ -150,7 +149,7 @@ let metrics =
           Some (distance, relative distance (StringSet.cardinal union)) ) }
   ]
 
-let selected_metric = ref (List.hd metrics)
+let selected_metrics = ref [List.hd metrics]
 
 let rerender () =
   if Js.to_string Dom_html.window##.location##.hash = "#judge-board" then
@@ -318,7 +317,7 @@ let load ~on_loaded contest_id =
 let analyze contest_id =
   if not !analyzing then (
     let request_generation = !generation in
-    let metric = !selected_metric in
+    let selected = !selected_metrics in
     analyzing := true ;
     message :=
       "Loading source files for the current view's latest 50 submissions..." ;
@@ -350,8 +349,7 @@ let analyze contest_id =
                           { submission= sub
                           ; filename= source.filename
                           ; content= source.content
-                          ; distance= None
-                          ; relative_distance= None } )
+                          ; distances= [] } )
                         details.source_artifacts )
                   (fun _ -> Lwt.return []) ) )
           recent
@@ -369,20 +367,24 @@ let analyze contest_id =
                   , entry.submission.problem_id
                   , entry.filename )
                 in
-                let distance, relative_distance =
+                let distances =
                   match
                     (entry.submission.owner_id, Hashtbl.find_opt previous key)
                   with
-                  | Some _, Some content -> (
-                    match metric.calculate content entry.content with
-                    | Some (distance, relative) ->
-                        (Some distance, Some relative)
-                    | None -> incr skipped ; (None, None) )
-                  | _ -> (None, None)
+                  | Some _, Some content ->
+                      List.map
+                        (fun metric ->
+                          let result =
+                            metric.calculate content entry.content
+                          in
+                          if result = None then incr skipped ;
+                          (metric.key, result) )
+                        selected
+                  | _ -> []
                 in
                 if entry.submission.owner_id <> None then
                   Hashtbl.replace previous key entry.content ;
-                {entry with distance; relative_distance} ) ;
+                {entry with distances} ) ;
           let unavailable =
             List.length recent
             - List.length (List.filter (fun xs -> xs <> []) fetched)
@@ -700,7 +702,7 @@ let histogram ?(show_users = false) ~title submissions =
                    breakdown ) ] )
         rows )
 
-let distance_plot () =
+let distance_plot metric =
   let problem_ids =
     visible_submissions ()
     |> List.map (fun (sub : Api.Openapi.submission) -> sub.problem_id)
@@ -711,15 +713,17 @@ let distance_plot () =
       List.filter_map
         (fun file ->
           if file.submission.problem_id = problem_id then
-            Option.map (fun d -> (file, d)) file.distance
+            Option.map
+              (fun (distance, relative) -> (file, distance, relative))
+              (Option.join (List.assoc_opt metric.key file.distances))
           else None )
         !files
     in
     let n = List.length measured in
-    let peak = List.fold_left (fun p (_, d) -> max p d) 1 measured in
+    let peak = List.fold_left (fun p (_, d, _) -> max p d) 1 measured in
     let points =
       List.mapi
-        (fun i (_, d) ->
+        (fun i (_, d, _) ->
           ( 10. +. (980. *. float i /. float (max 1 (n - 1)))
           , 175. -. (155. *. float d /. float peak) ) )
         measured
@@ -749,7 +753,7 @@ let distance_plot () =
                         ; Tyxml_js.Svg.a_class ["judge-distance-line"] ]
                       []
                   :: List.map2
-                       (fun (file, distance) (x, y) ->
+                       (fun (file, distance, relative) (x, y) ->
                          Tyxml_js.Svg.circle
                            ~a:
                              [ Tyxml_js.Svg.a_cx (x, None)
@@ -762,9 +766,8 @@ let distance_plot () =
                                      "Submission #%d, %s: %d %s (%.2f%% \
                                       relative)"
                                      file.submission.id file.filename
-                                     distance !selected_metric.unit_name
-                                     (Option.value ~default:0.
-                                        file.relative_distance ) ) ) ] )
+                                     distance metric.unit_name relative ) )
+                           ] )
                        measured points )
               ; small
                   ~a:[a_class ["text-muted"]]
@@ -772,22 +775,21 @@ let distance_plot () =
                       (Printf.sprintf
                          "%d comparable files; maximum distance %d %s. \
                           Points follow submission order."
-                         n peak !selected_metric.unit_name ) ] ] ) ]
+                         n peak metric.unit_name ) ] ] ) ]
   in
   div
     ~a:[a_class ["card"; "p-3"; "mb-3"; "w-100"]]
-    ( [ h2 ~a:[a_class ["h5"]] [txt "Submission file distance by problem"]
+    ( [ h2 ~a:[a_class ["h5"]] [txt (metric.label ^ " by problem")]
       ; p
           ~a:[a_class ["text-muted"]]
           [ txt
-              ( !selected_metric.label
-              ^ " compares each file only with an earlier file from the \
+              ( "Each file is compared only with an earlier file from the \
                  same owner, problem and filename. First files have no \
                  predecessor. Only accessible sources from the current \
                  view's latest 50 submissions are analyzed. Relative \
                  distance is the raw distance divided by "
-              ^ !selected_metric.relative_basis ^ "." ) ] ]
-    @ ( match !selected_metric.key with
+              ^ metric.relative_basis ^ "." ) ] ]
+    @ ( match metric.key with
       | "tokens" ->
           [ p
               ~a:[a_class ["text-muted"]]
@@ -806,46 +808,56 @@ let distance_plot () =
     else List.map plot_problem problem_ids )
 
 let metric_selector ~on_select () =
-  label
-    ~a:[a_class ["d-block"; "mb-3"]]
-    [ span
-        ~a:[a_class ["d-block"; "fw-semibold"; "mb-1"]]
-        [txt "File distance metric"]
-    ; select
-        ~a:
-          [ a_class ["form-select"]
-          ; a_style "max-width:30rem"
-          ; a_onchange (fun event ->
-                let target =
-                  Js.Opt.get event##.target (fun () -> assert false)
-                in
-                let field =
-                  Js.Opt.get (Dom_html.CoerceTo.select target) (fun () ->
-                      assert false )
-                in
-                let key = Js.to_string field##.value in
-                ( match
-                    List.find_opt (fun metric -> metric.key = key) metrics
-                  with
-                | Some metric when metric.key <> !selected_metric.key ->
-                    incr generation ;
-                    selected_metric := metric ;
-                    analyzing := false ;
-                    evaluating := None ;
-                    files := [] ;
-                    message := "" ;
-                    on_select ()
-                | _ -> () ) ;
-                false ) ]
-        (List.map
+  div
+    ~a:[a_class ["mb-3"]]
+    [ p ~a:[a_class ["fw-semibold"; "mb-1"]] [txt "File distance metrics"]
+    ; div
+        ~a:[a_class ["d-flex"; "flex-wrap"; "gap-2"]]
+        (List.concat_map
            (fun metric ->
-             option
-               ~a:
-                 ( [a_value metric.key]
-                 @
-                 if metric.key = !selected_metric.key then [a_selected ()]
-                 else [] )
-               (txt metric.label) )
+             let selected =
+               List.exists (fun m -> m.key = metric.key) !selected_metrics
+             in
+             let id = "judge-metric-" ^ metric.key in
+             [ input
+                 ~a:
+                   ( [ a_id id
+                     ; a_class ["btn-check"]
+                     ; a_input_type `Checkbox
+                     ; a_onchange (fun _ ->
+                           let selected_keys =
+                             List.map (fun m -> m.key) !selected_metrics
+                           in
+                           selected_metrics :=
+                             List.filter
+                               (fun m ->
+                                 if m.key = metric.key then not selected
+                                 else List.mem m.key selected_keys )
+                               metrics ;
+                           incr generation ;
+                           analyzing := false ;
+                           evaluating := None ;
+                           files := [] ;
+                           message := "" ;
+                           on_select () ;
+                           false ) ]
+                   @ (if selected then [a_checked ()] else [])
+                   @
+                   if selected && List.length !selected_metrics = 1 then
+                     [a_disabled ()]
+                   else [] )
+                 ()
+             ; label
+                 ~a:
+                   [ a_class ["btn"; "btn-outline-primary"; "btn-sm"]
+                   ; a_label_for id
+                   ; a_title metric.label ]
+                 [ txt
+                     ( match metric.key with
+                     | "hamming" -> "Hamming"
+                     | "levenshtein" -> "Levenshtein"
+                     | "tokens" -> "Token Jaccard"
+                     | _ -> metric.label ) ] ] )
            metrics ) ]
 
 let results_table () =
@@ -911,14 +923,21 @@ let results_table () =
                                  entry.filename ) ]
                       ; td [txt (problem_code entry.submission.problem_id)]
                       ; td
-                          [ txt
-                              ( match
-                                  (entry.distance, entry.relative_distance)
-                                with
-                              | Some d, Some relative ->
-                                  Printf.sprintf "%d %s (%.2f%%)" d
-                                    !selected_metric.unit_name relative
-                              | _ -> "-" ) ]
+                          (List.map
+                             (fun metric ->
+                               div
+                                 [ txt
+                                     ( metric.label ^ ": "
+                                     ^
+                                     match
+                                       List.assoc_opt metric.key
+                                         entry.distances
+                                     with
+                                     | Some (Some (d, relative)) ->
+                                         Printf.sprintf "%d %s (%.2f%%)" d
+                                           metric.unit_name relative
+                                     | _ -> "-" ) ] )
+                             !selected_metrics )
                       ; td
                           [ txt
                               (I18n.submission_status entry.submission.status)
@@ -1156,7 +1175,8 @@ let content contest_id =
                               ^ Option.value ~default:"User"
                                   (Hashtbl.find_opt usernames id) )
                             (visible_submissions ()) ] )
-                @ [distance_plot (); results_table ()] ) ) ] ]
+                @ List.map distance_plot !selected_metrics
+                @ [results_table ()] ) ) ] ]
 
 let render () =
   if not (Helpers.is_judge_or_admin ()) then (
