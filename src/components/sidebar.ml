@@ -176,7 +176,7 @@ let sidebar ?(only_icons = false) ?(horizontal = false) () =
                 (if only_icons then "" else I18n.t "sidebar_sign_out") ] ]
     ; a
         ~a:
-          [ a_href "#about"
+          [ a_href "https://github.com/anmaped/yoda-web"
           ; a_class
               [ "sidebar-about"
               ; "position-fixed"
