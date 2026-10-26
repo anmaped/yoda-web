@@ -51,7 +51,13 @@ slash (for example, `https://api.openai.com/`). The browser uses the default
 `/llm/v1/models`. nginx strips `/llm/` and forwards both requests, including
 the API key's `Authorization` header. The upstream must be reachable from the
 container. A 404 usually indicates the upstream URL has the wrong path or a
-missing trailing slash; 502/504 indicates an upstream connection or TLS issue.
+missing trailing slash. Chat completions are not streamed, so nginx waits for
+the provider's complete response; the `/llm/` route allows up to 300 seconds
+between upstream reads. A 504 after about five minutes can mean the provider
+is still generating; a quicker 502/504 suggests an upstream connection or TLS
+issue. If another reverse proxy sits in front of nginx, its timeout may also
+need adjustment.
+
 Without `LLM_ROUTING_URL`, use a direct provider endpoint that supports CORS.
 
 ## nginx `/api` Proxy

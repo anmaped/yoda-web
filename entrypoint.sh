@@ -14,5 +14,5 @@ fi
 
 # Proxy browser LLM requests through nginx to avoid provider CORS restrictions.
 if [ -n "$LLM_ROUTING_URL" ]; then
-  sed -i "s|^\}|    # LLM routing\n    location /llm/ {\n        proxy_pass ${LLM_ROUTING_URL};\n        proxy_ssl_server_name on;\n    }\n}|" /etc/nginx/conf.d/default.conf
+  sed -i "s|^\}|    # LLM routing\n    location /llm/ {\n        proxy_pass ${LLM_ROUTING_URL};\n        proxy_ssl_server_name on;\n        proxy_read_timeout 300s;\n    }\n}|" /etc/nginx/conf.d/default.conf
 fi

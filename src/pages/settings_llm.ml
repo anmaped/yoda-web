@@ -31,6 +31,12 @@ let models_error = ref ""
 
 let loaded_for = ref None
 
+let test_loading = ref false
+
+let test_result : (bool * string) option ref = ref None
+
+let test_generation = ref 0
+
 let prompt =
   ref
     "Review this source file as a judging aid. Describe notable patterns \
@@ -122,6 +128,70 @@ let load_models () =
                   Helpers.trigger_render () ) ;
                 Lwt.return_unit ) ) )
 
+let test_llm () =
+  if not !test_loading && List.mem !model !models then (
+    let requested_endpoint = !endpoint
+    and key = !api_key
+    and selected_model = !model
+    and generation = !test_generation in
+    test_loading := true ;
+    test_result := None ;
+    Helpers.trigger_render () ;
+    let body =
+      `Assoc
+        [ ("model", `String selected_model)
+        ; ( "messages"
+          , `List
+              [ `Assoc
+                  [ ("role", `String "user")
+                  ; ("content", `String "Reply with OK.") ] ] ) ]
+      |> Yojson.Safe.to_string
+    in
+    Lwt.async (fun () ->
+        let finish result =
+          if generation = !test_generation then (
+            test_loading := false ;
+            test_result := Some result ;
+            Helpers.trigger_render () ) ;
+          Lwt.return_unit
+        in
+        Lwt.catch
+          (fun () ->
+            XmlHttpRequest.perform_raw_url ~override_method:`POST
+              ~headers:
+                [ ("Content-Type", "application/json")
+                ; ("Authorization", "Bearer " ^ key) ]
+              ~contents:(`String body) requested_endpoint
+            >>= fun response ->
+            if response.code < 200 || response.code >= 300 then
+              finish
+                ( false
+                , Printf.sprintf "Provider returned HTTP %d." response.code
+                )
+            else
+              let result =
+                try
+                  let content =
+                    Yojson.Safe.from_string response.content
+                    |> Yojson.Safe.Util.member "choices"
+                    |> Yojson.Safe.Util.to_list |> List.hd
+                    |> Yojson.Safe.Util.member "message"
+                    |> Yojson.Safe.Util.member "content"
+                    |> Yojson.Safe.Util.to_string
+                  in
+                  if String.trim content <> "" then
+                    (true, "LLM ready: chat completion succeeded.")
+                  else (false, "Provider returned an empty response.")
+                with _ ->
+                  (false, "Provider response did not include message content.")
+              in
+              finish result )
+          (fun _ ->
+            finish
+              ( false
+              , "Request failed. Check the endpoint, proxy or CORS policy, \
+                 and network access." ) ) ) )
+
 let text_input title key value typ =
   label
     ~a:[a_class ["d-block"; "mb-2"]]
@@ -147,6 +217,9 @@ let text_input title key value typ =
                 loaded_for := None ;
                 model := "" ;
                 Helpers.set_local_variable (storage_key key_model) "" ;
+                incr test_generation ;
+                test_loading := false ;
+                test_result := None ;
                 false ) ]
           @ [a_onchange (fun _ -> Helpers.trigger_render () ; false)] )
         () ]
@@ -191,6 +264,10 @@ let render_tab () =
                       model := Js.to_string target##.value ;
                       Helpers.set_local_variable (storage_key key_model)
                         !model ;
+                      incr test_generation ;
+                      test_loading := false ;
+                      test_result := None ;
+                      Helpers.trigger_render () ;
                       false ) ]
               @ if !models = [] then [a_disabled ()] else [] )
             ( option ~a:[a_value ""] (txt "Select a model")
@@ -221,6 +298,33 @@ let render_tab () =
                             false ) ]
                     [txt "Retry"] ]
             else small [] ) ]
+    ; div
+        ~a:[a_class ["mb-3"]]
+        [ button
+            ~a:
+              ( [ a_button_type `Button
+                ; a_class ["btn"; "btn-outline-primary"]
+                ; a_onclick (fun _ -> test_llm () ; false) ]
+              @
+              if !test_loading || not (List.mem !model !models) then
+                [a_disabled ()]
+              else [] )
+            [txt (if !test_loading then "Testing..." else "Test LLM")]
+        ; small
+            ~a:[a_class ["d-block"; "text-muted"; "mt-1"]]
+            [ txt
+                "Sends a short prompt to the selected model; no submission \
+                 data is included." ]
+        ; ( match !test_result with
+          | None -> div []
+          | Some (success, message) ->
+              p
+                ~a:
+                  [ a_class
+                      [ "mt-2"
+                      ; (if success then "text-success" else "text-danger") ]
+                  ; a_aria "live" ["polite"] ]
+                [txt message] ) ]
     ; label
         ~a:[a_class ["d-block"; "mb-3"]]
         [ span [txt "Evaluation prompt"]
