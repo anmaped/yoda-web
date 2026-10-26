@@ -43,6 +43,9 @@ let get_users () = fetch_json (base_url ^ "/users")
 
 let get_contests () = fetch_json (base_url ^ "/contests")
 
+let get_contest contest_id =
+  fetch_json (Printf.sprintf "%s/contests/%d" base_url contest_id)
+
 let submit_solution json_obj =
   post_json (base_url ^ "/submissions") (Yojson.Safe.to_string json_obj)
 

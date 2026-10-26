@@ -22,8 +22,7 @@ let content ?(show_progress_only = false) () =
       []
   in
   Lwt.async (fun () ->
-      Api.Helpers.fetch_json
-        (Printf.sprintf "%s/contests/%d" Api.Helpers.base_url contest_id)
+      Api.Helpers.get_contest contest_id
       >>= fun (resp, status) ->
       if status <> 200 then (
         Console.console##log

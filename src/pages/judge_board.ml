@@ -15,6 +15,8 @@ type evaluation = {entry: file_entry; response: string; error: bool}
 
 let contest = ref (-1)
 
+let contest_details : Api.Openapi.contest option ref = ref None
+
 let submissions : Api.Openapi.submission list ref = ref []
 
 let selected_user : int option ref = ref None
@@ -150,9 +152,21 @@ let metrics =
 
 let selected_metric = ref (List.hd metrics)
 
-let refresh () =
+let rerender () =
   if Js.to_string Dom_html.window##.location##.hash = "#judge-board" then
     Helpers.trigger_render ()
+
+let load_contest_details contest_id =
+  Lwt.async (fun () ->
+      Lwt.catch
+        (fun () ->
+          Api.Helpers.get_contest contest_id
+          >>= fun (json, status) ->
+          if status = 200 && !contest = contest_id then (
+            contest_details := Some (Api.Openapi.Contest.of_yojson json) ;
+            rerender () ) ;
+          Lwt.return_unit )
+        (fun _ -> Lwt.return_unit) )
 
 let visible_submissions () =
   match !selected_user with
@@ -291,14 +305,14 @@ let load ~on_loaded contest_id =
                 Printf.sprintf "Submissions request failed (%d)." code ) ;
             loading := false ;
             if code = 200 then on_loaded () ;
-            refresh () ) ;
+            rerender () ) ;
           Lwt.return_unit )
         (fun _ ->
           if !contest = contest_id && !generation = request_generation then (
             loading := false ;
             selected_user := None ;
             message := "Could not load submissions." ;
-            refresh () ) ;
+            rerender () ) ;
           Lwt.return_unit ) )
 
 let analyze contest_id =
@@ -308,7 +322,7 @@ let analyze contest_id =
     analyzing := true ;
     message :=
       "Loading source files for the current view's latest 50 submissions..." ;
-    refresh () ;
+    rerender () ;
     let recent =
       List.sort
         (fun (a : Api.Openapi.submission) b -> Int.compare b.id a.id)
@@ -387,7 +401,7 @@ let analyze contest_id =
                  limit."
                 !skipped ;
           analyzing := false ;
-          refresh () ) ;
+          rerender () ) ;
         Lwt.return_unit ) )
 
 let attempts entry =
@@ -409,7 +423,7 @@ let evaluate entry =
       let key = (entry.submission.id, entry.filename) in
       let request_generation = !generation in
       evaluating := Some key ;
-      refresh () ;
+      rerender () ;
       Lwt.async (fun () ->
           let body =
             `Assoc
@@ -469,7 +483,7 @@ let evaluate entry =
                          <> key )
                        !evaluations ;
                 evaluating := None ;
-                refresh () ) ;
+                rerender () ) ;
               Lwt.return_unit )
             (fun _ ->
               if !evaluating = Some key && !generation = request_generation
@@ -482,7 +496,7 @@ let evaluate entry =
                   ; error= true }
                   :: !evaluations ;
                 evaluating := None ;
-                refresh () ) ;
+                rerender () ) ;
               Lwt.return_unit ) )
   | Some _ -> ()
 
@@ -490,7 +504,7 @@ let request_reevaluation submission_id =
   if Helpers.is_judge_or_admin () && !reevaluating = None then (
     reevaluating := Some submission_id ;
     reevaluation_notice := "" ;
-    refresh () ;
+    rerender () ;
     Lwt.async (fun () ->
         Lwt.catch
           (fun () ->
@@ -508,7 +522,7 @@ let request_reevaluation submission_id =
                     "Re-evaluation of submission #%d failed (HTTP %d)."
                     submission_id status ;
               reevaluating := None ;
-              refresh () ) ;
+              rerender () ) ;
             Lwt.return_unit )
           (fun _ ->
             if !reevaluating = Some submission_id then (
@@ -517,7 +531,7 @@ let request_reevaluation submission_id =
                   "Could not request re-evaluation of submission #%d."
                   submission_id ;
               reevaluating := None ;
-              refresh () ) ;
+              rerender () ) ;
             Lwt.return_unit ) ) )
 
 let status_rank = function
@@ -614,7 +628,12 @@ let histogram ?(show_users = false) ~title submissions =
               [ txt
                   (Printf.sprintf "%d submissions from %d users"
                      (List.length submissions) unique_users ) ] ]
-        else [] )
+        else
+          [ p
+              ~a:[a_class ["text-muted"]]
+              [ txt
+                  (Printf.sprintf "%d submissions in current view"
+                     (List.length submissions) ) ] ] )
     @
     if rows = [] then [p [txt "No submissions available."]]
     else
@@ -964,9 +983,23 @@ let results_table () =
                               ) ] ] )
                   rows ) ] ]
 
+let format_contest_time value =
+  let timestamp = Js.Unsafe.global##.Date##parse (Js.string value) in
+  if Float.is_nan (Js.float_of_number timestamp) then value
+  else
+    let date = new%js Js.date_fromTimeValue timestamp in
+    let offset = -date##getTimezoneOffset in
+    Printf.sprintf "%s (UTC%s%02d:%02d)"
+      (Js.to_string date##toLocaleString)
+      (if offset < 0 then "-" else "+")
+      (abs offset / 60)
+      (abs offset mod 60)
+
 let content contest_id =
   if !contest <> contest_id then (
     contest := contest_id ;
+    contest_details := None ;
+    load_contest_details contest_id ;
     submissions := [] ;
     files := [] ;
     evaluations := [] ;
@@ -977,6 +1010,11 @@ let content contest_id =
     Hashtbl.clear problem_codes ;
     message := "" ;
     load ~on_loaded:(fun () -> analyze contest_id) contest_id ) ;
+  let contest_title =
+    match !contest_details with
+    | Some details -> details.title
+    | None -> string_of_int contest_id
+  in
   main
     ~a:[a_class ["panel"; "flex-grow-1"; "judge-board"]]
     [ section
@@ -993,15 +1031,7 @@ let content contest_id =
                   ; "align-items-center"
                   ; "gap-2"
                   ; "mb-3" ] ]
-            [ div
-                [ h1 ~a:[a_class ["h3"; "mb-0"]] [txt "Judge board"]
-                ; small
-                    ~a:[a_class ["text-muted"]]
-                    [ txt
-                        (Printf.sprintf
-                           "Contest %d | %d submissions in current view"
-                           contest_id
-                           (List.length (visible_submissions ())) ) ] ]
+            [ h1 ~a:[a_class ["h3"; "mb-0"]] [txt "Judge board"]
             ; div
                 ~a:[a_class ["d-flex"; "gap-2"]]
                 [ button
@@ -1011,7 +1041,7 @@ let content contest_id =
                               load
                                 ~on_loaded:(fun () -> analyze contest_id)
                                 contest_id ;
-                              refresh () ;
+                              rerender () ;
                               false ) ]
                       @
                       if !loading || !analyzing then [a_disabled ()] else []
@@ -1027,6 +1057,61 @@ let content contest_id =
                     [ txt
                         ( if !analyzing then "Analyzing..."
                           else "Recalculate file distances" ) ] ] ]
+        ; div
+            ~a:[a_class ["card"; "p-3"; "mb-3"]]
+            ( match !contest_details with
+            | None ->
+                [ p
+                    ~a:[a_class ["text-muted"; "mb-0"]]
+                    [ txt
+                        (Printf.sprintf "Loading contest #%d details..."
+                           contest_id ) ] ]
+            | Some details ->
+                let status_label, status_class =
+                  match details.status with
+                  | Api.Openapi.Running -> ("Running", "text-bg-success")
+                  | Api.Openapi.Upcoming -> ("Upcoming", "text-bg-warning")
+                  | Api.Openapi.Finished -> ("Finished", "text-bg-secondary")
+                in
+                [ div
+                    ~a:
+                      [ a_class
+                          [ "d-flex"
+                          ; "flex-wrap"
+                          ; "align-items-center"
+                          ; "gap-2" ] ]
+                    [ h2
+                        ~a:[a_class ["h5"; "mb-0"]]
+                        [ txt
+                            (Printf.sprintf "%s | #%d" details.title
+                               details.id ) ]
+                    ; span
+                        ~a:[a_class ["badge"; status_class]]
+                        [txt status_label] ] ]
+                @ ( match details.description with
+                  | Some description when description <> "" ->
+                      [ p
+                          ~a:[a_class ["text-muted"; "mt-2"; "mb-0"]]
+                          [txt description] ]
+                  | _ -> [] )
+                @ [ div
+                      ~a:[a_class ["judge-contest-dates"]]
+                      [ div
+                          [ span
+                              ~a:[a_class ["text-muted"; "small"]]
+                              [txt "Starts"]
+                          ; time
+                              ~a:[a_datetime details.start_time]
+                              [txt (format_contest_time details.start_time)]
+                          ]
+                      ; div
+                          [ span
+                              ~a:[a_class ["text-muted"; "small"]]
+                              [txt "Ends"]
+                          ; time
+                              ~a:[a_datetime details.end_time]
+                              [txt (format_contest_time details.end_time)] ]
+                      ] ] )
         ; (if !loading then p [txt "Loading submissions..."] else div [])
         ; ( if !message <> "" then
               p ~a:[a_class ["text-muted"]] [txt !message]
@@ -1035,8 +1120,7 @@ let content contest_id =
             else
               histogram ~show_users:true
                 ~title:
-                  ( "Verdicts for Each Problem in Contest "
-                  ^ string_of_int contest_id )
+                  ("Verdicts for Each Problem in Contest " ^ contest_title)
                 !submissions )
         ; ( if !loading then div []
             else
