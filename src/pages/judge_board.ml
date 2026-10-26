@@ -907,6 +907,18 @@ let metric_selector ~on_select () =
                      | _ -> metric.label ) ] ] )
            metrics ) ]
 
+let markdown_evaluation response =
+  let content =
+    div ~a:[a_class ["markdown-content"; "judge-llm-response"]]
+      [txt response]
+  in
+  if Js.Optdef.test (Js.Unsafe.get Js.Unsafe.global "markdownit") then
+    (Tyxml_js.To_dom.of_div content)##.innerHTML
+    := Js.string
+         (Components.View_problem_markdown.render_markdown ~allow_html:false
+            response ) ;
+  content
+
 let results_table () =
   let ready = Option.is_some (Settings_llm.configuration ()) in
   let rows =
@@ -993,13 +1005,10 @@ let results_table () =
                       ; td
                           ( match result with
                           | None -> [txt "Not evaluated"]
-                          | Some r ->
-                              [ span
-                                  ~a:
-                                    [ a_class
-                                        ( if r.error then ["text-danger"]
-                                          else [] ) ]
-                                  [txt r.response] ] )
+                          | Some r when r.error ->
+                              [ span ~a:[a_class ["text-danger"]]
+                                  [txt r.response] ]
+                          | Some r -> [markdown_evaluation r.response] )
                       ; td
                           [ div
                               ~a:[a_class ["d-flex"; "gap-2"]]

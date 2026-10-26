@@ -42,7 +42,7 @@ let highlight_with_codemirror ~code ~lang =
             ; Js.Unsafe.inject sink |] ) ;
       Js.to_string sink##.outerHTML
 
-let render_markdown text =
+let render_markdown ?(allow_html = true) text =
   let cleaned = text in
   match
     Js.Optdef.to_option (Js.Unsafe.get Js.Unsafe.global "markdownit")
@@ -59,7 +59,7 @@ let render_markdown text =
       in
       let options =
         Js.Unsafe.obj
-          [| ("html", Js.Unsafe.inject (Js.bool true))
+          [| ("html", Js.Unsafe.inject (Js.bool allow_html))
            ; ("linkify", Js.Unsafe.inject (Js.bool true))
            ; ("typographer", Js.Unsafe.inject (Js.bool true))
            ; ("highlight", Js.Unsafe.inject highlight_callback) |]
