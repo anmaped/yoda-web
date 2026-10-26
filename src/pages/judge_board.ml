@@ -10,7 +10,8 @@ type file_entry =
   ; content: string
   ; distances: (string * (int * float) option) list }
 
-type evaluation = {entry: file_entry; response: string; error: bool}
+type evaluation =
+  {submission_id: int; filename: string; response: string; error: bool}
 
 let contest = ref (-1)
 
@@ -32,6 +33,44 @@ let problem_code id =
 let files : file_entry list ref = ref []
 
 let evaluations : evaluation list ref = ref []
+
+let evaluations_key contest_id =
+  Printf.sprintf "yoda-judge-evaluations-%d-%s" contest_id
+    (Helpers.get_username ())
+
+let load_evaluations contest_id =
+  match Helpers.get_local_variable (evaluations_key contest_id) with
+  | None -> []
+  | Some saved -> (
+    try
+      Yojson.Safe.from_string (Js.to_string saved)
+      |> Yojson.Safe.Util.to_list
+      |> List.filter_map (fun json ->
+             try
+               let open Yojson.Safe.Util in
+               Some
+                 { submission_id= json |> member "submission_id" |> to_int
+                 ; filename= json |> member "filename" |> to_string
+                 ; response= json |> member "response" |> to_string
+                 ; error= false }
+             with _ -> None )
+    with _ -> [] )
+
+let save_evaluation contest_id evaluation =
+  (evaluation
+  :: List.filter
+       (fun result ->
+         (result.submission_id, result.filename)
+         <> (evaluation.submission_id, evaluation.filename) )
+       (load_evaluations contest_id) )
+  |> List.map (fun result ->
+         `Assoc
+           [ ("submission_id", `Int result.submission_id)
+           ; ("filename", `String result.filename)
+           ; ("response", `String result.response) ] )
+  |> fun json ->
+  Helpers.set_local_variable (evaluations_key contest_id)
+    (Yojson.Safe.to_string (`List json))
 
 let loading = ref false
 
@@ -179,7 +218,6 @@ let select_user user_id =
   incr generation ;
   selected_user := user_id ;
   files := [] ;
-  evaluations := [] ;
   analyzing := false ;
   evaluating := None ;
   reevaluating := None ;
@@ -237,7 +275,6 @@ let load ~on_loaded contest_id =
   loading := true ;
   submissions := [] ;
   files := [] ;
-  evaluations := [] ;
   evaluating := None ;
   reevaluating := None ;
   reevaluation_notice := "" ;
@@ -477,13 +514,19 @@ let evaluate entry =
               in
               if !evaluating = Some key && !generation = request_generation
               then (
+                let result =
+                  { submission_id= entry.submission.id
+                  ; filename= entry.filename
+                  ; response= text
+                  ; error }
+                in
                 evaluations :=
-                  {entry; response= text; error}
+                  result
                   :: List.filter
                        (fun result ->
-                         (result.entry.submission.id, result.entry.filename)
-                         <> key )
+                         (result.submission_id, result.filename) <> key )
                        !evaluations ;
+                if not error then save_evaluation !contest result ;
                 evaluating := None ;
                 rerender () ) ;
               Lwt.return_unit )
@@ -491,12 +534,16 @@ let evaluate entry =
               if !evaluating = Some key && !generation = request_generation
               then (
                 evaluations :=
-                  { entry
+                  { submission_id= entry.submission.id
+                  ; filename= entry.filename
                   ; response=
                       "Request failed. Check endpoint, CORS policy, and \
                        network access."
                   ; error= true }
-                  :: !evaluations ;
+                  :: List.filter
+                       (fun result ->
+                         (result.submission_id, result.filename) <> key )
+                       !evaluations ;
                 evaluating := None ;
                 rerender () ) ;
               Lwt.return_unit ) )
@@ -877,7 +924,9 @@ let results_table () =
         ~a:[a_class ["text-muted"]]
         [ txt "Configure the provider and prompt in "
         ; a ~a:[a_href "#settings-llm"] [txt "LLM settings"]
-        ; txt ". Evaluation sends code only when requested." ]
+        ; txt
+            ". Evaluation sends code only when requested. Successful \
+             results are saved in this browser." ]
     ; div
         ~a:[a_class ["table-responsive"]]
         [ table
@@ -904,8 +953,7 @@ let results_table () =
                     let key = (entry.submission.id, entry.filename) in
                     let result =
                       List.find_opt
-                        (fun r ->
-                          (r.entry.submission.id, r.entry.filename) = key )
+                        (fun r -> (r.submission_id, r.filename) = key)
                         !evaluations
                     in
                     tr
@@ -1021,7 +1069,7 @@ let content contest_id =
     load_contest_details contest_id ;
     submissions := [] ;
     files := [] ;
-    evaluations := [] ;
+    evaluations := load_evaluations contest_id ;
     analyzing := false ;
     evaluating := None ;
     selected_user := None ;
