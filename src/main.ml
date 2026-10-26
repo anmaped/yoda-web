@@ -12,6 +12,7 @@ let () =
       Helpers.ensure_local_cache_preloaded ()
       >>= fun () ->
       Pages.Settings.init () ;
+      Pages.Settings_llm.init () ;
       Pages.Codeboard.init () ;
       Blobs.init () ;
       I18n.init () ;

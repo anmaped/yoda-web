@@ -867,7 +867,7 @@ let results_table () =
   in
   div
     ~a:[a_class ["card"; "p-3"; "mb-3"]]
-    [ h2 ~a:[a_class ["h5"]] [txt "LLM evaluation"]
+    [ h2 ~a:[a_class ["h5"]] [txt "Submission Review"]
     ; ( if !reevaluation_notice = "" then div []
         else
           p
@@ -1179,12 +1179,11 @@ let content contest_id =
                 @ [results_table ()] ) ) ] ]
 
 let render () =
-  if not (Helpers.is_judge_or_admin ()) then (
-    Settings_llm.clear_api_key () ;
+  if not (Helpers.is_judge_or_admin ()) then
     [ div
         ~a:[a_class ["panel"; "p-4"]]
         [h1 [txt "Judge board"]; p [txt "Judge or admin access required."]]
-    ] )
+    ]
   else
     let body = content (Helpers.get_current_contest_id ()) in
     match Helpers.layout () with

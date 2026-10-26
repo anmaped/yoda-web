@@ -192,12 +192,10 @@ let get_local_variable key =
           [| Js.Unsafe.inject (Js.string user_id)
            ; Js.Unsafe.inject (Js.string key) |]
       in
-      (* print value *)
-      Console.console##log
-        (Js.string
-           ( "Retrieved " ^ key ^ " : "
-           ^ Js.to_string (Js.Opt.get value (fun _ -> Js.string "Not found!"))
-           ) ) ;
+      (* Do not log stored values: they may contain an LLM API key.
+         Console.console##log (Js.string ( "Retrieved " ^ key ^ " : " ^
+         Js.to_string (Js.Opt.get value (fun _ -> Js.string "Not found!")) )
+         ) ; *)
       Js.Opt.to_option value
   | None -> (
     match Js.Optdef.to_option Dom_html.window##.localStorage with
