@@ -46,30 +46,31 @@ let load_evaluations contest_id =
       Yojson.Safe.from_string (Js.to_string saved)
       |> Yojson.Safe.Util.to_list
       |> List.filter_map (fun json ->
-             try
-               let open Yojson.Safe.Util in
-               Some
-                 { submission_id= json |> member "submission_id" |> to_int
-                 ; filename= json |> member "filename" |> to_string
-                 ; response= json |> member "response" |> to_string
-                 ; error= false }
-             with _ -> None )
+          try
+            let open Yojson.Safe.Util in
+            Some
+              { submission_id= json |> member "submission_id" |> to_int
+              ; filename= json |> member "filename" |> to_string
+              ; response= json |> member "response" |> to_string
+              ; error= false }
+          with _ -> None )
     with _ -> [] )
 
 let save_evaluation contest_id evaluation =
-  (evaluation
+  evaluation
   :: List.filter
        (fun result ->
          (result.submission_id, result.filename)
          <> (evaluation.submission_id, evaluation.filename) )
-       (load_evaluations contest_id) )
+       (load_evaluations contest_id)
   |> List.map (fun result ->
-         `Assoc
-           [ ("submission_id", `Int result.submission_id)
-           ; ("filename", `String result.filename)
-           ; ("response", `String result.response) ] )
+      `Assoc
+        [ ("submission_id", `Int result.submission_id)
+        ; ("filename", `String result.filename)
+        ; ("response", `String result.response) ] )
   |> fun json ->
-  Helpers.set_local_variable (evaluations_key contest_id)
+  Helpers.set_local_variable
+    (evaluations_key contest_id)
     (Yojson.Safe.to_string (`List json))
 
 let loading = ref false
@@ -909,8 +910,7 @@ let metric_selector ~on_select () =
 
 let markdown_evaluation response =
   let content =
-    div ~a:[a_class ["markdown-content"; "judge-llm-response"]]
-      [txt response]
+    div ~a:[a_class ["markdown-content"; "judge-llm-response"]] [txt response]
   in
   if Js.Optdef.test (Js.Unsafe.get Js.Unsafe.global "markdownit") then
     (Tyxml_js.To_dom.of_div content)##.innerHTML
@@ -921,6 +921,7 @@ let markdown_evaluation response =
 
 let results_table () =
   let ready = Option.is_some (Settings_llm.configuration ()) in
+  let show_user = !selected_user = None in
   let rows =
     List.sort (fun a b -> Int.compare b.submission.id a.submission.id) !files
   in
@@ -946,17 +947,17 @@ let results_table () =
             ~thead:
               (thead
                  [ tr
-                     [ th [txt "User"]
-                     ; th [txt "Submission / file"]
-                     ; th [txt "Problem"]
-                     ; th [txt "Distance"]
-                     ; th [txt "Judge verdict"]
-                     ; th [txt "LLM evaluation"]
-                     ; th [txt "Action"] ] ] )
+                     ( (if show_user then [th [txt "User"]] else [])
+                     @ [ th [txt "Submission / file"]
+                       ; th [txt "Problem"]
+                       ; th [txt "Distance"]
+                       ; th [txt "Judge verdict"]
+                       ; th [txt "LLM evaluation"]
+                       ; th [txt "Action"] ] ) ] )
             ( if rows = [] then
                 [ tr
                     [ td
-                        ~a:[a_colspan 7]
+                        ~a:[a_colspan (if show_user then 7 else 6)]
                         [txt "Analyze source files to populate this table."]
                     ] ]
               else
@@ -969,94 +970,85 @@ let results_table () =
                         !evaluations
                     in
                     tr
-                      [ td
-                          [ txt
-                              ( match entry.submission.owner_id with
-                              | Some id ->
-                                  Option.value
-                                    ~default:"Username unavailable"
-                                    (Hashtbl.find_opt usernames id)
-                              | None -> "Username unavailable" ) ]
-                      ; td
-                          [ txt
-                              (Printf.sprintf "#%d / %s" entry.submission.id
-                                 entry.filename ) ]
-                      ; td [txt (problem_code entry.submission.problem_id)]
-                      ; td
-                          (List.map
-                             (fun metric ->
-                               div
-                                 [ txt
-                                     ( metric.label ^ ": "
-                                     ^
-                                     match
-                                       List.assoc_opt metric.key
-                                         entry.distances
-                                     with
-                                     | Some (Some (d, relative)) ->
-                                         Printf.sprintf "%d %s (%.2f%%)" d
-                                           metric.unit_name relative
-                                     | _ -> "-" ) ] )
-                             !selected_metrics )
-                      ; td
-                          [ txt
-                              (I18n.submission_status entry.submission.status)
-                          ]
-                      ; td
-                          ( match result with
-                          | None -> [txt "Not evaluated"]
-                          | Some r when r.error ->
-                              [ span ~a:[a_class ["text-danger"]]
-                                  [txt r.response] ]
-                          | Some r -> [markdown_evaluation r.response] )
-                      ; td
-                          [ div
-                              ~a:[a_class ["d-flex"; "gap-2"]]
-                              ( button
-                                  ~a:
-                                    ( [ a_class
-                                          [ "btn"
-                                          ; "btn-sm"
-                                          ; "btn-outline-primary" ]
-                                      ; a_title "Evaluate with LLM"
-                                      ; a_aria "label" ["Evaluate with LLM"]
-                                      ; a_onclick (fun _ ->
-                                            evaluate entry ; false ) ]
-                                    @
-                                    if (not ready) || !evaluating <> None
-                                    then [a_disabled ()]
-                                    else [] )
-                                  [Components.Icons.robot_icon ()]
-                              :: button
-                                   ~a:
-                                     ( [ a_class
-                                           [ "btn"
-                                           ; "btn-sm"
-                                           ; "btn-outline-warning" ]
-                                       ; a_title
-                                           (I18n.t "submissions_reevaluate")
-                                       ; a_aria "label"
-                                           [I18n.t "submissions_reevaluate"]
-                                       ; a_onclick (fun _ ->
-                                             request_reevaluation
-                                               entry.submission.id ;
-                                             false ) ]
-                                     @
-                                     if !reevaluating <> None then
-                                       [a_disabled ()]
-                                     else [] )
-                                   [ Components.Icons.reeval_icon
-                                       ~a:
-                                         ( if
-                                             !reevaluating
-                                             = Some entry.submission.id
-                                           then ["spin"]
-                                           else [] )
-                                       () ]
-                              :: Option.to_list
-                                   (Components.Submissions_list_details
-                                    .source_artifacts_action entry.submission )
-                              ) ] ] )
+                      ( ( if show_user then
+                            [ td
+                                [ txt
+                                    ( match entry.submission.owner_id with
+                                    | Some id ->
+                                        Option.value
+                                          ~default:"Username unavailable"
+                                          (Hashtbl.find_opt usernames id)
+                                    | None -> "Username unavailable" ) ] ]
+                          else [] )
+                      @ [ td
+                            [ txt
+                                (Printf.sprintf "#%d / %s"
+                                   entry.submission.id entry.filename ) ]
+                        ; td [txt (problem_code entry.submission.problem_id)]
+                        ; td
+                            (List.map
+                               (fun metric ->
+                                 div
+                                   [ txt
+                                       ( metric.label ^ ": "
+                                       ^
+                                       match
+                                         List.assoc_opt metric.key
+                                           entry.distances
+                                       with
+                                       | Some (Some (d, relative)) ->
+                                           Printf.sprintf "%d %s (%.2f%%)" d
+                                             metric.unit_name relative
+                                       | _ -> "-" ) ] )
+                               !selected_metrics )
+                        ; td
+                            [ txt
+                                (I18n.submission_status
+                                   entry.submission.status ) ]
+                        ; td
+                            ( match result with
+                            | None -> [txt "Not evaluated"]
+                            | Some r when r.error ->
+                                [ span
+                                    ~a:[a_class ["text-danger"]]
+                                    [txt r.response] ]
+                            | Some r -> [markdown_evaluation r.response] )
+                        ; td
+                            [ div
+                                ~a:[a_class ["d-flex"; "gap-2"]]
+                                ( button
+                                    ~a:
+                                      ( [ a_class
+                                            [ "btn"
+                                            ; "btn-sm"
+                                            ; "btn-outline-primary" ]
+                                        ; a_title "Evaluate with LLM"
+                                        ; a_aria "label" ["Evaluate with LLM"]
+                                        ; a_onclick (fun _ ->
+                                              evaluate entry ; false ) ]
+                                      @
+                                      if (not ready) || !evaluating <> None
+                                      then [a_disabled ()]
+                                      else [] )
+                                    [Components.Icons.robot_icon ()]
+                                :: Components.Submissions_list_details
+                                   .reevaluate_action
+                                     ~disabled:(!reevaluating <> None)
+                                     ~spinning:
+                                       ( !reevaluating
+                                       = Some entry.submission.id )
+                                     ~on_click:(fun () ->
+                                       request_reevaluation
+                                         entry.submission.id )
+                                     ()
+                                :: ( Option.to_list
+                                       (Components.Submissions_list_details
+                                        .action entry.submission.id
+                                          entry.submission )
+                                   @ Option.to_list
+                                       (Components.Submissions_list_details
+                                        .source_artifacts_action
+                                          entry.submission ) ) ) ] ] ) )
                   rows ) ] ]
 
 let format_contest_time value =
@@ -1107,7 +1099,7 @@ let content contest_id =
                   ; "align-items-center"
                   ; "gap-2"
                   ; "mb-3" ] ]
-            [ h1 ~a:[a_class ["h3"; "mb-0"]] [txt "Judge board"]
+            [ h1 ~a:[a_class ["h3"; "mb-0"]] [txt ""]
             ; div
                 ~a:[a_class ["d-flex"; "gap-2"]]
                 [ button

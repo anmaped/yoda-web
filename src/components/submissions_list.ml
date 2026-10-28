@@ -121,21 +121,16 @@ let submission_row ?(usernames_by_id = None)
     in
     let reeval_action =
       if Helpers.is_judge_or_admin () then
-        [ button
-            ~a:
-              [ a_class ["btn"; "btn-sm"; "btn-outline-warning"]
-              ; a_title (I18n.t "submissions_reevaluate")
-              ; a_id ("reeval-btn-" ^ string_of_int id)
-              ; a_onclick (fun _ ->
-                    Lwt.async (fun () ->
-                        Api.Helpers.re_evaluate_submission id
-                        >>= fun (_, status) ->
-                        Console.console##log
-                          (Js.string
-                             ("Re-eval status: " ^ string_of_int status) ) ;
-                        Lwt.return_unit ) ;
-                    false ) ]
-            [Icons.reeval_icon ()] ]
+        [ Submissions_list_details.reevaluate_action
+            ~id:("reeval-btn-" ^ string_of_int id)
+            ~on_click:(fun () ->
+              Lwt.async (fun () ->
+                  Api.Helpers.re_evaluate_submission id
+                  >>= fun (_, status) ->
+                  Console.console##log
+                    (Js.string ("Re-eval status: " ^ string_of_int status)) ;
+                  Lwt.return_unit ) )
+            () ]
       else []
     in
     reeval_action @ results_action @ source_action
@@ -146,7 +141,8 @@ let submission_row ?(usernames_by_id = None)
       ; td [txt problem]
       ; td [txt lang]
       ; td
-          [ span ~a:[a_class (badge_class result)]
+          [ span
+              ~a:[a_class (badge_class result)]
               [txt (I18n.submission_status submission.status)] ]
       ; td [txt time]
       ; td [txt date] ]

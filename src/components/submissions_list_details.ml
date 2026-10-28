@@ -15,6 +15,15 @@ let availability (details : Api.Openapi.submissionDetails) =
 
 let format_time_ms ms = Printf.sprintf "%d ms" ms
 
+let status_cell (detail : Api.Openapi.submissionDetail) =
+  td
+    [ span
+        ~a:
+          ( if detail.status = "accepted" then
+              [a_class ["text-success"; "fw-semibold"]]
+            else [a_class ["text-danger"; "fw-semibold"]] )
+        [txt (I18n.submission_status detail.status)] ]
+
 let detail_row number (detail : Api.Openapi.submissionDetail) =
   let output_cells =
     match detail.output with
@@ -26,7 +35,7 @@ let detail_row number (detail : Api.Openapi.submissionDetail) =
   in
   tr
     ( [ td [txt (string_of_int number)]
-      ; td [txt (I18n.submission_status detail.status)]
+      ; status_cell detail
       ; td [txt (format_time_ms detail.time_ms)] ]
     @ output_cells )
 
@@ -42,7 +51,7 @@ let compile_error_row (detail : Api.Openapi.submissionDetail) =
         ; td [pre [txt output.stderr]]
         ; td [txt (string_of_int output.return_code)] ]
   in
-  tr ([td [txt (I18n.submission_status detail.status)]] @ output_cells)
+  tr (status_cell detail :: output_cells)
 
 let is_compile_error (detail : Api.Openapi.submissionDetail) =
   detail.status = "compile_error"
@@ -113,6 +122,18 @@ let details_modal submission_id details =
 
 let show submission_id details =
   Helpers.add_element_to_app (details_modal submission_id details)
+
+let reevaluate_action ?id ?(disabled = false) ?(spinning = false) ~on_click
+    () =
+  button
+    ~a:
+      ( [ a_class ["btn"; "btn-sm"; "btn-outline-warning"]
+        ; a_title (I18n.t "submissions_reevaluate")
+        ; a_aria "label" [I18n.t "submissions_reevaluate"]
+        ; a_onclick (fun _ -> on_click () ; false) ]
+      @ (match id with Some id -> [a_id id] | None -> [])
+      @ if disabled then [a_disabled ()] else [] )
+    [Icons.reeval_icon ~a:(if spinning then ["spin"] else []) ()]
 
 let action submission_id (submission : Api.Openapi.submission) =
   match availability submission.details with
