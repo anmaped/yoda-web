@@ -11,6 +11,7 @@
   service_status
   submissions_list_details
   submissions_list
+  llm_evaluation
   user_list
   sidebar
   spinner_modal
@@ -37,6 +38,8 @@
   js_of_ocaml-tyxml
   tyxml
   js_of_ocaml-lwt
+  astring
+  yojson
   lwt)
  (preprocess
   (pps js_of_ocaml-ppx)))

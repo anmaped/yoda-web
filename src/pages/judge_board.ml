@@ -1,5 +1,4 @@
 open Js_of_ocaml
-open Js_of_ocaml_lwt
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 open Lwt.Infix
@@ -76,8 +75,6 @@ let save_evaluation contest_id evaluation =
 let loading = ref false
 
 let analyzing = ref false
-
-let evaluating : (int * string) option ref = ref None
 
 let reevaluating : int option ref = ref None
 
@@ -195,6 +192,8 @@ let rerender () =
   if Js.to_string Dom_html.window##.location##.hash = "#judge-board" then
     Helpers.trigger_render ()
 
+let _unsubscribe_jobs = Components.Llm_evaluation.subscribe rerender
+
 let load_contest_details contest_id =
   Lwt.async (fun () ->
       Lwt.catch
@@ -220,7 +219,6 @@ let select_user user_id =
   selected_user := user_id ;
   files := [] ;
   analyzing := false ;
-  evaluating := None ;
   reevaluating := None ;
   reevaluation_notice := "" ;
   message := ""
@@ -276,7 +274,6 @@ let load ~on_loaded contest_id =
   loading := true ;
   submissions := [] ;
   files := [] ;
-  evaluating := None ;
   reevaluating := None ;
   reevaluation_notice := "" ;
   let url =
@@ -455,100 +452,6 @@ let attempts entry =
       then count + 1
       else count )
     0 (visible_submissions ())
-
-let evaluate entry =
-  match Settings_llm.configuration () with
-  | None -> ()
-  | Some config when !evaluating = None ->
-      let key = (entry.submission.id, entry.filename) in
-      let request_generation = !generation in
-      evaluating := Some key ;
-      rerender () ;
-      Lwt.async (fun () ->
-          let body =
-            `Assoc
-              [ ("model", `String config.model)
-              ; ( "messages"
-                , `List
-                    [ `Assoc
-                        [ ("role", `String "system")
-                        ; ("content", `String config.prompt) ]
-                    ; `Assoc
-                        [ ("role", `String "user")
-                        ; ( "content"
-                          , `String
-                              (Printf.sprintf
-                                 "Problem %s, submission %d, file %s, \
-                                  attempts so far %d, judge verdict %s. \
-                                  Source:\n\
-                                  %s"
-                                 (problem_code entry.submission.problem_id)
-                                 entry.submission.id entry.filename
-                                 (attempts entry) entry.submission.status
-                                 entry.content ) ) ] ] ) ]
-            |> Yojson.Safe.to_string
-          in
-          Lwt.catch
-            (fun () ->
-              XmlHttpRequest.perform_raw_url ~override_method:`POST
-                ~headers:
-                  [ ("Content-Type", "application/json")
-                  ; ("Authorization", "Bearer " ^ config.api_key) ]
-                ~contents:(`String body) config.endpoint
-              >>= fun response ->
-              let text, error =
-                if response.code < 200 || response.code >= 300 then
-                  ( Printf.sprintf "Provider returned HTTP %d." response.code
-                  , true )
-                else
-                  try
-                    let json = Yojson.Safe.from_string response.content in
-                    Yojson.Safe.Util.(json |> member "choices" |> to_list)
-                    |> List.hd
-                    |> Yojson.Safe.Util.member "message"
-                    |> Yojson.Safe.Util.member "content"
-                    |> Yojson.Safe.Util.to_string
-                    |> fun content -> (content, false)
-                  with _ ->
-                    ( "Provider response did not include message content."
-                    , true )
-              in
-              if !evaluating = Some key && !generation = request_generation
-              then (
-                let result =
-                  { submission_id= entry.submission.id
-                  ; filename= entry.filename
-                  ; response= text
-                  ; error }
-                in
-                evaluations :=
-                  result
-                  :: List.filter
-                       (fun result ->
-                         (result.submission_id, result.filename) <> key )
-                       !evaluations ;
-                if not error then save_evaluation !contest result ;
-                evaluating := None ;
-                rerender () ) ;
-              Lwt.return_unit )
-            (fun _ ->
-              if !evaluating = Some key && !generation = request_generation
-              then (
-                evaluations :=
-                  { submission_id= entry.submission.id
-                  ; filename= entry.filename
-                  ; response=
-                      "Request failed. Check endpoint, CORS policy, and \
-                       network access."
-                  ; error= true }
-                  :: List.filter
-                       (fun result ->
-                         (result.submission_id, result.filename) <> key )
-                       !evaluations ;
-                evaluating := None ;
-                rerender () ) ;
-              Lwt.return_unit ) )
-  | Some _ -> ()
 
 let request_reevaluation submission_id =
   if Helpers.is_judge_or_admin () && !reevaluating = None then (
@@ -884,7 +787,6 @@ let metric_selector ~on_select () =
                                metrics ;
                            incr generation ;
                            analyzing := false ;
-                           evaluating := None ;
                            files := [] ;
                            message := "" ;
                            on_select () ;
@@ -908,19 +810,17 @@ let metric_selector ~on_select () =
                      | _ -> metric.label ) ] ] )
            metrics ) ]
 
-let markdown_evaluation response =
-  let content =
-    div ~a:[a_class ["markdown-content"; "judge-llm-response"]] [txt response]
-  in
-  if Js.Optdef.test (Js.Unsafe.get Js.Unsafe.global "markdownit") then
-    (Tyxml_js.To_dom.of_div content)##.innerHTML
-    := Js.string
-         (Components.View_problem_markdown.render_markdown ~allow_html:false
-            response ) ;
-  content
-
 let results_table () =
-  let ready = Option.is_some (Settings_llm.configuration ()) in
+  let llm_config =
+    Option.map
+      (fun (config : Settings_llm.config) ->
+        Components.Llm_evaluation.
+          { endpoint= config.endpoint
+          ; model= config.model
+          ; api_key= config.api_key
+          ; prompt= config.prompt } )
+      (Settings_llm.configuration ())
+  in
   let show_user = !selected_user = None in
   let rows =
     List.sort (fun a b -> Int.compare b.submission.id a.submission.id) !files
@@ -969,6 +869,36 @@ let results_table () =
                         (fun r -> (r.submission_id, r.filename) = key)
                         !evaluations
                     in
+                    let contest_id = !contest in
+                    let input =
+                      Components.Llm_evaluation.
+                        { contest_id
+                        ; submission_id= entry.submission.id
+                        ; filename= entry.filename
+                        ; problem_code=
+                            problem_code entry.submission.problem_id
+                        ; attempts= attempts entry
+                        ; verdict= entry.submission.status
+                        ; source= entry.content }
+                    in
+                    let on_result text error =
+                      let evaluation =
+                        { submission_id= entry.submission.id
+                        ; filename= entry.filename
+                        ; response= text
+                        ; error }
+                      in
+                      if not error then save_evaluation contest_id evaluation ;
+                      if !contest = contest_id then (
+                        evaluations :=
+                          evaluation
+                          :: List.filter
+                               (fun result ->
+                                 (result.submission_id, result.filename)
+                                 <> key )
+                               !evaluations ;
+                        rerender () )
+                    in
                     tr
                       ( ( if show_user then
                             [ td
@@ -1005,32 +935,16 @@ let results_table () =
                             [ txt
                                 (I18n.submission_status
                                    entry.submission.status ) ]
-                        ; td
-                            ( match result with
-                            | None -> [txt "Not evaluated"]
-                            | Some r when r.error ->
-                                [ span
-                                    ~a:[a_class ["text-danger"]]
-                                    [txt r.response] ]
-                            | Some r -> [markdown_evaluation r.response] )
+                        ; Components.Llm_evaluation.result_cell ~input
+                            ~result:
+                              (Option.map
+                                 (fun r -> (r.response, r.error))
+                                 result )
                         ; td
                             [ div
                                 ~a:[a_class ["d-flex"; "gap-2"]]
-                                ( button
-                                    ~a:
-                                      ( [ a_class
-                                            [ "btn"
-                                            ; "btn-sm"
-                                            ; "btn-outline-primary" ]
-                                        ; a_title "Evaluate with LLM"
-                                        ; a_aria "label" ["Evaluate with LLM"]
-                                        ; a_onclick (fun _ ->
-                                              evaluate entry ; false ) ]
-                                      @
-                                      if (not ready) || !evaluating <> None
-                                      then [a_disabled ()]
-                                      else [] )
-                                    [Components.Icons.robot_icon ()]
+                                ( Components.Llm_evaluation.action_button
+                                    ~input ~config:llm_config ~on_result
                                 :: Components.Submissions_list_details
                                    .reevaluate_action
                                      ~disabled:(!reevaluating <> None)
@@ -1072,7 +986,6 @@ let content contest_id =
     files := [] ;
     evaluations := load_evaluations contest_id ;
     analyzing := false ;
-    evaluating := None ;
     selected_user := None ;
     Hashtbl.clear usernames ;
     Hashtbl.clear problem_codes ;
