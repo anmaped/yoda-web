@@ -1,5 +1,4 @@
 open Js_of_ocaml
-open Js_of_ocaml_lwt
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
 open Lwt.Infix
@@ -61,19 +60,6 @@ let configuration () =
     Some
       {endpoint= !endpoint; model= !model; api_key= !api_key; prompt= !prompt}
 
-let models_url url =
-  let url = String.trim url in
-  let url =
-    if Astring.String.is_suffix ~affix:"/" url then
-      String.sub url 0 (String.length url - 1)
-    else url
-  in
-  let suffix = "/chat/completions" in
-  if Astring.String.is_suffix ~affix:suffix url then
-    Some
-      (String.sub url 0 (String.length url - String.length suffix) ^ "/models")
-  else None
-
 let load_models () =
   let requested_endpoint = !endpoint and key = !api_key in
   if
@@ -83,50 +69,33 @@ let load_models () =
     loaded_for := Some (requested_endpoint, key) ;
     models_loading := true ;
     models_error := "" ;
-    match models_url requested_endpoint with
-    | None ->
-        models_loading := false ;
-        models_error := "Endpoint must end in /chat/completions."
-    | Some url ->
-        Lwt.async (fun () ->
-            Lwt.catch
-              (fun () ->
-                XmlHttpRequest.perform_raw_url
-                  ~headers:[("Authorization", "Bearer " ^ key)] url
-                >>= fun response ->
-                if !endpoint = requested_endpoint && !api_key = key then (
-                  if response.code < 200 || response.code >= 300 then
-                    models_error :=
-                      Printf.sprintf "Provider returned HTTP %d."
-                        response.code
-                  else (
-                    let available =
-                      Yojson.Safe.from_string response.content
-                      |> Yojson.Safe.Util.member "data"
-                      |> Yojson.Safe.Util.to_list
-                      |> List.map (fun item ->
-                             Yojson.Safe.Util.
-                               (item |> member "id" |> to_string) )
-                      |> List.sort_uniq String.compare
-                    in
-                    models := available ;
-                    if not (List.mem !model available) then (
-                      model := "" ;
-                      Helpers.set_local_variable (storage_key key_model) "" ) ;
-                    models_error :=
-                      if available = [] then "Provider returned no models."
-                      else "" ) ;
-                  models_loading := false ;
-                  Helpers.trigger_render () ) ;
-                Lwt.return_unit )
-              (fun _ ->
-                if !endpoint = requested_endpoint && !api_key = key then (
-                  models_loading := false ;
-                  models_error :=
+    Lwt.async (fun () ->
+        Lwt.catch
+          (fun () ->
+            Api.Openai.list_models ~endpoint:requested_endpoint
+              ~api_key:key
+            >>= fun available ->
+            if !endpoint = requested_endpoint && !api_key = key then (
+              models := available ;
+              if not (List.mem !model available) then (
+                model := "" ;
+                Helpers.set_local_variable (storage_key key_model) "" ) ;
+              models_error :=
+                if available = [] then "Provider returned no models." else "" ;
+              models_loading := false ;
+              Helpers.trigger_render () ) ;
+            Lwt.return_unit )
+          (fun error ->
+            if !endpoint = requested_endpoint && !api_key = key then (
+              models_loading := false ;
+              models_error :=
+                ( match error with
+                | Failure message -> message
+                | _ ->
                     "Could not load models. Check the endpoint, API key and \
-                     provider CORS support." ;
-                  Helpers.trigger_render () ) ;
-                Lwt.return_unit ) ) )
+                     provider CORS support." ) ;
+              Helpers.trigger_render () ) ;
+            Lwt.return_unit ) ) )
 
 let test_llm () =
   if not !test_loading && List.mem !model !models then (
@@ -137,16 +106,6 @@ let test_llm () =
     test_loading := true ;
     test_result := None ;
     Helpers.trigger_render () ;
-    let body =
-      `Assoc
-        [ ("model", `String selected_model)
-        ; ( "messages"
-          , `List
-              [ `Assoc
-                  [ ("role", `String "user")
-                  ; ("content", `String "Reply with OK.") ] ] ) ]
-      |> Yojson.Safe.to_string
-    in
     Lwt.async (fun () ->
         let finish result =
           if generation = !test_generation then (
@@ -157,40 +116,22 @@ let test_llm () =
         in
         Lwt.catch
           (fun () ->
-            XmlHttpRequest.perform_raw_url ~override_method:`POST
-              ~headers:
-                [ ("Content-Type", "application/json")
-                ; ("Authorization", "Bearer " ^ key) ]
-              ~contents:(`String body) requested_endpoint
-            >>= fun response ->
-            if response.code < 200 || response.code >= 300 then
-              finish
-                ( false
-                , Printf.sprintf "Provider returned HTTP %d." response.code
-                )
-            else
-              let result =
-                try
-                  let content =
-                    Yojson.Safe.from_string response.content
-                    |> Yojson.Safe.Util.member "choices"
-                    |> Yojson.Safe.Util.to_list |> List.hd
-                    |> Yojson.Safe.Util.member "message"
-                    |> Yojson.Safe.Util.member "content"
-                    |> Yojson.Safe.Util.to_string
-                  in
-                  if String.trim content <> "" then
-                    (true, "LLM ready: chat completion succeeded.")
-                  else (false, "Provider returned an empty response.")
-                with _ ->
-                  (false, "Provider response did not include message content.")
-              in
-              finish result )
-          (fun _ ->
+            Api.Openai.chat_completion
+              ~endpoint:requested_endpoint ~api_key:key
+              ~model:selected_model ~messages:[("user", "Reply with OK.")]
+            >>= fun content ->
+            finish
+              ( if String.trim content <> "" then
+                  (true, "LLM ready: chat completion succeeded.")
+                else (false, "Provider returned an empty response.") ) )
+          (fun error ->
             finish
               ( false
-              , "Request failed. Check the endpoint, proxy or CORS policy, \
-                 and network access." ) ) ) )
+              , ( match error with
+                | Failure message -> message
+                | _ ->
+                    "Request failed. Check the endpoint, proxy or CORS \
+                     policy, and network access." ) ) ) ) )
 
 let text_input title key value typ =
   label

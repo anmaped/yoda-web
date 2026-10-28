@@ -1,8 +1,6 @@
 open Js_of_ocaml
-open Js_of_ocaml_lwt
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
-open Lwt.Infix
 
 type config =
   {endpoint: string; model: string; api_key: string; prompt: string}
@@ -57,49 +55,17 @@ let enqueue ~input ~config ~on_result =
            Helpers.get_username () <> username
            || not (Helpers.is_judge_or_admin ())
          then failwith "Evaluation canceled after sign-out." ;
-         let body =
-           `Assoc
-             [ ("model", `String config.model)
-             ; ( "messages"
-               , `List
-                   [ `Assoc
-                       [ ("role", `String "system")
-                       ; ("content", `String config.prompt) ]
-                   ; `Assoc
-                       [ ("role", `String "user")
-                       ; ( "content"
-                         , `String
-                             (Printf.sprintf
-                                "Problem %s, submission %d, file %s, \
-                                 attempts so far %d, judge verdict %s. \
-                                 Source:\n\
-                                 %s"
-                                input.problem_code input.submission_id
-                                input.filename input.attempts input.verdict
-                                input.source ) ) ] ] ) ]
-           |> Yojson.Safe.to_string
-         in
-         XmlHttpRequest.perform_raw_url ~override_method:`POST
-           ~headers:
-             [ ("Content-Type", "application/json")
-             ; ("Authorization", "Bearer " ^ config.api_key) ]
-           ~contents:(`String body) config.endpoint
-         >>= fun response ->
-         if response.code < 200 || response.code >= 300 then
-           failwith
-             (Printf.sprintf "Provider returned HTTP %d." response.code) ;
-         let content =
-           try
-             let json = Yojson.Safe.from_string response.content in
-             Yojson.Safe.Util.(json |> member "choices" |> to_list)
-             |> List.hd
-             |> Yojson.Safe.Util.member "message"
-             |> Yojson.Safe.Util.member "content"
-             |> Yojson.Safe.Util.to_string
-           with _ ->
-             failwith "Provider response did not include message content."
-         in
-         Lwt.return content )
+          let message =
+            Printf.sprintf
+              "Problem %s, submission %d, file %s, attempts so far %d, \
+               judge verdict %s. Source:\n\
+               %s"
+              input.problem_code input.submission_id input.filename
+              input.attempts input.verdict input.source
+          in
+           Api.Openai.chat_completion ~endpoint:config.endpoint
+            ~api_key:config.api_key ~model:config.model
+            ~messages:[("system", config.prompt); ("user", message)] )
        ~on_result:(fun outcome ->
          if Helpers.get_username () = username then
            match outcome with

@@ -39,7 +39,6 @@
   tyxml
   js_of_ocaml-lwt
   astring
-  yojson
   lwt)
  (preprocess
   (pps js_of_ocaml-ppx)))
