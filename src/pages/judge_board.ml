@@ -80,6 +80,24 @@ let reevaluating : int option ref = ref None
 
 let reevaluation_notice = ref ""
 
+let batch_problem : int option ref = ref None
+
+let batch_fetching = ref false
+
+let batch_notice = ref ""
+
+let batch_request_id = ref 0
+
+type batch_preview =
+  { contest_id: int
+  ; request_id: int
+  ; username: string
+  ; problem_id: int
+  ; user_count: int
+  ; inputs: Components.Llm_evaluation.input list }
+
+let batch_preview : batch_preview option ref = ref None
+
 let generation = ref 0
 
 let message = ref ""
@@ -194,6 +212,19 @@ let rerender () =
 
 let _unsubscribe_jobs = Components.Llm_evaluation.subscribe rerender
 
+let record_evaluation contest_id submission_id filename text error =
+  let evaluation = {submission_id; filename; response= text; error} in
+  if not error then save_evaluation contest_id evaluation ;
+  if !contest = contest_id then (
+    evaluations :=
+      evaluation
+      :: List.filter
+           (fun result ->
+             (result.submission_id, result.filename)
+             <> (submission_id, filename) )
+           !evaluations ;
+    rerender () )
+
 let load_contest_details contest_id =
   Lwt.async (fun () ->
       Lwt.catch
@@ -270,6 +301,10 @@ let user_selector ~on_select () =
 
 let load ~on_loaded contest_id =
   incr generation ;
+  incr batch_request_id ;
+  batch_preview := None ;
+  batch_fetching := false ;
+  batch_notice := "" ;
   let request_generation = !generation in
   loading := true ;
   submissions := [] ;
@@ -310,6 +345,15 @@ let load ~on_loaded contest_id =
           if !contest = contest_id && !generation = request_generation then (
             if code = 200 then (
               submissions := Api.Openapi.Submissions.of_yojson json ;
+              ( match !batch_problem with
+              | Some problem_id
+                when not
+                       (List.exists
+                          (fun (sub : Api.Openapi.submission) ->
+                            sub.problem_id = problem_id )
+                          !submissions ) ->
+                  batch_problem := None
+              | _ -> () ) ;
               Hashtbl.clear usernames ;
               List.iter
                 (fun (user : Api.Openapi.user) ->
@@ -452,6 +496,182 @@ let attempts entry =
       then count + 1
       else count )
     0 (visible_submissions ())
+
+let evaluate_latest_for_problem problem_id =
+  if not !batch_fetching then (
+    let contest_id = !contest and request_id = !batch_request_id in
+    let username = Helpers.get_username () in
+    let all_submissions = !submissions in
+    let latest = Hashtbl.create 32 in
+    List.iter
+      (fun (sub : Api.Openapi.submission) ->
+        if sub.problem_id = problem_id then
+          match sub.owner_id with
+          | None -> ()
+          | Some owner_id -> (
+            match Hashtbl.find_opt latest owner_id with
+            | Some (previous : Api.Openapi.submission)
+              when previous.id >= sub.id -> ()
+            | _ -> Hashtbl.replace latest owner_id sub ) )
+      all_submissions ;
+    let latest = Hashtbl.fold (fun _ sub acc -> sub :: acc) latest [] in
+    batch_fetching := true ;
+    batch_preview := None ;
+    batch_notice := "Fetching latest submissions' source files..." ;
+    rerender () ;
+    let pool = Lwt_pool.create 5 (fun () -> Lwt.return_unit) in
+    Lwt.async (fun () ->
+        Lwt_list.map_p
+          (fun (sub : Api.Openapi.submission) ->
+            Lwt_pool.use pool (fun () ->
+                Lwt.catch
+                  (fun () ->
+                    Api.Helpers.fetch_json
+                      (Printf.sprintf "%s/submissions/%d/details"
+                         Api.Helpers.base_url sub.id )
+                    >|= fun (json, code) ->
+                    if code <> 200 then (sub, [])
+                    else
+                      let details =
+                        Api.Openapi.SubmissionFullDetails.of_yojson json
+                      in
+                      (sub, details.source_artifacts) )
+                  (fun _ -> Lwt.return (sub, [])) ) )
+          latest
+        >>= fun fetched ->
+        if
+          !contest = contest_id && !batch_request_id = request_id
+          && Helpers.get_username () = username
+        then (
+          batch_fetching := false ;
+          let unavailable =
+            List.length (List.filter (fun (_, sources) -> sources = []) fetched)
+          in
+          let saved = load_evaluations contest_id in
+          let inputs =
+            List.concat_map
+              (fun ((sub : Api.Openapi.submission), sources) ->
+                let attempts =
+                  List.fold_left
+                    (fun count (prior : Api.Openapi.submission) ->
+                      if
+                        prior.owner_id = sub.owner_id
+                        && prior.problem_id = problem_id
+                        && prior.id <= sub.id
+                      then count + 1
+                      else count )
+                    0 all_submissions
+                in
+                List.map
+                  (fun (source : Api.Openapi.sourceArtifact) ->
+                    Components.Llm_evaluation.
+                      { contest_id
+                      ; submission_id= sub.id
+                      ; filename= source.filename
+                      ; problem_code= problem_code problem_id
+                      ; attempts
+                      ; verdict= sub.status
+                      ; source= source.content } )
+                  sources )
+              fetched
+            |> List.filter (fun (input : Components.Llm_evaluation.input) ->
+                   not
+                     (List.exists
+                        (fun result ->
+                          result.submission_id = input.submission_id
+                          && result.filename = input.filename )
+                        saved )
+                   && not (Components.Llm_evaluation.is_pending input) )
+          in
+          let inputs =
+            List.sort_uniq
+              (fun (a : Components.Llm_evaluation.input) b ->
+                compare (a.submission_id, a.filename)
+                  (b.submission_id, b.filename) )
+              inputs
+          in
+          let total = List.length inputs in
+          let user_count =
+            List.map
+              (fun (input : Components.Llm_evaluation.input) ->
+                input.submission_id )
+              inputs
+            |> List.sort_uniq Int.compare |> List.length
+          in
+          if total = 0 then
+            batch_notice :=
+              Printf.sprintf
+                "No new source files to evaluate (%d latest submission(s) \
+                 unavailable)."
+                unavailable
+          else (
+            batch_preview :=
+              Some
+                { contest_id
+                ; request_id
+                ; username
+                ; problem_id
+                ; user_count
+                ; inputs } ;
+            batch_notice :=
+              Printf.sprintf
+                "Ready to send %d source file(s) from %d user(s) for problem \
+                 %s. This may incur provider charges."
+                total user_count
+                (problem_code problem_id) ) ;
+          rerender () ) ;
+        Lwt.return_unit ) )
+
+let confirm_batch (config : Components.Llm_evaluation.config) =
+  match !batch_preview with
+  | None -> ()
+  | Some preview ->
+      batch_preview := None ;
+      if
+        !contest = preview.contest_id
+        && !batch_request_id = preview.request_id
+        && Helpers.get_username () = preview.username
+        && Helpers.is_judge_or_admin ()
+      then (
+        let saved = load_evaluations preview.contest_id in
+        let inputs =
+          List.filter
+            (fun (input : Components.Llm_evaluation.input) ->
+              not
+                (List.exists
+                   (fun result ->
+                     result.submission_id = input.submission_id
+                     && result.filename = input.filename )
+                   saved )
+              && not (Components.Llm_evaluation.is_pending input) )
+            preview.inputs
+        in
+        let total = List.length inputs in
+        let completed = ref 0 and failed = ref 0 in
+        batch_notice :=
+          if total = 0 then "No new files remain to evaluate."
+          else
+            Printf.sprintf "Queued %d file(s) for problem %s." total
+              (problem_code preview.problem_id) ;
+        List.iter
+          (fun (input : Components.Llm_evaluation.input) ->
+            ignore
+              (Components.Llm_evaluation.enqueue ~input ~config
+                 ~on_result:(fun text error ->
+                   record_evaluation preview.contest_id input.submission_id
+                     input.filename text error ;
+                   if !contest = preview.contest_id
+                      && !batch_request_id = preview.request_id
+                   then (
+                     incr completed ;
+                     if error then incr failed ;
+                     batch_notice :=
+                       Printf.sprintf
+                         "LLM batch: %d/%d finished (%d failed)." !completed
+                         total !failed ;
+                     rerender () ) ) ) )
+          inputs ;
+        rerender () )
 
 let request_reevaluation submission_id =
   if Helpers.is_judge_or_admin () && !reevaluating = None then (
@@ -822,12 +1042,128 @@ let results_table () =
       (Settings_llm.configuration ())
   in
   let show_user = !selected_user = None in
+  let batch_problems =
+    !submissions
+    |> List.filter_map (fun (sub : Api.Openapi.submission) ->
+           match sub.owner_id with
+           | Some _ -> Some sub.problem_id
+           | None -> None )
+    |> List.sort_uniq Int.compare
+    |> List.sort (fun a b -> String.compare (problem_code a) (problem_code b))
+  in
   let rows =
     List.sort (fun a b -> Int.compare b.submission.id a.submission.id) !files
   in
   div
     ~a:[a_class ["card"; "p-3"; "mb-3"]]
-    [ h2 ~a:[a_class ["h5"]] [txt "Submission Review"]
+    [ div
+        ~a:
+          [ a_class
+              [ "d-flex"
+              ; "flex-wrap"
+              ; "justify-content-between"
+              ; "align-items-center"
+              ; "gap-2"
+              ; "mb-2" ] ]
+        ( h2 ~a:[a_class ["h5"; "mb-0"]] [txt "Submission Review"]
+        :: if show_user then
+             [ div
+                 ~a:[a_class ["d-flex"; "flex-wrap"; "gap-2"]]
+                 [ label
+                     ~a:
+                       [ a_class ["visually-hidden"]
+                       ; a_label_for "judge-batch-problem" ]
+                     [txt "Problem for batch LLM evaluation"]
+                 ; select
+                     ~a:
+                       ( [ a_id "judge-batch-problem"
+                         ; a_class ["form-select"; "form-select-sm"]
+                         ; a_style "width:auto;max-width:18rem"
+                         ; a_onchange (fun event ->
+                               let target =
+                                 Js.Opt.get event##.target (fun () ->
+                                     assert false )
+                               in
+                               let field =
+                                 Js.Opt.get (Dom_html.CoerceTo.select target)
+                                   (fun () -> assert false)
+                               in
+                               let value = Js.to_string field##.value in
+                               batch_problem :=
+                                 if value = "" then None
+                                 else Some (int_of_string value) ;
+                               batch_preview := None ;
+                               batch_notice := "" ;
+                               rerender () ;
+                               false ) ]
+                       @ if !batch_fetching then [a_disabled ()] else [] )
+                     ( option ~a:[a_value ""] (txt "Select a problem")
+                     :: List.map
+                          (fun id ->
+                            option
+                              ~a:
+                                ( [a_value (string_of_int id)]
+                                @ if !batch_problem = Some id then
+                                    [a_selected ()]
+                                  else [] )
+                              (txt (problem_code id)) )
+                          batch_problems )
+                 ; button
+                     ~a:
+                       ( [ a_button_type `Button
+                         ; a_class ["btn"; "btn-sm"; "btn-outline-primary"]
+                         ; a_title
+                             "Evaluate each user's latest submission for the selected problem"
+                         ; a_onclick (fun _ ->
+                               ( match (!batch_problem, llm_config) with
+                               | Some id, Some _ ->
+                                   evaluate_latest_for_problem id
+                               | _ -> () ) ;
+                               false ) ]
+                       @
+                       if
+                         !batch_fetching || !batch_problem = None
+                         || llm_config = None || !batch_preview <> None
+                       then [a_disabled ()]
+                       else [] )
+                     [ txt
+                         ( if !batch_fetching then "Fetching sources..."
+                           else "Evaluate latest per user" ) ] ] ]
+           else [] )
+    ; ( if !batch_notice = "" || not show_user then div []
+        else
+          p
+            ~a:[a_class ["text-muted"; "mb-2"]; a_aria "live" ["polite"]]
+            [txt !batch_notice] )
+    ; ( if not show_user then div []
+        else
+          match !batch_preview with
+          | None -> div []
+          | Some preview ->
+              div
+                ~a:[a_class ["d-flex"; "gap-2"; "mb-3"]]
+                [ button
+                    ~a:
+                      ( [ a_button_type `Button
+                        ; a_class ["btn"; "btn-sm"; "btn-primary"]
+                        ; a_onclick (fun _ ->
+                              Option.iter confirm_batch llm_config ;
+                              false ) ]
+                      @ if llm_config = None then [a_disabled ()] else [] )
+                    [ txt
+                        (Printf.sprintf "Confirm %d file(s) from %d user(s)"
+                           (List.length preview.inputs)
+                           preview.user_count ) ]
+                ; button
+                    ~a:
+                      [ a_button_type `Button
+                      ; a_class ["btn"; "btn-sm"; "btn-outline-secondary"]
+                      ; a_onclick (fun _ ->
+                            batch_preview := None ;
+                            batch_notice := "LLM batch canceled." ;
+                            rerender () ;
+                            false ) ]
+                    [txt "Cancel"] ] )
     ; ( if !reevaluation_notice = "" then div []
         else
           p
@@ -882,22 +1218,8 @@ let results_table () =
                         ; source= entry.content }
                     in
                     let on_result text error =
-                      let evaluation =
-                        { submission_id= entry.submission.id
-                        ; filename= entry.filename
-                        ; response= text
-                        ; error }
-                      in
-                      if not error then save_evaluation contest_id evaluation ;
-                      if !contest = contest_id then (
-                        evaluations :=
-                          evaluation
-                          :: List.filter
-                               (fun result ->
-                                 (result.submission_id, result.filename)
-                                 <> key )
-                               !evaluations ;
-                        rerender () )
+                      record_evaluation contest_id entry.submission.id
+                        entry.filename text error
                     in
                     tr
                       ( ( if show_user then
@@ -979,6 +1301,7 @@ let format_contest_time value =
 
 let content contest_id =
   if !contest <> contest_id then (
+    batch_problem := None ;
     contest := contest_id ;
     contest_details := None ;
     load_contest_details contest_id ;

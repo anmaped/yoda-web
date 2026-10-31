@@ -1,6 +1,7 @@
 open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Tyxml_js.Html
+open Lwt.Infix
 
 type config =
   {endpoint: string; model: string; api_key: string; prompt: string}
@@ -18,9 +19,20 @@ let job_key input =
   Printf.sprintf "llm:%s:%d:%d:%s" (Helpers.get_username ()) input.contest_id
     input.submission_id input.filename
 
+let is_pending input =
+  match Model.Job_queue.status (job_key input) with
+  | Some (Model.Job_queue.Queued | Model.Job_queue.Running) -> true
+  | _ -> false
+
 let subscribe on_change =
+  let scheduled = ref false in
   Model.Job_queue.subscribe (fun key _ ->
-      if Astring.String.is_prefix ~affix:"llm:" key then on_change () )
+      if Astring.String.is_prefix ~affix:"llm:" key && not !scheduled then (
+        scheduled := true ;
+        Lwt.async (fun () ->
+            Lwt.pause () >|= fun () ->
+            scheduled := false ;
+            on_change () ) ) )
 
 let markdown_response response =
   let content =
@@ -48,37 +60,35 @@ let result_cell ~input ~result =
 
 let enqueue ~input ~config ~on_result =
   let username = Helpers.get_username () in
-  ignore
-    (Model.Job_queue.enqueue ~key:(job_key input)
-       ~run:(fun () ->
-         if
-           Helpers.get_username () <> username
-           || not (Helpers.is_judge_or_admin ())
-         then failwith "Evaluation canceled after sign-out." ;
-          let message =
-            Printf.sprintf
-              "Problem %s, submission %d, file %s, attempts so far %d, \
-               judge verdict %s. Source:\n\
-               %s"
-              input.problem_code input.submission_id input.filename
-              input.attempts input.verdict input.source
-          in
-           Api.Openai.chat_completion ~endpoint:config.endpoint
-            ~api_key:config.api_key ~model:config.model
-            ~messages:[("system", config.prompt); ("user", message)] )
-       ~on_result:(fun outcome ->
-         if Helpers.get_username () = username then
-           match outcome with
-           | Ok content -> on_result content false
-           | Error (Failure message) -> on_result message true
-           | Error _ ->
-               on_result
-                 "Request failed. Check endpoint, proxy, CORS policy, and \
-                  network access."
-                 true ) )
+  Model.Job_queue.enqueue ~key:(job_key input)
+    ~run:(fun () ->
+      if
+        Helpers.get_username () <> username
+        || not (Helpers.is_judge_or_admin ())
+      then failwith "Evaluation canceled after sign-out." ;
+      let message =
+        Printf.sprintf
+          "Problem %s, submission %d, file %s, attempts so far %d, judge \
+           verdict %s. Source:\n\
+           %s"
+          input.problem_code input.submission_id input.filename input.attempts
+          input.verdict input.source
+      in
+      Api.Openai.chat_completion ~endpoint:config.endpoint
+        ~api_key:config.api_key ~model:config.model
+        ~messages:[("system", config.prompt); ("user", message)] )
+    ~on_result:(fun outcome ->
+      if Helpers.get_username () = username then
+        match outcome with
+        | Ok content -> on_result content false
+        | Error (Failure message) -> on_result message true
+        | Error _ ->
+            on_result
+              "Request failed. Check endpoint, proxy, CORS policy, and \
+               network access."
+              true )
 
 let action_button ~input ~config ~on_result =
-  let status = Model.Job_queue.status (job_key input) in
   button
     ~a:
       ( [ a_class ["btn"; "btn-sm"; "btn-outline-primary"]
@@ -86,14 +96,13 @@ let action_button ~input ~config ~on_result =
         ; a_aria "label" ["Evaluate with LLM"]
         ; a_onclick (fun _ ->
               Option.iter
-                (fun config -> enqueue ~input ~config ~on_result)
+                (fun config -> ignore (enqueue ~input ~config ~on_result))
                 config ;
               false ) ]
       @
       if
         config = None
-        || status = Some Model.Job_queue.Queued
-        || status = Some Model.Job_queue.Running
+        || is_pending input
       then [a_disabled ()]
       else [] )
     [Icons.robot_icon ()]
